@@ -62,9 +62,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   z-index:15;
   background:var(--surface2);
 }
-.ciclos-table thead tr:nth-child(1) th{top:0;}
-.ciclos-table thead tr:nth-child(2) th{top:23px;}
-.ciclos-table thead tr:nth-child(3) th{top:41px;}
 
 
 .ciclos-table{border-collapse:collapse;font-size:11px;}
@@ -676,6 +673,17 @@ function render(){
 
   html+='</tbody></table>';
   document.getElementById('table-wrap').innerHTML=html;
+  // Calcular top dinámico para cada fila del thead
+  requestAnimationFrame(()=>{
+    const thead = document.querySelector('.ciclos-table thead');
+    if(!thead) return;
+    const rows = thead.querySelectorAll('tr');
+    let acum = 0;
+    rows.forEach(row=>{
+      row.querySelectorAll('th').forEach(th=>{ th.style.top = acum+'px'; });
+      acum += row.offsetHeight;
+    });
+  });
 }
 
 // =============================================
