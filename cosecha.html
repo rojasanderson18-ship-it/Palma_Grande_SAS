@@ -462,7 +462,7 @@ const LOTES = [
   {finca:'FINCA 3',lote:'58',ha:9,tipo:'guineensis'},
 ];
 
-const GAS_URL = 'TU_APPS_SCRIPT_URL_AQUI';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const DIAS_SEM = ['D','L','M','M','J','V','S'];
 
@@ -782,13 +782,13 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // =============================================
 // GAS
 // =============================================
-const GAS_URL2='TU_APPS_SCRIPT_URL_AQUI';
+const GAS_URL2='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
 async function enviarGAS(payload){
-  if(GAS_URL2==='TU_APPS_SCRIPT_URL_AQUI') return;
+  if(GAS_URL2==='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec') return;
   try{ await fetch(GAS_URL2,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}}); }catch(e){}
 }
 async function cargarGAS(){
-  if(GAS_URL2==='TU_APPS_SCRIPT_URL_AQUI') return;
+  if(GAS_URL2==='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec') return;
   try{
     const r=await fetch(GAS_URL2+'?accion=obtenerMarcas');
     const data=await r.json();
@@ -1190,6 +1190,7 @@ function togglePanel(){
 // PDF EXPORT
 // =============================================
 function exportarPDF(){
+  if(!window.jspdf){ showToast('Librería PDF no cargada','err'); return; }
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
   const hoy = hoyLocal();
@@ -1199,89 +1200,79 @@ function exportarPDF(){
     const d=new Date(hoy);d.setDate(d.getDate()-i);fechas.push(d);
   }
 
-  // Title
-  doc.setFontSize(16);
-  doc.setFont('helvetica','bold');
-  doc.text('CICLOS DE COSECHA - PALMA GRANDE S.A.S.', 14, 14);
-  doc.setFontSize(9);
-  doc.setFont('helvetica','normal');
-  doc.text(`Fecha: ${hoy.getDate()} ${MESES[hoy.getMonth()]} ${hoy.getFullYear()} | Semana ${semanaNum(hoy)} | Labor: Cosecha`, 14, 20);
+  // Titulo
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('CICLOS DE COSECHA - PALMA GRANDE S.A.S.', 14, 12);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Fecha: '+hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear()+' | Semana '+semanaNum(hoy), 14, 18);
 
   // Indicadores
-  let verde=0,azul=0,rojo=0,haFuera=0,haEn=0;
+  let nVerde=0,nAzul=0,nRojo=0,haFuera=0,haEn=0;
   LOTES.forEach(l=>{
     const k=l.finca+'_'+l.lote;
-    const cs=getCellState('cosecha',key,l.tipo,hoy);
-    if(cs.tipo==='verde'||cs.tipo==='cosechando'){verde++;haEn+=l.ha;}
-    else if(cs.tipo==='azul'){azul++;haFuera+=l.ha;}
-    else if(cs.tipo==='rojo'){rojo++;haFuera+=l.ha;}
+    const cs=getCellState(k,l.tipo,hoy);
+    if(cs.tipo==='verde'||cs.tipo==='cosechando'){nVerde++;haEn+=l.ha;}
+    else if(cs.tipo==='azul'){nAzul++;haFuera+=l.ha;}
+    else if(cs.tipo==='rojo'){nRojo++;haFuera+=l.ha;}
   });
-  doc.setFontSize(8);
-  doc.text(`En ciclo: ${verde} lotes | Tolerancia: ${azul} | Incumplimiento: ${rojo} | HA fuera de ciclo: ${haFuera} | HA en ciclo: ${haEn}`, 14, 26);
+  doc.text('En ciclo: '+nVerde+' lotes | Tolerancia: '+nAzul+' | Incumplimiento: '+nRojo+' | HA en ciclo: '+haEn+' | HA fuera: '+haFuera, 14, 23);
 
-  // Build table data
+  // Tabla
   const lotesFilt = LOTES.filter(l=>filtroFinca==='todas'||l.finca===filtroFinca);
-
-  // Headers: fixed cols + date cols (limit to fit page - max 30 days)
-  const maxCols = Math.min(totalDias, 28);
+  const maxCols = Math.min(totalDias, 30);
   const fechasCols = fechas.slice(0, maxCols);
 
-  const head = [['F','Lote','HA','Frec','Estado', ...fechasCols.map(d=>d.getDate().toString())]];
-
+  const head = [['F','Lote','HA','Frec','Estado hoy', ...fechasCols.map(d=>String(d.getDate()))]];
   const body = [];
-  let fincaActual = '';
+  let fincaActual='';
+
   lotesFilt.forEach(l=>{
     if(l.finca!==fincaActual){
       fincaActual=l.finca;
-      body.push([{content:l.finca, colSpan:5+maxCols, styles:{fillColor:[230,240,255],fontStyle:'bold',textColor:[30,58,95]}}]);
+      body.push([{content:'🌴 '+l.finca, colSpan:5+maxCols, styles:{fillColor:[220,235,255],fontStyle:'bold',textColor:[30,58,95]}}]);
     }
     const key=l.finca+'_'+l.lote;
-    const eH=estadoHoy('cosecha',key,l.tipo,hoy);
+    const eH=estadoHoy(key,l.tipo,hoy);
     const freq=l.tipo==='hibrido'?'21-22d':'11-12d';
-    const row = [l.finca.replace('FINCA ','F'), l.lote, l.ha, freq, eH==='sin'?'SIN REG':eH.toUpperCase()];
-
+    const estadoTxt = eH==='sin'?'SIN REG':eH==='cosechando'?'COSECHANDO':eH==='verde'?'EN CICLO':eH==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
+    const row=[l.finca.replace('FINCA ','F'), l.lote, l.ha, freq, estadoTxt];
     fechasCols.forEach(d=>{
-      const cs=getCellState('cosecha',key,l.tipo,d);
-      row.push(cs.num!==null?cs.num.toString():'');
+      const cs=getCellState(key,l.tipo,d);
+      row.push(cs.num!==null&&cs.num!==undefined ? String(cs.num) : '');
     });
     body.push(row);
   });
 
   doc.autoTable({
-    head,
-    body,
-    startY: 30,
-    styles:{fontSize:6, cellPadding:1, halign:'center'},
-    headStyles:{fillColor:[30,58,95], textColor:255, fontStyle:'bold'},
+    head, body,
+    startY: 27,
+    styles:{fontSize:6, cellPadding:0.8, halign:'center', valign:'middle'},
+    headStyles:{fillColor:[30,58,95], textColor:255, fontStyle:'bold', fontSize:6},
     columnStyles:{
-      0:{cellWidth:6},
-      1:{cellWidth:9},
-      2:{cellWidth:6},
-      3:{cellWidth:12},
+      0:{cellWidth:5},
+      1:{cellWidth:8},
+      2:{cellWidth:5},
+      3:{cellWidth:10},
       4:{cellWidth:18},
     },
     didParseCell: function(data){
       if(data.section==='body' && data.column.index>=5 && data.cell.raw!==''){
-        const val = parseInt(data.cell.raw);
-        const col = data.column.index - 5;
-        if(col<fechasCols.length){
-          const d=fechasCols[col];
-          const loteIdx=data.row.index;
-          // Color by value
-          if(!isNaN(val)){
-            if(val<=10) data.cell.styles.fillColor=[220,252,231]; // verde
-            else if(val<=12) data.cell.styles.fillColor=[219,234,254]; // azul
-            else data.cell.styles.fillColor=[254,226,226]; // rojo
-          }
+        const val=parseInt(data.cell.raw);
+        if(!isNaN(val)){
+          if(val<=10) data.cell.styles.fillColor=[220,252,231];
+          else if(val<=12) data.cell.styles.fillColor=[219,234,254];
+          else data.cell.styles.fillColor=[254,226,226];
+          data.cell.styles.textColor=[20,20,20];
         }
       }
     },
-    margin:{top:30, left:5, right:5},
+    margin:{top:27, left:4, right:4},
   });
 
-  doc.save(`ciclos-cosecha-${isoDate(hoy)}.pdf`);
+  doc.save('ciclos-cosecha-'+isoDate(hoy)+'.pdf');
   showToast('✓ PDF generado');
 }
+
 
 function init(){
   const hoy=hoyLocal();
