@@ -204,6 +204,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .mwa-preview{background:#e8f5e9;border-radius:8px;padding:12px;font-size:11px;color:#1b5e20;line-height:1.8;font-family:'DM Mono',monospace;white-space:pre-wrap;max-height:260px;overflow-y:auto;}
 .btn-wa-send{background:#25d366;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
 .btn-wa-cancel{background:#f3f4f6;color:#6b7280;border:none;padding:9px 16px;border-radius:8px;font-size:12px;cursor:pointer;}
+.btn-home{display:flex;align-items:center;gap:5px;background:#f8f9fa;border:1px solid #e5e7eb;color:#6b7280;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:500;cursor:pointer;text-decoration:none;flex-shrink:0;}
+.btn-home:hover{border-color:#b8860b;color:#b8860b;}
 </style>
 </head>
 <body>
@@ -216,7 +218,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="brand-sub">S.A.S.</div>
     </div>
   </div>
-  <div class="header-title">CICLOS DE COSECHA</div>
+  <a class="btn-home" href="index.html">← Inicio</a><div class="header-title">CICLOS DE COSECHA</div>
   <button class="btn-filter" style="background:#25d366;color:#fff;border-color:#25d366;font-size:11px;padding:6px 12px;flex-shrink:0;" onclick="abrirModalWA()">📲 Compartir</button>
   <div style="display:flex;flex-direction:column;align-items:flex-end;">
     <div class="header-fecha" id="hdr-fecha">—</div>
