@@ -826,8 +826,17 @@ async function cargarGAS(){
     const text=await r.text();
     const data=JSON.parse(text);
     if(data&&data.marcas){
-      marcas=data.marcas;
-      guardarLocal();
+      // Solo actualizar si el Sheet tiene MÁS datos que el local
+      // Esto evita que una respuesta vacía o incompleta borre datos locales
+      const marcasGAS = data.marcas;
+      const totalGAS = Object.values(marcasGAS).reduce((s,v)=>s+Object.keys(v).length,0);
+      const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
+      if(totalGAS >= totalLocal){
+        marcas = marcasGAS;
+        guardarLocal();
+      } else {
+        console.log('GAS tiene menos datos que local ('+totalGAS+' vs '+totalLocal+'), manteniendo local');
+      }
     }
   }catch(e){ console.error('Error GAS:',e); }
 }
@@ -1603,8 +1612,11 @@ function init(){
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
   cargarLocal();
   cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
-  setInterval(()=>cargarGAS().finally(()=>{ render(); actualizarAlertas(); }),5*60*1000);
-  setInterval(render,60*1000);
+  setInterval(()=>{
+    if(modoEdicion) return; // No recargar mientras se edita
+    cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
+  },5*60*1000);
+  setInterval(()=>{ if(!modoEdicion) render(); },60*1000);
   actualizarAlertas();
 }
 document.addEventListener('DOMContentLoaded',init);
