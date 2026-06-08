@@ -1192,19 +1192,19 @@ function togglePanel(){
 // =============================================
 function exportarPDF(){
   const jspdfLib = window.jspdf || window.jsPDF;
-  if(!jspdfLib){ showToast('Librería PDF no cargada','err'); return; }
+  if(!jspdfLib){ showToast('Libreria PDF no cargada','err'); return; }
   const {jsPDF} = window.jspdf || {jsPDF: window.jsPDF};
-  showToast('⏳ Generando PDF...');
+  showToast('Generando PDF...');
 
   const hoy = hoyLocal();
   const hoyISO = isoDate(hoy);
   const sn = semanaNum(hoy);
   const fecha = hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
+  const fmt = n => n.toLocaleString('es-CO');
+  const pct = (a,b) => b>0 ? Math.round(a/b*100)+'%' : '0%';
 
-  // ============================================
-  // CALCULAR DATOS
-  // ============================================
-  let nVerde=0,nAzul=0,nRojo=0,nCos=0,haEn=0,haFuera=0,haTotal=0;
+  // ── CALCULOS ──────────────────────────────
+  let nV=0,nA=0,nR=0,nC=0,haEn=0,haFuera=0,haTotal=0;
   const criticos=[], proximas=[];
   const rangos=[
     {label:'< 13 dias',min:0,max:12,ha:0},
@@ -1214,293 +1214,330 @@ function exportarPDF(){
     {label:'> 30 dias',min:31,max:9999,ha:0},
   ];
   LOTES.forEach(l=>{
-    const key=l.finca+'_'+l.lote;
-    const cs=getCellState(key,l.tipo,hoy);
+    const k=l.finca+'_'+l.lote;
+    const cs=getCellState(k,l.tipo,hoy);
     const dias=cs.num||0;
     haTotal+=l.ha;
-    if(cs.tipo==='cosechando'){nCos++;haEn+=l.ha;}
-    else if(cs.tipo==='verde'){nVerde++;haEn+=l.ha;}
-    else if(cs.tipo==='azul'){nAzul++;haFuera+=l.ha;}
-    else if(cs.tipo==='rojo'){nRojo++;haFuera+=l.ha;criticos.push({lote:l.lote,finca:l.finca,dias,ha:l.ha});}
-    if(dias>0){for(const r of rangos){if(dias>=r.min&&dias<=r.max){r.ha+=l.ha;break;}}}
-    const limAviso=l.tipo==='hibrido'?[19,20]:[9,10];
-    if(cs.tipo==='verde'&&limAviso.includes(dias)) proximas.push({lote:l.lote,finca:l.finca,dias,esHoy:dias===limAviso[1]});
+    if(cs.tipo==='cosechando'){nC++;haEn+=l.ha;}
+    else if(cs.tipo==='verde'){nV++;haEn+=l.ha;}
+    else if(cs.tipo==='azul'){nA++;haFuera+=l.ha;}
+    else if(cs.tipo==='rojo'){nR++;haFuera+=l.ha;criticos.push({lote:l.lote,finca:l.finca,dias,ha:l.ha});}
+    if(dias>0) for(const r of rangos){if(dias>=r.min&&dias<=r.max){r.ha+=l.ha;break;}}
+    const lim=l.tipo==='hibrido'?[19,20]:[9,10];
+    if(cs.tipo==='verde'&&lim.includes(dias)) proximas.push({lote:l.lote,finca:l.finca,esHoy:dias===lim[1]});
   });
   criticos.sort((a,b)=>b.dias-a.dias);
-  const lotesActivos=nCos+nVerde+nAzul+nRojo;
-  const pct=(a,b)=>b>0?Math.round(a/b*100)+'%':'0%';
-  const haTotalRangos=rangos.reduce((s,r)=>s+r.ha,0);
-  const fmt=n=>n.toLocaleString('es-CO');
+  const lotesActivos=nC+nV+nA+nR;
+  const haTotalR=rangos.reduce((s,r)=>s+r.ha,0);
 
   const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
 
-  // ============================================
-  // HELPERS
-  // ============================================
-  function secTitle(d,t,y){
-    d.setFontSize(8);d.setFont('helvetica','bold');d.setTextColor(107,114,128);
-    d.text(t,14,y);
-    d.setDrawColor(229,231,235);d.line(14,y+1.5,196,y+1.5);
-  }
-  function kpiCard(d,x,y,w,h,val,lbl,sub,color,bg){
-    d.setFillColor(...bg);d.roundedRect(x,y,w,h,2,2,'F');
-    d.setFillColor(...color);d.rect(x,y,2.5,h,'F');
-    d.setFontSize(20);d.setFont('helvetica','bold');d.setTextColor(...color);
-    d.text(String(val),x+5,y+h/2+3);
-    d.setFontSize(7);d.setFont('helvetica','normal');d.setTextColor(107,114,128);
-    d.text(lbl,x+5,y+h-5);
-    d.setFontSize(8);d.setFont('helvetica','bold');d.setTextColor(...color);
-    d.text(sub,x+5,y+h-1.5);
-  }
-
-  // ============================================
-  // PÁG 1 - GERENCIA
-  // ============================================
-  // Header oscuro
-  doc.setFillColor(15,17,23);doc.rect(0,0,210,26,'F');
-  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(240,201,106);
-  doc.text('CICLOS DE COSECHA',105,11,{align:'center'});
-  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(148,163,184);
-  doc.text('PALMA GRANDE S.A.S. · Departamento Agronomico',105,17,{align:'center'});
+  // ══════════════════════════════════════════
+  // PÁG 1 — GERENCIA (portrait)
+  // ══════════════════════════════════════════
+  // Header
+  doc.setFillColor(15,17,23); doc.rect(0,0,210,28,'F');
+  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(240,201,106);
+  doc.text('CICLOS DE COSECHA',105,12,{align:'center'});
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(148,163,184);
+  doc.text('PALMA GRANDE S.A.S.  ·  Departamento Agronomico',105,18,{align:'center'});
   doc.setTextColor(240,201,106);
-  doc.text(fecha+' · Semana '+sn,105,22,{align:'center'});
+  doc.text(fecha+'  ·  Semana '+sn,105,24,{align:'center'});
 
-  let y=33;
+  let y=34;
+  const secH=(t)=>{
+    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(150,150,150);
+    doc.text(t,14,y);
+    doc.setDrawColor(220,220,220);doc.line(14,y+1.5,196,y+1.5);
+    y+=6;
+  };
 
-  // KPI fila 1
-  secTitle(doc,'ESTADO GENERAL DE LOTES Y HECTAREAS',y); y+=6;
-  const kw=44,kh=18;
-  kpiCard(doc,14,y,kw,kh,nVerde+nCos,'Lotes en ciclo',pct(nVerde+nCos,lotesActivos),[21,128,61],[240,253,244]);
-  kpiCard(doc,60,y,kw,kh,nAzul,'Tolerancia',pct(nAzul,lotesActivos),[29,78,216],[239,246,255]);
-  kpiCard(doc,106,y,kw,kh,nRojo,'Incumplimiento',pct(nRojo,lotesActivos),[185,28,28],[254,242,242]);
-  kpiCard(doc,152,y,kw,kh,fmt(haTotal),'Total HA','3 fincas · 62 lotes',[184,134,11],[255,251,235]);
-  y+=21;
+  // ── KPI LOTES ──
+  secH('ESTADO DE LOTES Y HECTAREAS');
+  const kdata=[
+    {v:nV+nC,l:'En ciclo',s:pct(nV+nC,lotesActivos),c:[21,128,61],bg:[240,253,244]},
+    {v:nA,   l:'Tolerancia',s:pct(nA,lotesActivos),c:[29,78,216],bg:[219,234,254]},
+    {v:nR,   l:'Incumplimiento',s:pct(nR,lotesActivos),c:[185,28,28],bg:[254,226,226]},
+    {v:fmt(haTotal),l:'Total HA',s:'62 lotes · 3 fincas',c:[184,134,11],bg:[255,251,235]},
+  ];
+  const kw=44,kh=20;
+  kdata.forEach((k,i)=>{
+    const x=14+i*(kw+2);
+    doc.setFillColor(...k.bg);doc.roundedRect(x,y,kw,kh,2,2,'F');
+    doc.setFillColor(...k.c);doc.rect(x,y,3,kh,'F');
+    doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(...k.c);
+    doc.text(String(k.v),x+6,y+12);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+    doc.text(k.l,x+6,y+16);
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(...k.c);
+    doc.text(k.s,x+6,y+19.5);
+  });
+  y+=kh+4;
 
-  // KPI fila 2 — HA
-  kpiCard(doc,14,y,90,14,fmt(haEn)+' HA','HA en ciclo',pct(haEn,haTotal)+' del total',[21,128,61],[240,253,244]);
-  kpiCard(doc,108,y,90,14,fmt(haFuera)+' HA','HA fuera de ciclo',pct(haFuera,haTotal)+' del total',[185,28,28],[254,242,242]);
-  y+=20;
+  // HA en/fuera
+  [[fmt(haEn)+' HA','HA en ciclo',pct(haEn,haTotal),[21,128,61],[240,253,244]],
+   [fmt(haFuera)+' HA','HA fuera de ciclo',pct(haFuera,haTotal),[185,28,28],[254,226,226]]
+  ].forEach(([v,l,s,c,bg],i)=>{
+    const x=14+i*96;
+    doc.setFillColor(...bg);doc.roundedRect(x,y,92,14,2,2,'F');
+    doc.setFillColor(...c);doc.rect(x,y,3,14,'F');
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(...c);
+    doc.text(v,x+6,y+9);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+    doc.text(l+' · '+s+' del total',x+6,y+13);
+  });
+  y+=18;
 
-  // Rangos
-  secTitle(doc,'DISTRIBUCION DE HA POR DIAS DEL CICLO',y); y+=6;
-  const rcolors=[[21,128,61],[77,124,15],[133,77,14],[154,52,18],[185,28,28]];
-  const rbgs=[[240,253,244],[247,254,231],[255,251,235],[255,247,237],[254,242,242]];
-  const rw2=36,rh2=22;
+  // ── RANGOS ──
+  secH('DISTRIBUCION DE HA POR DIAS DEL CICLO');
+  const rcols=[[21,128,61],[77,124,15],[133,77,14],[154,52,18],[185,28,28]];
+  const rbgs=[[240,253,244],[247,254,231],[255,251,235],[255,247,237],[254,226,226]];
+  const rw=36,rh=24;
   rangos.forEach((r,i)=>{
-    const x=14+i*(rw2+2);
-    const p=haTotalRangos>0?Math.round(r.ha/haTotalRangos*100):0;
-    doc.setFillColor(...rbgs[i]);doc.roundedRect(x,y,rw2,rh2,2,2,'F');
-    doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);
+    const x=14+i*(rw+2);
+    const p=haTotalR>0?Math.round(r.ha/haTotalR*100):0;
+    doc.setFillColor(...rbgs[i]);doc.roundedRect(x,y,rw,rh,2,2,'F');
+    doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(120,120,120);
     doc.text(r.label,x+3,y+5);
-    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...rcolors[i]);
-    doc.text(r.ha>0?fmt(r.ha):'—',x+3,y+13);
-    doc.setFontSize(8);doc.setTextColor(107,114,128);
-    doc.text(p+'%',x+3,y+17.5);
-    // Barra
-    doc.setFillColor(229,231,235);doc.rect(x+3,y+19,rw2-6,2,'F');
-    if(p>0){doc.setFillColor(...rcolors[i]);doc.rect(x+3,y+19,Math.round((rw2-6)*p/100),2,'F');}
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(...rcols[i]);
+    doc.text(r.ha>0?fmt(r.ha):'—',x+3,y+14);
+    doc.setFontSize(8);doc.setTextColor(120,120,120);
+    doc.text(p+'%',x+3,y+19);
+    doc.setFillColor(229,231,235);doc.rect(x+3,y+21,rw-6,2,'F');
+    if(p>0){doc.setFillColor(...rcols[i]);doc.rect(x+3,y+21,(rw-6)*p/100,2,'F');}
   });
-  y+=27;
+  y+=rh+6;
 
-  // Criticos + Proximas en 2 columnas
-  const midX=107;
-  secTitle(doc,'LOTES CRITICOS',y); y+=6;
-  const topC=criticos.slice(0,7);
-  topC.forEach((c,i)=>{
-    const cx=14+(i%2)*midX, cy=y+Math.floor(i/2)*7;
-    doc.setFillColor(254,242,242);doc.roundedRect(cx,cy,101,5.5,1,1,'F');
-    doc.setFillColor(220,38,38);doc.circle(cx+4,cy+2.8,1.5,'F');
-    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(26,31,46);
-    doc.text('Lote '+c.lote,cx+8,cy+3.8);
-    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);
-    doc.text(c.finca.replace('FINCA ','F')+' · '+c.ha+' ha',cx+30,cy+3.8);
+  // ── CRITICOS ──
+  secH('LOTES EN INCUMPLIMIENTO');
+  criticos.slice(0,8).forEach((c,i)=>{
+    const col=i%2, row=Math.floor(i/2);
+    const x=14+col*96, cy=y+row*8;
+    doc.setFillColor(254,226,226);doc.roundedRect(x,cy,92,6,1,1,'F');
+    doc.setFillColor(220,38,38);doc.circle(x+4,cy+3,1.8,'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);
+    doc.text('Lote '+c.lote,x+9,cy+4);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+    doc.text(c.finca.replace('FINCA ','F')+' · '+c.ha+' ha',x+30,cy+4);
     doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(185,28,28);
-    doc.text(c.dias+' dias',cx+85,cy+3.8,{align:'right'});
+    doc.text(c.dias+' dias',x+82,cy+4,{align:'right'});
   });
-  y+=Math.ceil(topC.length/2)*7+6;
+  y+=Math.ceil(Math.min(criticos.length,8)/2)*8+4;
 
+  // ── PROXIMAS ──
   if(proximas.length>0){
-    secTitle(doc,'PROXIMAS ENTRADAS',y); y+=6;
-    const proxHoy=proximas.filter(p=>p.esHoy);
-    const proxMan=proximas.filter(p=>!p.esHoy);
-    if(proxHoy.length>0){
+    secH('PROXIMAS ENTRADAS');
+    const proxH=proximas.filter(p=>p.esHoy);
+    const proxM=proximas.filter(p=>!p.esHoy);
+    if(proxH.length){
       doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(185,28,28);
-      doc.text('HOY: '+proxHoy.map(p=>'Lote '+p.lote).join(', '),14,y);y+=6;
+      doc.text('HOY: '+proxH.map(p=>'Lote '+p.lote).join(', '),14,y);y+=7;
     }
-    if(proxMan.length>0){
+    if(proxM.length){
       doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(194,65,12);
-      doc.text('MANANA: '+proxMan.map(p=>'Lote '+p.lote).join(', '),14,y);y+=6;
+      doc.text('MANANA: '+proxM.map(p=>'Lote '+p.lote).join(', '),14,y);y+=7;
     }
   }
 
   // Footer pág 1
-  doc.setFillColor(249,250,251);doc.rect(0,280,210,17,'F');
-  doc.setDrawColor(229,231,235);doc.line(0,280,210,280);
-  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(156,163,175);
-  doc.text('Palma Grande S.A.S. · Departamento Agronomico',14,288);
-  doc.text('Sistema de Gestion Agricola · Generado automaticamente',105,288,{align:'center'});
-  doc.text('Semana '+sn+' · '+hoy.getFullYear()+' · Pag. 1',196,288,{align:'right'});
+  doc.setFillColor(249,250,251);doc.rect(0,281,210,16,'F');
+  doc.setDrawColor(220,220,220);doc.line(0,281,210,281);
+  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
+  doc.text('Palma Grande S.A.S.',14,289);
+  doc.text('Sistema de Gestion Agricola · Semana '+sn+' · '+hoy.getFullYear(),105,289,{align:'center'});
+  doc.text('Pagina 1 de 4',196,289,{align:'right'});
 
-  // ============================================
-  // PÁGS 2-4: OPERACIONES POR FINCA
-  // ============================================
-  const fincas=['FINCA 1','FINCA 2','FINCA 3'];
+  // ══════════════════════════════════════════
+  // PÁGS 2-4 — TABLA POR FINCA (landscape)
+  // Replicando exactamente el diseño de la web
+  // ══════════════════════════════════════════
   const DIAS_OP=14;
   const fechasOp=[];
-  for(let i=0;i<DIAS_OP;i++){
-    const d=new Date(hoy);d.setDate(d.getDate()-i);fechasOp.push(d);
-  }
-  const DIAS_SEM2=['D','L','M','M','J','V','S'];
-  const FIXED=5;
-  const diaW=Math.floor((267-88)/DIAS_OP); // ancho por columna día
+  for(let i=0;i<DIAS_OP;i++){const d=new Date(hoy);d.setDate(d.getDate()-i);fechasOp.push(d);}
+  const DSEM=['D','L','M','M','J','V','S'];
 
-  fincas.forEach((finca,fi)=>{
+  // Anchos columnas fijas
+  const CW={f:7,lote:13,ha:8,freq:26,estado:22};
+  const fixedW=CW.f+CW.lote+CW.ha+CW.freq+CW.estado;
+  const pageW=287; // usable landscape width
+  const diaW=Math.floor((pageW-fixedW)/DIAS_OP);
+  const rowH=5.2;
+  const startX=5;
+
+  ['FINCA 1','FINCA 2','FINCA 3'].forEach((finca,fi)=>{
     doc.addPage('a4','landscape');
-    const lotesFinca=LOTES.filter(l=>l.finca===finca);
+    const lotes=LOTES.filter(l=>l.finca===finca);
 
-    // Header
-    doc.setFillColor(15,17,23);doc.rect(0,0,297,18,'F');
-    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(240,201,106);
-    doc.text('CICLOS DE COSECHA · '+finca,148.5,10,{align:'center'});
+    // ── Header ──
+    doc.setFillColor(15,17,23);doc.rect(0,0,297,20,'F');
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.setTextColor(240,201,106);
+    doc.text('CICLOS DE COSECHA  ·  '+finca,148.5,11,{align:'center'});
     doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(148,163,184);
-    doc.text(fecha+' · Semana '+sn+' · Ultimas 2 semanas',148.5,15,{align:'center'});
+    doc.text(fecha+'  ·  Semana '+sn+'  ·  Ultimas 2 semanas',148.5,17,{align:'center'});
 
-    // Mini stats finca
+    // ── Mini KPIs finca ──
     let fV=0,fA=0,fR=0,fHAen=0,fHAf=0;
-    lotesFinca.forEach(l=>{
+    lotes.forEach(l=>{
       const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
       if(cs.tipo==='verde'||cs.tipo==='cosechando'){fV++;fHAen+=l.ha;}
       else if(cs.tipo==='azul'){fA++;fHAf+=l.ha;}
       else if(cs.tipo==='rojo'){fR++;fHAf+=l.ha;}
     });
-    const mkd=[
-      {v:fV,l:'En ciclo ('+fHAen+' ha)',c:[21,128,61],b:[240,253,244]},
-      {v:fA,l:'Tolerancia',c:[29,78,216],b:[239,246,255]},
-      {v:fR,l:'Incumplimiento ('+fHAf+' ha)',c:[185,28,28],b:[254,242,242]},
+    const mks=[
+      {v:fV,l:'En ciclo ('+fHAen+' ha)',c:[21,128,61],bg:[240,253,244]},
+      {v:fA,l:'Tolerancia',c:[29,78,216],bg:[219,234,254]},
+      {v:fR,l:'Incumplimiento ('+fHAf+' ha)',c:[185,28,28],bg:[254,226,226]},
     ];
-    mkd.forEach((k,i)=>{
-      const x=8+i*96;
-      doc.setFillColor(...k.b);doc.roundedRect(x,20,92,8,1,1,'F');
-      doc.setFillColor(...k.c);doc.rect(x,20,2,8,'F');
-      doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...k.c);
-      doc.text(String(k.v),x+5,26);
-      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);
-      doc.text(k.l,x+13,26);
+    mks.forEach((k,i)=>{
+      const x=5+i*96;
+      doc.setFillColor(...k.bg);doc.roundedRect(x,22,92,9,1,1,'F');
+      doc.setFillColor(...k.c);doc.rect(x,22,2.5,9,'F');
+      doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(...k.c);
+      doc.text(String(k.v),x+5,28.5);
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+      doc.text(k.l,x+15,28.5);
     });
 
-    // Encabezado tabla
-    let tx=8,ty=31;
-    const colsW=[8,12,8,32,22];
-    const hdrH=5;
+    // ── Encabezado tabla ──
+    let tx=startX, ty=34;
 
-    // Fila semana
+    // Fila semanas (agrupadas)
     doc.setFillColor(30,64,175);
-    colsW.forEach(w=>{doc.rect(tx,ty,w,hdrH,'F');tx+=w;});
-    // Agrupar por semana
-    let semActual2=null;
-    const semsOp=[];
+    [CW.f,CW.lote,CW.ha,CW.freq,CW.estado].forEach(w=>{doc.rect(tx,ty,w,4.5,'F');tx+=w;});
+    // Agrupar fechas por semana
+    const semsOp=[];let semCur=null;
     fechasOp.forEach((d,i)=>{
-      const sn2=semanaNum(d);const sk=d.getFullYear()+'-'+sn2;
-      if(!semActual2||semActual2.key!==sk){semActual2={key:sk,sn:sn2,count:0,startX:tx};semsOp.push(semActual2);}
-      semActual2.count++;tx+=diaW;
+      const snD=semanaNum(d);const sk=d.getFullYear()+'-'+snD;
+      if(!semCur||semCur.key!==sk){
+        if(semCur)semsOp.push(semCur);
+        semCur={key:sk,sn:snD,count:0,startX:tx+i*diaW-(semCur?semCur.count*diaW:0)};
+        semCur.startX=startX+fixedW+i*diaW;
+        semsOp.push(semCur);semCur=semsOp[semsOp.length-1];
+      }
+      semCur.count++;
     });
-    tx=8+colsW.reduce((a,b)=>a+b,0);
     semsOp.forEach(sg=>{
-      doc.setFillColor(30,64,175);doc.rect(sg.startX,ty,sg.count*diaW,hdrH,'F');
-      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
-      doc.text('SEM '+sg.sn,sg.startX+2,ty+3.5);
+      doc.setFillColor(30,64,175);doc.rect(sg.startX,ty,sg.count*diaW,4.5,'F');
+      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      const pd=fechasOp.find(d=>semanaNum(d)===sg.sn);
+      const lbl='SEM '+sg.sn+(pd?' · '+pd.getDate()+' '+MESES[pd.getMonth()]:'');
+      doc.text(lbl,sg.startX+2,ty+3.2);
     });
+    ty+=4.5;
 
-    // Fila fechas
-    ty+=hdrH;tx=8;
-    const fijosH=['F','LOTE','HA','FRECUENCIA','ESTADO'];
-    colsW.forEach((w,i)=>{
-      doc.setFillColor(30,58,95);doc.rect(tx,ty,w,hdrH,'F');
+    // Fila números de día
+    tx=startX;
+    const colLabels=['F','LOTE','HA','FRECUENCIA','ESTADO HOY'];
+    [CW.f,CW.lote,CW.ha,CW.freq,CW.estado].forEach((w,i)=>{
+      doc.setFillColor(30,58,95);doc.rect(tx,ty,w,5,'F');
       doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
-      doc.text(fijosH[i],tx+w/2,ty+3.5,{align:'center'});
+      doc.text(colLabels[i],tx+w/2,ty+3.5,{align:'center'});
       tx+=w;
     });
     fechasOp.forEach((d,i)=>{
-      const isHoy=isoDate(d)===hoyISO;
-      doc.setFillColor(isHoy?184:30,isHoy?134:58,isHoy?11:95);
-      doc.rect(tx,ty,diaW,hdrH,'F');
-      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      const isH=isoDate(d)===hoyISO;
+      doc.setFillColor(isH?184:30,isH?134:58,isH?11:95);
+      doc.rect(tx,ty,diaW,5,'F');
+      doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
       doc.text(String(d.getDate()),tx+diaW/2,ty+3.5,{align:'center'});
       tx+=diaW;
     });
+    ty+=5;
 
-    // Fila dia semana
-    ty+=hdrH;tx=8;
-    colsW.forEach(w=>{doc.setFillColor(45,55,72);doc.rect(tx,ty,w,3.5,'F');tx+=w;});
+    // Fila día semana
+    tx=startX;
+    [CW.f,CW.lote,CW.ha,CW.freq,CW.estado].forEach(w=>{
+      doc.setFillColor(40,50,70);doc.rect(tx,ty,w,3.5,'F');tx+=w;
+    });
     fechasOp.forEach((d,i)=>{
-      doc.setFillColor(45,55,72);doc.rect(tx,ty,diaW,3.5,'F');
-      doc.setFontSize(5);doc.setFont('helvetica','normal');doc.setTextColor(180,180,180);
-      doc.text(DIAS_SEM2[d.getDay()],tx+diaW/2,ty+2.8,{align:'center'});
+      const isH=isoDate(d)===hoyISO;
+      doc.setFillColor(isH?140:40,isH?100:50,isH?8:70);
+      doc.rect(tx,ty,diaW,3.5,'F');
+      doc.setFontSize(5.5);doc.setFont('helvetica','normal');doc.setTextColor(180,185,200);
+      doc.text(DSEM[d.getDay()],tx+diaW/2,ty+2.8,{align:'center'});
       tx+=diaW;
     });
     ty+=3.5;
 
-    // FILAS DE LOTES
-    const rowH=5;
-    lotesFinca.forEach((l,li)=>{
+    // ── Filas de lotes ──
+    lotes.forEach((l,li)=>{
       if(ty>200) return;
-      tx=8;
+      tx=startX;
       const key=l.finca+'_'+l.lote;
       const cs=getCellState(key,l.tipo,hoy);
-      const freq=l.tipo==='hibrido'?'21-22d':'11-12d';
-      const eH=cs.tipo==='sin'?'SIN REG':cs.tipo==='cosechando'?'COSECHANDO':cs.tipo==='verde'?'EN CICLO':cs.tipo==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
-      const bgRow=li%2===0?[255,255,255]:[249,250,251];
-      doc.setFillColor(...bgRow);
-      doc.rect(8,ty,colsW.reduce((a,b)=>a+b,0)+DIAS_OP*diaW,rowH,'F');
+      const freq=l.tipo==='hibrido'?'Entre 21 y 22 dias':'Entre 11 y 12 dias';
 
-      // Cols fijas
-      const fijosV=[l.finca.replace('FINCA ','F'),l.lote,l.ha,freq,eH];
-      const ecol=cs.tipo==='verde'||cs.tipo==='cosechando'?[21,128,61]:cs.tipo==='azul'?[29,78,216]:cs.tipo==='rojo'?[185,28,28]:[107,114,128];
-      colsW.forEach((w,i)=>{
-        doc.setFontSize(6);
-        doc.setFont('helvetica',i===1?'bold':'normal');
-        doc.setTextColor(...(i===4?ecol:[26,31,46]));
-        doc.text(String(fijosV[i]),tx+w/2,ty+rowH-1.5,{align:'center'});
-        tx+=w;
-      });
+      // Estado badge colors
+      const eH=cs.tipo;
+      const estadoTxt=eH==='sin'?'SIN REGISTRO':eH==='cosechando'?'COSECHANDO':eH==='verde'?'EN CICLO':eH==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
+      const estadoC=eH==='verde'||eH==='cosechando'?[21,128,61]:eH==='azul'?[29,78,216]:eH==='rojo'?[185,28,28]:[120,120,120];
+      const estadoBg=eH==='verde'||eH==='cosechando'?[240,253,244]:eH==='azul'?[219,234,254]:eH==='rojo'?[254,226,226]:[245,245,245];
 
-      // Celdas días
+      // Fondo fila alternado
+      doc.setFillColor(li%2===0?255:249,li%2===0?255:250,li%2===0?255:251);
+      doc.rect(startX,ty,fixedW+DIAS_OP*diaW,rowH,'F');
+
+      // Columnas fijas
+      doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(184,134,11);
+      doc.text(l.finca.replace('FINCA ','F'),tx+CW.f/2,ty+rowH-1.5,{align:'center'});tx+=CW.f;
+
+      doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);
+      doc.text(l.lote,tx+CW.lote/2,ty+rowH-1.5,{align:'center'});tx+=CW.lote;
+
+      doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+      doc.text(String(l.ha),tx+CW.ha/2,ty+rowH-1.5,{align:'center'});tx+=CW.ha;
+
+      doc.setFontSize(5.5);doc.setTextColor(100,100,100);
+      doc.text(freq,tx+2,ty+rowH-1.5);tx+=CW.freq;
+
+      // Badge estado
+      const badgeW=CW.estado-2,badgeH=3.5;
+      const badgeX=tx+1,badgeY=ty+(rowH-badgeH)/2;
+      doc.setFillColor(...estadoBg);doc.roundedRect(badgeX,badgeY,badgeW,badgeH,1,1,'F');
+      doc.setFontSize(5);doc.setFont('helvetica','bold');doc.setTextColor(...estadoC);
+      doc.text(estadoTxt,tx+CW.estado/2,ty+rowH-1.8,{align:'center'});
+      tx+=CW.estado;
+
+      // Celdas de días
       fechasOp.forEach((d,di)=>{
         const csd=getCellState(key,l.tipo,d);
+        const dISO2=isoDate(d);
         if(csd.tipo!=='vacio'&&csd.num!==null){
           let bg,tc;
           if(csd.tipo==='cosechando'){
-            const mk=(marcas[key]||{})[isoDate(d)];
+            const mk=(marcas[key]||{})[dISO2];
             bg=mk==='nuevo'?[20,83,45]:[30,58,95];tc=[255,255,255];
-          }
-          else if(csd.tipo==='verde'){bg=[209,250,229];tc=[6,95,70];}
+          } else if(csd.tipo==='verde'){bg=[209,250,229];tc=[6,95,70];}
           else if(csd.tipo==='azul'){bg=[219,234,254];tc=[30,58,138];}
           else{bg=[254,226,226];tc=[127,29,29];}
           doc.setFillColor(...bg);doc.rect(tx,ty,diaW,rowH,'F');
-          doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...tc);
+          doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(...tc);
           doc.text(String(csd.num),tx+diaW/2,ty+rowH-1.5,{align:'center'});
         }
-        // Línea vertical
-        doc.setDrawColor(229,231,235);doc.line(tx,ty,tx,ty+rowH);
+        // Líneas rejilla
+        doc.setDrawColor(229,231,235);
+        doc.line(tx,ty,tx,ty+rowH);
         tx+=diaW;
       });
-      // Línea horizontal
-      doc.setDrawColor(229,231,235);doc.line(8,ty+rowH,8+colsW.reduce((a,b)=>a+b,0)+DIAS_OP*diaW,ty+rowH);
+
+      // Línea horizontal fila
+      doc.setDrawColor(229,231,235);
+      doc.line(startX,ty+rowH,startX+fixedW+DIAS_OP*diaW,ty+rowH);
       ty+=rowH;
     });
 
     // Footer
-    doc.setFillColor(249,250,251);doc.rect(0,202,297,8,'F');
-    doc.setDrawColor(229,231,235);doc.line(0,202,297,202);
-    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(156,163,175);
-    doc.text('Palma Grande S.A.S. · '+finca,14,207);
-    doc.text('Sistema de Gestion Agricola · Semana '+sn,148.5,207,{align:'center'});
-    doc.text('Pag. '+(fi+2),283,207,{align:'right'});
+    doc.setFillColor(249,250,251);doc.rect(0,203,297,7,'F');
+    doc.setDrawColor(220,220,220);doc.line(0,203,297,203);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
+    doc.text('Palma Grande S.A.S. · '+finca,5,208);
+    doc.text('Sistema de Gestion Agricola · Semana '+sn,148.5,208,{align:'center'});
+    doc.text('Pagina '+(fi+2)+' de 4',292,208,{align:'right'});
   });
 
   setTimeout(()=>{
     doc.save('ciclos-cosecha-sem'+sn+'-'+isoDate(hoy)+'.pdf');
-    showToast('✓ PDF generado correctamente');
+    showToast('PDF generado correctamente');
   },100);
 }
 
