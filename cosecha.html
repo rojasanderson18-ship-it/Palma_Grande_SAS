@@ -1410,31 +1410,59 @@ function exportarPDF(){
       render();
       await new Promise(r=>setTimeout(r,400));
 
-      const tableWrap=document.getElementById('table-wrap');
+      // Obtener la tabla completa (incluyendo contenido fuera de scroll)
+      const tableEl = document.querySelector('.ciclos-table');
+      if(!tableEl){ continue; }
+
+      // Calcular ancho real de la tabla
+      const tableRealW = tableEl.scrollWidth || tableEl.offsetWidth;
+      const tableRealH = tableEl.scrollHeight || tableEl.offsetHeight;
+      const snapW = Math.max(tableRealW + 40, 1100);
+
       const snap=document.createElement('div');
-      snap.style.cssText='position:fixed;left:-9999px;top:0;background:#fff;width:1122px;';
+      snap.style.cssText=`position:fixed;left:-9999px;top:0;background:#fff;width:${snapW}px;overflow:visible;`;
+
+      // Clonar la tabla para no afectar el DOM original
+      const tableClone = tableEl.cloneNode(true);
+      tableClone.style.cssText='border-collapse:collapse;font-size:11px;';
+
       snap.innerHTML=`
         <div style="background:#0f1117;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;">
           <div style="font-family:Arial;font-size:13px;font-weight:900;color:#f0c96a;letter-spacing:2px;">PALMA GRANDE S.A.S.</div>
           <div style="font-family:Arial;font-size:17px;font-weight:900;color:#fff;letter-spacing:3px;">CICLOS DE COSECHA · ${fincas[fi]}</div>
           <div style="font-family:Arial;font-size:12px;color:#f0c96a;">${fecha} · Sem ${sn}</div>
         </div>
-        <div style="overflow:hidden;">${tableWrap.innerHTML}</div>
+        <div style="overflow:visible;padding:0;"></div>
         <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:6px 20px;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
           <span>Palma Grande S.A.S.</span>
           <span>Semana ${sn} · ${hoy.getFullYear()}</span>
           <span>Pag. ${fi+2} de 4</span>
         </div>`;
+      // Insertar tabla clonada en el div del medio
+      snap.children[1].appendChild(tableClone);
       document.body.appendChild(snap);
-      await new Promise(r=>setTimeout(r,300));
+      await new Promise(r=>setTimeout(r,400));
 
       const snapCanvas=await window.html2canvas(snap,{
-        scale:1.3, useCORS:true, backgroundColor:'#fff', logging:false
+        scale:1.2,
+        useCORS:true,
+        backgroundColor:'#fff',
+        logging:false,
+        width:snap.scrollWidth,
+        height:snap.scrollHeight,
+        windowWidth:snap.scrollWidth,
+        windowHeight:snap.scrollHeight,
       });
       document.body.removeChild(snap);
+
+      // Escalar para que quepa en A4 landscape (297x210mm)
       const snapImg=snapCanvas.toDataURL('image/jpeg',0.92);
-      const snapH=(snapCanvas.height*297)/snapCanvas.width;
-      doc.addImage(snapImg,'JPEG',0,0,297,Math.min(snapH,210));
+      const ratio = snapCanvas.width / snapCanvas.height;
+      let imgW=297, imgH=297/ratio;
+      if(imgH>210){ imgH=210; imgW=210*ratio; }
+      const offX=(297-imgW)/2;
+      const offY=(210-imgH)/2;
+      doc.addImage(snapImg,'JPEG',offX,offY,imgW,imgH);
     }
 
     filtroFinca=filtroOrig;
