@@ -175,7 +175,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .tabs-bar{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;padding:0 20px;position:sticky;top:0;z-index:190;}
 .tab-btn{padding:11px 18px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;font-family:'DM Sans',sans-serif;background:none;border-top:none;border-left:none;border-right:none;}
 .tab-btn.active{color:#b8860b;border-bottom-color:#b8860b;font-weight:600;}
-.tab-panel{display:none;}.tab-panel.active{display:block;}
+.tab-panel{display:none;}.tab-panel.active{display:block;min-height:200px;}
 
 /* ===== ALERTAS BANNER ===== */
 .alertas-banner{background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 16px;display:flex;gap:8px;overflow-x:auto;align-items:center;}
@@ -187,9 +187,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .ap-verde{background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.2);color:#15803d;}
 
 /* ===== DASHBOARD ===== */
-.dash-wrap{padding:16px 20px;}
+.dash-wrap{padding:16px 20px;min-height:400px;}
 .dash-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.dash-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;}
+.dash-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;overflow:hidden;}
+.dash-card canvas{max-height:160px !important;}
 .dash-title{font-size:12px;font-weight:600;color:#1a1f2e;margin-bottom:12px;}
 
 .crit-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:11px;}
@@ -261,8 +262,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 <!-- TABS -->
 <div class="tabs-bar">
-  <button class="tab-btn active" onclick="setTab('tablero')">📋 Tablero</button>
-  <button class="tab-btn" onclick="setTab('dashboard')">📊 Dashboard</button>
+  <button class="tab-btn active" id="tab-btn-tablero" onclick="setTab('tablero')">📋 Tablero</button>
+  <button class="tab-btn" id="tab-btn-dashboard" onclick="setTab('dashboard')">📊 Dashboard</button>
 </div>
 
 <!-- PANEL TABLERO -->
@@ -358,11 +359,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <div class="dash-grid2">
       <div class="dash-card">
         <div class="dash-title">📈 Cumplimiento semanal</div>
-        <canvas id="chart-trend" height="150"></canvas>
+        <canvas id="chart-trend" style="max-height:160px;"></canvas>
       </div>
       <div class="dash-card">
         <div class="dash-title">🏭 Estado por finca</div>
-        <canvas id="chart-finca" height="150"></canvas>
+        <canvas id="chart-finca" style="max-height:160px;"></canvas>
       </div>
     </div>
 
@@ -948,12 +949,15 @@ function calcularIndicadores(){
 
 // ===== TABS =====
 function setTab(t){
-  document.querySelectorAll('.tab-btn').forEach(el=>{
-    el.classList.toggle('active', el.textContent.includes(t==='tablero'?'Tablero':'Dashboard'));
+  ['tablero','dashboard'].forEach(id=>{
+    const btn = document.getElementById('tab-btn-'+id);
+    const panel = document.getElementById('tab-'+id);
+    if(btn) btn.classList.toggle('active', id===t);
+    if(panel) panel.classList.toggle('active', id===t);
   });
-  document.getElementById('tab-tablero').classList.toggle('active', t==='tablero');
-  document.getElementById('tab-dashboard').classList.toggle('active', t==='dashboard');
-  if(t==='dashboard'){ calcularDashboard(); }
+  if(t==='dashboard'){ 
+    setTimeout(()=>calcularDashboard(), 50);
+  }
 }
 
 // ===== ALERTAS BANNER =====
@@ -1034,7 +1038,7 @@ function calcularDashboard(){
           {label:'Incumplimiento',data:[14,12,10,13,11],borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2}
         ]
       },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},min:0,max:45}}}
+      options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},min:0,max:45}}}
     });
     chartFinca = new Chart(document.getElementById('chart-finca'),{
       type:'bar',
@@ -1046,7 +1050,7 @@ function calcularDashboard(){
           {label:'Incumplimiento',data:fincas.map(f=>fincaStats[f].rojo),backgroundColor:'#dc2626'},
         ]
       },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{font:{size:10}}}}}
+      options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{font:{size:10}}}}}
     });
   } else {
     chartFinca.data.datasets[0].data = fincas.map(f=>fincaStats[f].verde);
