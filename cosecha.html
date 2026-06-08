@@ -4,8 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"/>
 <title>Ciclos de Cosecha – Palma Grande S.A.S.</title>
+<!-- v3.1 - continuidad/nuevo ciclo -->
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
   --bg:#f4f6f9;--surface:#ffffff;--surface2:#f0f2f5;--border:#dde1e9;
@@ -328,6 +331,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <div class="sep"></div>
   <span class="hint">Clic en celda para marcar</span>
+  <div class="sep"></div>
+  <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
 </div>
 
 <div class="table-wrap" id="table-wrap"></div>
@@ -503,41 +508,51 @@ function semanaNum(d){
 //    Pero si diasCiclo > maxCiclo + margen → rojo, etc.
 // 3. Si no hay ningún bloque previo → vacío
 
-function getPrimerDiaBloque(key, desdeFecha){
+function getCicloMax(tipo){
+  return tipo==='hibrido' ? 22 : 12;
+}
+
+function getCicloOptimo(tipo){
+  // Día hasta el cual se considera dentro del ciclo normal (antes de tolerancia)
+  return tipo==='hibrido' ? 20 : 10;
+}
+
+function getCicloStart(key, tipo, hastaFecha){
+  // El ciclo reinicia cuando hay una marca 'nuevo' o cuando no hay marcas previas.
+  // Cualquier marca 'continuidad' sigue contando desde el inicio del ciclo actual.
   const m = marcas[key] || {};
-  // Normalizar fecha a medianoche para evitar problemas de horas
-  let d = new Date(desdeFecha);
-  d.setHours(0,0,0,0);
-  let ultimoCos = null;
-  for(let i=0;i<365;i++){
-    if(m[isoDate(d)]){ ultimoCos = new Date(d); break; }
-    d.setDate(d.getDate()-1);
+  const hastaISO = isoDate(hastaFecha);
+
+  const todasMarks = Object.keys(m)
+    .filter(iso => iso <= hastaISO)
+    .sort()
+    .reverse(); // más nueva primero
+
+  if(todasMarks.length === 0) return null;
+
+  // Buscar hacia atrás hasta encontrar una marca 'nuevo' o el inicio de las marcas
+  let cicloActualInicio = todasMarks[0];
+
+  for(let i = 0; i < todasMarks.length; i++){
+    cicloActualInicio = todasMarks[i];
+    if(m[todasMarks[i]] === 'nuevo') break; // este es el inicio del ciclo actual
+    // si es 'continuidad' seguimos buscando hacia atrás
   }
-  if(!ultimoCos) return null;
-  // Retroceder hasta el primer día consecutivo del bloque
-  let primer = new Date(ultimoCos);
-  while(true){
-    const prev = new Date(primer);
-    prev.setDate(prev.getDate()-1);
-    if(m[isoDate(prev)]) primer = new Date(prev);
-    else break;
-  }
-  return primer;
+
+  return parseISO(cicloActualInicio);
 }
 
 function getCellState(key, tipo, fecha){
   const m = marcas[key] || {};
   const dISO = isoDate(fecha);
 
-  // Encontrar el primer día del bloque más reciente hasta esta fecha
-  const primer = getPrimerDiaBloque(key, fecha);
-  if(!primer) return {tipo:'vacio'};
+  const cicloStart = getCicloStart(key, tipo, fecha);
+  if(!cicloStart) return {tipo:'vacio', num:null};
 
-  // diasCiclo: 1 = primer día del bloque
-  const diasCiclo = diasEntre(primer, fecha) + 1;
+  // diasCiclo: 1 = primer dia del ciclo
+  const diasCiclo = diasEntre(cicloStart, fecha) + 1;
 
-  // ¿Cosechando ese día?
-  if(m[dISO]) return {tipo:'cosechando', num:diasCiclo};
+  if(m[dISO]) return {tipo:'cosechando', num:diasCiclo, marca:m[dISO]};
 
   if(tipo==='hibrido'){
     if(diasCiclo<=20) return {tipo:'verde', num:diasCiclo};
@@ -652,10 +667,12 @@ function render(){
       const cs = getCellState(key,l.tipo,d);
 
       let cellHtml,clsExtra='';
-      if(esFuturo){
-        cellHtml=`<div class="dia-inner di-vacio">·</div>`;
+      if(esFuturo && cs.tipo==='vacio'){
+        cellHtml=`<div class="dia-inner di-vacio" style="color:rgba(0,0,0,.06);">·</div>`;
+        clsExtra=' editable';
       } else if(cs.tipo==='cosechando'){
-        cellHtml=`<div class="dia-inner di-cosechando">${cs.num}</div>`;
+        const esNuevo = cs.marca==='nuevo';
+        cellHtml=`<div class="dia-inner di-cosechando${esNuevo?' es-nuevo':''}">${cs.num}</div>`;
         clsExtra=' editable';
       } else if(cs.tipo==='vacio'){
         cellHtml=`<div class="dia-inner di-vacio">·</div>`;
@@ -696,21 +713,28 @@ function onCellClick(e,td){
   const key=td.dataset.key;
   const fecha=td.dataset.fecha;
   const lote=td.dataset.lote;
-  const esCosechando=(marcas[key]||{})[fecha];
-  showPopup(e, key, fecha, lote, esCosechando);
+  showPopup(e, key, fecha, lote);
 }
 
-function showPopup(e, key, fecha, lote, esCosechando){
+function showPopup(e, key, fecha, lote){
   cerrarPopup();
   const popup=document.getElementById('cell-popup');
   const fechaD=parseISO(fecha);
   const fechaStr=fechaD.getDate()+' '+MESES[fechaD.getMonth()]+' '+fechaD.getFullYear();
 
+  const marcaActual = (marcas[key]||{})[fecha];
   popup.innerHTML=`
     <div class="popup-header">Lote <strong>${lote} · ${fecha.split('-').reverse().join('/')}</strong></div>
-
-    ${!esCosechando?`<div class="popup-opt" onclick="marcarCosechando('${key}','${fecha}')"><div class="pop-dot pd-negro"></div>Cosechando (entrada al lote)</div>`:''}
-    ${esCosechando?`<div class="popup-opt" onclick="marcarLibre('${key}','${fecha}')"><div class="pop-dot pd-libre"></div>Quitar cosecha (libre)</div>`:''}
+    ${!marcaActual?`
+      <div class="popup-opt" onclick="marcarCosechando('${key}','${fecha}','continuidad')">
+        <div class="pop-dot pd-negro"></div>
+        <div><div style="font-weight:600;">Continuidad</div><div style="font-size:10px;color:#6b7280;">Sigue el ciclo actual</div></div>
+      </div>
+      <div class="popup-opt" onclick="marcarCosechando('${key}','${fecha}','nuevo')">
+        <div class="pop-dot" style="background:#15803d;"></div>
+        <div><div style="font-weight:600;">Nuevo ciclo</div><div style="font-size:10px;color:#6b7280;">Reinicia desde 1</div></div>
+      </div>`:''}
+    ${marcaActual?`<div class="popup-opt" onclick="quitarMarca('${key}','${fecha}')"><div class="pop-dot pd-libre"></div>Quitar marca</div>`:''}
     <div class="popup-opt pop-limpiar" onclick="limpiarCelda('${key}','${fecha}')"><div class="pop-dot pd-limpiar"></div>Limpiar celda</div>
   `;
 
@@ -730,22 +754,21 @@ function cerrarPopup(){
   popupOpen=false;
 }
 
-function marcarCosechando(key,fecha){
-  const sup='';
+function marcarCosechando(key,fecha,tipo){
   if(!marcas[key]) marcas[key]={};
-  marcas[key][fecha]=true;
+  marcas[key][fecha]=tipo||'continuidad';
   guardarLocal();
-  enviarGAS({accion:'marcarCosechando',key,fecha,supervisor:sup});
+  enviarGAS({accion:'marcarCosechando',key,fecha,tipo});
   cerrarPopup();render();
-  showToast('✓ Día marcado como cosechando');
+  showToast(tipo==='nuevo'?'✓ Nuevo ciclo iniciado':'✓ Continuidad registrada');
 }
 
-function marcarLibre(key,fecha){
+function quitarMarca(key,fecha){
   if(marcas[key]) delete marcas[key][fecha];
   guardarLocal();
-  enviarGAS({accion:'marcarLibre',key,fecha});
+  enviarGAS({accion:'quitarMarca',key,fecha});
   cerrarPopup();render();
-  showToast('Día marcado como libre');
+  showToast('Marca eliminada');
 }
 
 function limpiarCelda(key,fecha){
@@ -1162,6 +1185,104 @@ function togglePanel(){
     (hidden?0:els.reduce((s,el)=>s+(el?el.offsetHeight:0),0));
   document.querySelector('.table-wrap').style.height = (window.innerHeight - usedH - 10) + 'px';
 }
+
+// =============================================
+// PDF EXPORT
+// =============================================
+function exportarPDF(){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  const hoy = hoyLocal();
+  const totalDias = semanas*7;
+  const fechas = [];
+  for(let i=0;i<totalDias;i++){
+    const d=new Date(hoy);d.setDate(d.getDate()-i);fechas.push(d);
+  }
+
+  // Title
+  doc.setFontSize(16);
+  doc.setFont('helvetica','bold');
+  doc.text('CICLOS DE COSECHA - PALMA GRANDE S.A.S.', 14, 14);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text(`Fecha: ${hoy.getDate()} ${MESES[hoy.getMonth()]} ${hoy.getFullYear()} | Semana ${semanaNum(hoy)} | Labor: Cosecha`, 14, 20);
+
+  // Indicadores
+  let verde=0,azul=0,rojo=0,haFuera=0,haEn=0;
+  LOTES.forEach(l=>{
+    const k=l.finca+'_'+l.lote;
+    const cs=getCellState('cosecha',key,l.tipo,hoy);
+    if(cs.tipo==='verde'||cs.tipo==='cosechando'){verde++;haEn+=l.ha;}
+    else if(cs.tipo==='azul'){azul++;haFuera+=l.ha;}
+    else if(cs.tipo==='rojo'){rojo++;haFuera+=l.ha;}
+  });
+  doc.setFontSize(8);
+  doc.text(`En ciclo: ${verde} lotes | Tolerancia: ${azul} | Incumplimiento: ${rojo} | HA fuera de ciclo: ${haFuera} | HA en ciclo: ${haEn}`, 14, 26);
+
+  // Build table data
+  const lotesFilt = LOTES.filter(l=>filtroFinca==='todas'||l.finca===filtroFinca);
+
+  // Headers: fixed cols + date cols (limit to fit page - max 30 days)
+  const maxCols = Math.min(totalDias, 28);
+  const fechasCols = fechas.slice(0, maxCols);
+
+  const head = [['F','Lote','HA','Frec','Estado', ...fechasCols.map(d=>d.getDate().toString())]];
+
+  const body = [];
+  let fincaActual = '';
+  lotesFilt.forEach(l=>{
+    if(l.finca!==fincaActual){
+      fincaActual=l.finca;
+      body.push([{content:l.finca, colSpan:5+maxCols, styles:{fillColor:[230,240,255],fontStyle:'bold',textColor:[30,58,95]}}]);
+    }
+    const key=l.finca+'_'+l.lote;
+    const eH=estadoHoy('cosecha',key,l.tipo,hoy);
+    const freq=l.tipo==='hibrido'?'21-22d':'11-12d';
+    const row = [l.finca.replace('FINCA ','F'), l.lote, l.ha, freq, eH==='sin'?'SIN REG':eH.toUpperCase()];
+
+    fechasCols.forEach(d=>{
+      const cs=getCellState('cosecha',key,l.tipo,d);
+      row.push(cs.num!==null?cs.num.toString():'');
+    });
+    body.push(row);
+  });
+
+  doc.autoTable({
+    head,
+    body,
+    startY: 30,
+    styles:{fontSize:6, cellPadding:1, halign:'center'},
+    headStyles:{fillColor:[30,58,95], textColor:255, fontStyle:'bold'},
+    columnStyles:{
+      0:{cellWidth:6},
+      1:{cellWidth:9},
+      2:{cellWidth:6},
+      3:{cellWidth:12},
+      4:{cellWidth:18},
+    },
+    didParseCell: function(data){
+      if(data.section==='body' && data.column.index>=5 && data.cell.raw!==''){
+        const val = parseInt(data.cell.raw);
+        const col = data.column.index - 5;
+        if(col<fechasCols.length){
+          const d=fechasCols[col];
+          const loteIdx=data.row.index;
+          // Color by value
+          if(!isNaN(val)){
+            if(val<=10) data.cell.styles.fillColor=[220,252,231]; // verde
+            else if(val<=12) data.cell.styles.fillColor=[219,234,254]; // azul
+            else data.cell.styles.fillColor=[254,226,226]; // rojo
+          }
+        }
+      }
+    },
+    margin:{top:30, left:5, right:5},
+  });
+
+  doc.save(`ciclos-cosecha-${isoDate(hoy)}.pdf`);
+  showToast('✓ PDF generado');
+}
+
 function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
