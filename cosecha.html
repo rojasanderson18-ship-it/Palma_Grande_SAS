@@ -333,9 +333,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <button onclick="cambiarSemanas(1)">+</button>
   </div>
   <div class="sep"></div>
-  <span class="hint">Clic en celda para marcar</span>
+  <div class="weeks-ctrl">
+    <span>Proyección:</span>
+    <button onclick="cambiarProyeccion(-1)">−</button>
+    <span class="weeks-val" id="proj-val">2</span>
+    <button onclick="cambiarProyeccion(1)">+</button>
+  </div>
   <div class="sep"></div>
-  <button class="btn-filter" id="btn-proyeccion" onclick="toggleProyeccion()">📅 Ocultar proyección</button>
+  <span class="hint">Clic en celda para marcar</span>
   <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
 </div>
@@ -585,7 +590,7 @@ function render(){
   const hoy = hoyLocal();
   const hoyISO = isoDate(hoy);
   const totalDias = semanas*7;
-  const FUTUROS = mostrarProyeccion ? 14 : 0;
+  const FUTUROS = semanasProyeccion * 7;
   const fechas = [];
   // Días futuros primero (más lejano a la izquierda)
   for(let i=FUTUROS;i>=1;i--){
@@ -835,12 +840,7 @@ function setFinca(f){
 }
 function cambiarSemanas(d){
   semanas=Math.max(1,semanas+d);
-  document.getElementById('weeks-val').value=semanas;
-  render();
-}
-function setSemanas(v){
-  semanas=Math.max(1,v);
-  document.getElementById('weeks-val').value=semanas;
+  document.getElementById('weeks-val').textContent=semanas;
   render();
 }
 
@@ -1530,13 +1530,11 @@ function exportarPDF(){
 // =============================================
 // PROYECCIÓN TOGGLE
 // =============================================
-let mostrarProyeccion = true;
+let semanasProyeccion = 2;
 
-function toggleProyeccion(){
-  mostrarProyeccion = !mostrarProyeccion;
-  const btn = document.getElementById('btn-proyeccion');
-  btn.textContent = mostrarProyeccion ? '📅 Ocultar proyección' : '📅 Mostrar proyección';
-  btn.classList.toggle('active', !mostrarProyeccion);
+function cambiarProyeccion(d){
+  semanasProyeccion = Math.max(0, semanasProyeccion + d);
+  document.getElementById('proj-val').textContent = semanasProyeccion;
   render();
 }
 
