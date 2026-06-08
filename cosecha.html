@@ -1406,7 +1406,7 @@ function exportarPDF(){
     for(let fi=0;fi<fincas.length;fi++){
       doc.addPage('a4','landscape');
       filtroFinca=fincas[fi];
-      semanas=2;
+      semanas=4;
       render();
       await new Promise(r=>setTimeout(r,400));
 
