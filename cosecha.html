@@ -341,7 +341,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <button onclick="cambiarProyeccion(1)">+</button>
   </div>
   <div class="sep"></div>
-  <span class="hint">Clic en celda para marcar</span>
+  <button class="btn-filter" id="btn-editar" onclick="toggleEdicion()" style="font-weight:600;">🔒 Editar</button>
   <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
 </div>
@@ -479,7 +479,9 @@ const DIAS_SEM = ['D','L','M','M','J','V','S'];
 
 // registros[key][fechaISO] = 'cosechando' | null (null = borrado)
 // Solo guardamos los días marcados como cosechando; el resto es calculado
-let marcas = {}; // { "FINCA1_1A": { "2026-06-01": true, "2026-06-02": true } }
+let marcas = {};
+let modoEdicion = false;
+const PIN_EDICION = '2105'; // { "FINCA1_1A": { "2026-06-01": true, "2026-06-02": true } }
 let semanas = 4;
 let filtroFinca = 'todas';
 
@@ -733,6 +735,7 @@ function render(){
 let popupOpen=false;
 function onCellClick(e,td){
   e.stopPropagation();
+  if(!modoEdicion) return;
   if(!td.classList.contains('editable')) return;
   const key=td.dataset.key;
   const fecha=td.dataset.fecha;
@@ -1573,6 +1576,27 @@ const FESTIVOS_CO = new Set([
 
 function esFestivo(d){ return FESTIVOS_CO.has(isoDate(d)); }
 
+
+function toggleEdicion(){
+  if(modoEdicion){
+    modoEdicion=false;
+    document.getElementById('btn-editar').textContent='🔒 Editar';
+    document.getElementById('btn-editar').style.color='';
+    document.getElementById('btn-editar').style.borderColor='';
+    render();
+    return;
+  }
+  const pin=prompt('Ingresa el PIN para editar:');
+  if(pin===PIN_EDICION){
+    modoEdicion=true;
+    document.getElementById('btn-editar').textContent='🔓 Editando';
+    document.getElementById('btn-editar').style.color='#15803d';
+    document.getElementById('btn-editar').style.borderColor='#16a34a';
+    render();
+  } else if(pin!==null){
+    alert('PIN incorrecto');
+  }
+}
 function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
