@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{
   --bg:#f4f6f9;--surface:#ffffff;--surface2:#f0f2f5;--border:#dde1e9;
@@ -1190,87 +1191,317 @@ function togglePanel(){
 // PDF EXPORT
 // =============================================
 function exportarPDF(){
-  if(!window.jspdf){ showToast('Librería PDF no cargada','err'); return; }
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  const jspdfLib = window.jspdf || window.jsPDF;
+  if(!jspdfLib){ showToast('Librería PDF no cargada','err'); return; }
+  const {jsPDF} = window.jspdf || {jsPDF: window.jsPDF};
+  showToast('⏳ Generando PDF...');
+
   const hoy = hoyLocal();
-  const totalDias = semanas*7;
-  const fechas = [];
-  for(let i=0;i<totalDias;i++){
-    const d=new Date(hoy);d.setDate(d.getDate()-i);fechas.push(d);
+  const hoyISO = isoDate(hoy);
+  const sn = semanaNum(hoy);
+  const fecha = hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
+
+  // ============================================
+  // CALCULAR DATOS
+  // ============================================
+  let nVerde=0,nAzul=0,nRojo=0,nCos=0,haEn=0,haFuera=0,haTotal=0;
+  const criticos=[], proximas=[];
+  const rangos=[
+    {label:'< 13 dias',min:0,max:12,ha:0},
+    {label:'13-15 dias',min:13,max:15,ha:0},
+    {label:'16-20 dias',min:16,max:20,ha:0},
+    {label:'21-30 dias',min:21,max:30,ha:0},
+    {label:'> 30 dias',min:31,max:9999,ha:0},
+  ];
+  LOTES.forEach(l=>{
+    const key=l.finca+'_'+l.lote;
+    const cs=getCellState(key,l.tipo,hoy);
+    const dias=cs.num||0;
+    haTotal+=l.ha;
+    if(cs.tipo==='cosechando'){nCos++;haEn+=l.ha;}
+    else if(cs.tipo==='verde'){nVerde++;haEn+=l.ha;}
+    else if(cs.tipo==='azul'){nAzul++;haFuera+=l.ha;}
+    else if(cs.tipo==='rojo'){nRojo++;haFuera+=l.ha;criticos.push({lote:l.lote,finca:l.finca,dias,ha:l.ha});}
+    if(dias>0){for(const r of rangos){if(dias>=r.min&&dias<=r.max){r.ha+=l.ha;break;}}}
+    const limAviso=l.tipo==='hibrido'?[19,20]:[9,10];
+    if(cs.tipo==='verde'&&limAviso.includes(dias)) proximas.push({lote:l.lote,finca:l.finca,dias,esHoy:dias===limAviso[1]});
+  });
+  criticos.sort((a,b)=>b.dias-a.dias);
+  const lotesActivos=nCos+nVerde+nAzul+nRojo;
+  const pct=(a,b)=>b>0?Math.round(a/b*100)+'%':'0%';
+  const haTotalRangos=rangos.reduce((s,r)=>s+r.ha,0);
+  const fmt=n=>n.toLocaleString('es-CO');
+
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+  // ============================================
+  // HELPERS
+  // ============================================
+  function secTitle(d,t,y){
+    d.setFontSize(8);d.setFont('helvetica','bold');d.setTextColor(107,114,128);
+    d.text(t,14,y);
+    d.setDrawColor(229,231,235);d.line(14,y+1.5,196,y+1.5);
+  }
+  function kpiCard(d,x,y,w,h,val,lbl,sub,color,bg){
+    d.setFillColor(...bg);d.roundedRect(x,y,w,h,2,2,'F');
+    d.setFillColor(...color);d.rect(x,y,2.5,h,'F');
+    d.setFontSize(20);d.setFont('helvetica','bold');d.setTextColor(...color);
+    d.text(String(val),x+5,y+h/2+3);
+    d.setFontSize(7);d.setFont('helvetica','normal');d.setTextColor(107,114,128);
+    d.text(lbl,x+5,y+h-5);
+    d.setFontSize(8);d.setFont('helvetica','bold');d.setTextColor(...color);
+    d.text(sub,x+5,y+h-1.5);
   }
 
-  // Titulo
-  doc.setFontSize(14);doc.setFont('helvetica','bold');
-  doc.text('CICLOS DE COSECHA - PALMA GRANDE S.A.S.', 14, 12);
-  doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Fecha: '+hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear()+' | Semana '+semanaNum(hoy), 14, 18);
+  // ============================================
+  // PÁG 1 - GERENCIA
+  // ============================================
+  // Header oscuro
+  doc.setFillColor(15,17,23);doc.rect(0,0,210,26,'F');
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(240,201,106);
+  doc.text('CICLOS DE COSECHA',105,11,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(148,163,184);
+  doc.text('PALMA GRANDE S.A.S. · Departamento Agronomico',105,17,{align:'center'});
+  doc.setTextColor(240,201,106);
+  doc.text(fecha+' · Semana '+sn,105,22,{align:'center'});
 
-  // Indicadores
-  let nVerde=0,nAzul=0,nRojo=0,haFuera=0,haEn=0;
-  LOTES.forEach(l=>{
-    const k=l.finca+'_'+l.lote;
-    const cs=getCellState(k,l.tipo,hoy);
-    if(cs.tipo==='verde'||cs.tipo==='cosechando'){nVerde++;haEn+=l.ha;}
-    else if(cs.tipo==='azul'){nAzul++;haFuera+=l.ha;}
-    else if(cs.tipo==='rojo'){nRojo++;haFuera+=l.ha;}
+  let y=33;
+
+  // KPI fila 1
+  secTitle(doc,'ESTADO GENERAL DE LOTES Y HECTAREAS',y); y+=6;
+  const kw=44,kh=18;
+  kpiCard(doc,14,y,kw,kh,nVerde+nCos,'Lotes en ciclo',pct(nVerde+nCos,lotesActivos),[21,128,61],[240,253,244]);
+  kpiCard(doc,60,y,kw,kh,nAzul,'Tolerancia',pct(nAzul,lotesActivos),[29,78,216],[239,246,255]);
+  kpiCard(doc,106,y,kw,kh,nRojo,'Incumplimiento',pct(nRojo,lotesActivos),[185,28,28],[254,242,242]);
+  kpiCard(doc,152,y,kw,kh,fmt(haTotal),'Total HA','3 fincas · 62 lotes',[184,134,11],[255,251,235]);
+  y+=21;
+
+  // KPI fila 2 — HA
+  kpiCard(doc,14,y,90,14,fmt(haEn)+' HA','HA en ciclo',pct(haEn,haTotal)+' del total',[21,128,61],[240,253,244]);
+  kpiCard(doc,108,y,90,14,fmt(haFuera)+' HA','HA fuera de ciclo',pct(haFuera,haTotal)+' del total',[185,28,28],[254,242,242]);
+  y+=20;
+
+  // Rangos
+  secTitle(doc,'DISTRIBUCION DE HA POR DIAS DEL CICLO',y); y+=6;
+  const rcolors=[[21,128,61],[77,124,15],[133,77,14],[154,52,18],[185,28,28]];
+  const rbgs=[[240,253,244],[247,254,231],[255,251,235],[255,247,237],[254,242,242]];
+  const rw2=36,rh2=22;
+  rangos.forEach((r,i)=>{
+    const x=14+i*(rw2+2);
+    const p=haTotalRangos>0?Math.round(r.ha/haTotalRangos*100):0;
+    doc.setFillColor(...rbgs[i]);doc.roundedRect(x,y,rw2,rh2,2,2,'F');
+    doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);
+    doc.text(r.label,x+3,y+5);
+    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...rcolors[i]);
+    doc.text(r.ha>0?fmt(r.ha):'—',x+3,y+13);
+    doc.setFontSize(8);doc.setTextColor(107,114,128);
+    doc.text(p+'%',x+3,y+17.5);
+    // Barra
+    doc.setFillColor(229,231,235);doc.rect(x+3,y+19,rw2-6,2,'F');
+    if(p>0){doc.setFillColor(...rcolors[i]);doc.rect(x+3,y+19,Math.round((rw2-6)*p/100),2,'F');}
   });
-  doc.text('En ciclo: '+nVerde+' lotes | Tolerancia: '+nAzul+' | Incumplimiento: '+nRojo+' | HA en ciclo: '+haEn+' | HA fuera: '+haFuera, 14, 23);
+  y+=27;
 
-  // Tabla
-  const lotesFilt = LOTES.filter(l=>filtroFinca==='todas'||l.finca===filtroFinca);
-  const maxCols = Math.min(totalDias, 30);
-  const fechasCols = fechas.slice(0, maxCols);
+  // Criticos + Proximas en 2 columnas
+  const midX=107;
+  secTitle(doc,'LOTES CRITICOS',y); y+=6;
+  const topC=criticos.slice(0,7);
+  topC.forEach((c,i)=>{
+    const cx=14+(i%2)*midX, cy=y+Math.floor(i/2)*7;
+    doc.setFillColor(254,242,242);doc.roundedRect(cx,cy,101,5.5,1,1,'F');
+    doc.setFillColor(220,38,38);doc.circle(cx+4,cy+2.8,1.5,'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(26,31,46);
+    doc.text('Lote '+c.lote,cx+8,cy+3.8);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);
+    doc.text(c.finca.replace('FINCA ','F')+' · '+c.ha+' ha',cx+30,cy+3.8);
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(185,28,28);
+    doc.text(c.dias+' dias',cx+85,cy+3.8,{align:'right'});
+  });
+  y+=Math.ceil(topC.length/2)*7+6;
 
-  const head = [['F','Lote','HA','Frec','Estado hoy', ...fechasCols.map(d=>String(d.getDate()))]];
-  const body = [];
-  let fincaActual='';
-
-  lotesFilt.forEach(l=>{
-    if(l.finca!==fincaActual){
-      fincaActual=l.finca;
-      body.push([{content:'🌴 '+l.finca, colSpan:5+maxCols, styles:{fillColor:[220,235,255],fontStyle:'bold',textColor:[30,58,95]}}]);
+  if(proximas.length>0){
+    secTitle(doc,'PROXIMAS ENTRADAS',y); y+=6;
+    const proxHoy=proximas.filter(p=>p.esHoy);
+    const proxMan=proximas.filter(p=>!p.esHoy);
+    if(proxHoy.length>0){
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(185,28,28);
+      doc.text('HOY: '+proxHoy.map(p=>'Lote '+p.lote).join(', '),14,y);y+=6;
     }
-    const key=l.finca+'_'+l.lote;
-    const eH=estadoHoy(key,l.tipo,hoy);
-    const freq=l.tipo==='hibrido'?'21-22d':'11-12d';
-    const estadoTxt = eH==='sin'?'SIN REG':eH==='cosechando'?'COSECHANDO':eH==='verde'?'EN CICLO':eH==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
-    const row=[l.finca.replace('FINCA ','F'), l.lote, l.ha, freq, estadoTxt];
-    fechasCols.forEach(d=>{
-      const cs=getCellState(key,l.tipo,d);
-      row.push(cs.num!==null&&cs.num!==undefined ? String(cs.num) : '');
+    if(proxMan.length>0){
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(194,65,12);
+      doc.text('MANANA: '+proxMan.map(p=>'Lote '+p.lote).join(', '),14,y);y+=6;
+    }
+  }
+
+  // Footer pág 1
+  doc.setFillColor(249,250,251);doc.rect(0,280,210,17,'F');
+  doc.setDrawColor(229,231,235);doc.line(0,280,210,280);
+  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(156,163,175);
+  doc.text('Palma Grande S.A.S. · Departamento Agronomico',14,288);
+  doc.text('Sistema de Gestion Agricola · Generado automaticamente',105,288,{align:'center'});
+  doc.text('Semana '+sn+' · '+hoy.getFullYear()+' · Pag. 1',196,288,{align:'right'});
+
+  // ============================================
+  // PÁGS 2-4: OPERACIONES POR FINCA
+  // ============================================
+  const fincas=['FINCA 1','FINCA 2','FINCA 3'];
+  const DIAS_OP=14;
+  const fechasOp=[];
+  for(let i=0;i<DIAS_OP;i++){
+    const d=new Date(hoy);d.setDate(d.getDate()-i);fechasOp.push(d);
+  }
+  const DIAS_SEM2=['D','L','M','M','J','V','S'];
+  const FIXED=5;
+  const diaW=Math.floor((267-88)/DIAS_OP); // ancho por columna día
+
+  fincas.forEach((finca,fi)=>{
+    doc.addPage('a4','landscape');
+    const lotesFinca=LOTES.filter(l=>l.finca===finca);
+
+    // Header
+    doc.setFillColor(15,17,23);doc.rect(0,0,297,18,'F');
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(240,201,106);
+    doc.text('CICLOS DE COSECHA · '+finca,148.5,10,{align:'center'});
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(148,163,184);
+    doc.text(fecha+' · Semana '+sn+' · Ultimas 2 semanas',148.5,15,{align:'center'});
+
+    // Mini stats finca
+    let fV=0,fA=0,fR=0,fHAen=0,fHAf=0;
+    lotesFinca.forEach(l=>{
+      const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+      if(cs.tipo==='verde'||cs.tipo==='cosechando'){fV++;fHAen+=l.ha;}
+      else if(cs.tipo==='azul'){fA++;fHAf+=l.ha;}
+      else if(cs.tipo==='rojo'){fR++;fHAf+=l.ha;}
     });
-    body.push(row);
-  });
+    const mkd=[
+      {v:fV,l:'En ciclo ('+fHAen+' ha)',c:[21,128,61],b:[240,253,244]},
+      {v:fA,l:'Tolerancia',c:[29,78,216],b:[239,246,255]},
+      {v:fR,l:'Incumplimiento ('+fHAf+' ha)',c:[185,28,28],b:[254,242,242]},
+    ];
+    mkd.forEach((k,i)=>{
+      const x=8+i*96;
+      doc.setFillColor(...k.b);doc.roundedRect(x,20,92,8,1,1,'F');
+      doc.setFillColor(...k.c);doc.rect(x,20,2,8,'F');
+      doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...k.c);
+      doc.text(String(k.v),x+5,26);
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);
+      doc.text(k.l,x+13,26);
+    });
 
-  doc.autoTable({
-    head, body,
-    startY: 27,
-    styles:{fontSize:6, cellPadding:0.8, halign:'center', valign:'middle'},
-    headStyles:{fillColor:[30,58,95], textColor:255, fontStyle:'bold', fontSize:6},
-    columnStyles:{
-      0:{cellWidth:5},
-      1:{cellWidth:8},
-      2:{cellWidth:5},
-      3:{cellWidth:10},
-      4:{cellWidth:18},
-    },
-    didParseCell: function(data){
-      if(data.section==='body' && data.column.index>=5 && data.cell.raw!==''){
-        const val=parseInt(data.cell.raw);
-        if(!isNaN(val)){
-          if(val<=10) data.cell.styles.fillColor=[220,252,231];
-          else if(val<=12) data.cell.styles.fillColor=[219,234,254];
-          else data.cell.styles.fillColor=[254,226,226];
-          data.cell.styles.textColor=[20,20,20];
+    // Encabezado tabla
+    let tx=8,ty=31;
+    const colsW=[8,12,8,32,22];
+    const hdrH=5;
+
+    // Fila semana
+    doc.setFillColor(30,64,175);
+    colsW.forEach(w=>{doc.rect(tx,ty,w,hdrH,'F');tx+=w;});
+    // Agrupar por semana
+    let semActual2=null;
+    const semsOp=[];
+    fechasOp.forEach((d,i)=>{
+      const sn2=semanaNum(d);const sk=d.getFullYear()+'-'+sn2;
+      if(!semActual2||semActual2.key!==sk){semActual2={key:sk,sn:sn2,count:0,startX:tx};semsOp.push(semActual2);}
+      semActual2.count++;tx+=diaW;
+    });
+    tx=8+colsW.reduce((a,b)=>a+b,0);
+    semsOp.forEach(sg=>{
+      doc.setFillColor(30,64,175);doc.rect(sg.startX,ty,sg.count*diaW,hdrH,'F');
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text('SEM '+sg.sn,sg.startX+2,ty+3.5);
+    });
+
+    // Fila fechas
+    ty+=hdrH;tx=8;
+    const fijosH=['F','LOTE','HA','FRECUENCIA','ESTADO'];
+    colsW.forEach((w,i)=>{
+      doc.setFillColor(30,58,95);doc.rect(tx,ty,w,hdrH,'F');
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text(fijosH[i],tx+w/2,ty+3.5,{align:'center'});
+      tx+=w;
+    });
+    fechasOp.forEach((d,i)=>{
+      const isHoy=isoDate(d)===hoyISO;
+      doc.setFillColor(isHoy?184:30,isHoy?134:58,isHoy?11:95);
+      doc.rect(tx,ty,diaW,hdrH,'F');
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text(String(d.getDate()),tx+diaW/2,ty+3.5,{align:'center'});
+      tx+=diaW;
+    });
+
+    // Fila dia semana
+    ty+=hdrH;tx=8;
+    colsW.forEach(w=>{doc.setFillColor(45,55,72);doc.rect(tx,ty,w,3.5,'F');tx+=w;});
+    fechasOp.forEach((d,i)=>{
+      doc.setFillColor(45,55,72);doc.rect(tx,ty,diaW,3.5,'F');
+      doc.setFontSize(5);doc.setFont('helvetica','normal');doc.setTextColor(180,180,180);
+      doc.text(DIAS_SEM2[d.getDay()],tx+diaW/2,ty+2.8,{align:'center'});
+      tx+=diaW;
+    });
+    ty+=3.5;
+
+    // FILAS DE LOTES
+    const rowH=5;
+    lotesFinca.forEach((l,li)=>{
+      if(ty>200) return;
+      tx=8;
+      const key=l.finca+'_'+l.lote;
+      const cs=getCellState(key,l.tipo,hoy);
+      const freq=l.tipo==='hibrido'?'21-22d':'11-12d';
+      const eH=cs.tipo==='sin'?'SIN REG':cs.tipo==='cosechando'?'COSECHANDO':cs.tipo==='verde'?'EN CICLO':cs.tipo==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
+      const bgRow=li%2===0?[255,255,255]:[249,250,251];
+      doc.setFillColor(...bgRow);
+      doc.rect(8,ty,colsW.reduce((a,b)=>a+b,0)+DIAS_OP*diaW,rowH,'F');
+
+      // Cols fijas
+      const fijosV=[l.finca.replace('FINCA ','F'),l.lote,l.ha,freq,eH];
+      const ecol=cs.tipo==='verde'||cs.tipo==='cosechando'?[21,128,61]:cs.tipo==='azul'?[29,78,216]:cs.tipo==='rojo'?[185,28,28]:[107,114,128];
+      colsW.forEach((w,i)=>{
+        doc.setFontSize(6);
+        doc.setFont('helvetica',i===1?'bold':'normal');
+        doc.setTextColor(...(i===4?ecol:[26,31,46]));
+        doc.text(String(fijosV[i]),tx+w/2,ty+rowH-1.5,{align:'center'});
+        tx+=w;
+      });
+
+      // Celdas días
+      fechasOp.forEach((d,di)=>{
+        const csd=getCellState(key,l.tipo,d);
+        if(csd.tipo!=='vacio'&&csd.num!==null){
+          let bg,tc;
+          if(csd.tipo==='cosechando'){
+            const mk=(marcas[key]||{})[isoDate(d)];
+            bg=mk==='nuevo'?[20,83,45]:[30,58,95];tc=[255,255,255];
+          }
+          else if(csd.tipo==='verde'){bg=[209,250,229];tc=[6,95,70];}
+          else if(csd.tipo==='azul'){bg=[219,234,254];tc=[30,58,138];}
+          else{bg=[254,226,226];tc=[127,29,29];}
+          doc.setFillColor(...bg);doc.rect(tx,ty,diaW,rowH,'F');
+          doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...tc);
+          doc.text(String(csd.num),tx+diaW/2,ty+rowH-1.5,{align:'center'});
         }
-      }
-    },
-    margin:{top:27, left:4, right:4},
+        // Línea vertical
+        doc.setDrawColor(229,231,235);doc.line(tx,ty,tx,ty+rowH);
+        tx+=diaW;
+      });
+      // Línea horizontal
+      doc.setDrawColor(229,231,235);doc.line(8,ty+rowH,8+colsW.reduce((a,b)=>a+b,0)+DIAS_OP*diaW,ty+rowH);
+      ty+=rowH;
+    });
+
+    // Footer
+    doc.setFillColor(249,250,251);doc.rect(0,202,297,8,'F');
+    doc.setDrawColor(229,231,235);doc.line(0,202,297,202);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(156,163,175);
+    doc.text('Palma Grande S.A.S. · '+finca,14,207);
+    doc.text('Sistema de Gestion Agricola · Semana '+sn,148.5,207,{align:'center'});
+    doc.text('Pag. '+(fi+2),283,207,{align:'right'});
   });
 
-  doc.save('ciclos-cosecha-'+isoDate(hoy)+'.pdf');
-  showToast('✓ PDF generado');
+  setTimeout(()=>{
+    doc.save('ciclos-cosecha-sem'+sn+'-'+isoDate(hoy)+'.pdf');
+    showToast('✓ PDF generado correctamente');
+  },100);
 }
 
 
