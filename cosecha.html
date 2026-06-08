@@ -503,8 +503,13 @@ function diasEntre(a,b){
   return Math.round((B-A)/86400000);
 }
 function semanaNum(d){
-  const j1=new Date(d.getFullYear(),0,1);
-  return Math.ceil(((d-j1)/86400000+j1.getDay()+1)/7);
+  // Semana ISO 8601: empieza el lunes, semana 1 = la que contiene el primer jueves del año
+  const fecha = new Date(d);
+  fecha.setHours(0,0,0,0);
+  // Ir al jueves de la semana actual (lunes=0... domingo=6 en ISO)
+  fecha.setDate(fecha.getDate() + 4 - (fecha.getDay()||7));
+  const inicioAnio = new Date(fecha.getFullYear(),0,1);
+  return Math.ceil(((fecha-inicioAnio)/86400000+1)/7);
 }
 
 // =============================================
