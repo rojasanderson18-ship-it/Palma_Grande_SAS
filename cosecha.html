@@ -104,7 +104,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 /* CELDAS DE DÍAS */
 .td-dia{text-align:center;padding:0;min-width:22px;width:22px;max-width:22px;position:relative;}
-.td-dia.hoy-borde{border-left:2px solid var(--gold) !important;border-right:2px solid var(--gold) !important;}
+.td-dia.hoy-borde{border-left:3px solid var(--gold) !important;border-right:3px solid var(--gold) !important;background:rgba(184,134,11,.04);}
+.td-dia.futuro-vacio .dia-inner{color:rgba(0,0,0,.08);background:rgba(240,248,255,.5);}
+.td-dia.futuro-vacio{background:rgba(240,248,255,.3);}
 .td-dia.editable{cursor:pointer;}
 .td-dia.editable:hover .dia-inner{filter:brightness(1.4);outline:1px solid rgba(255,255,255,.2);}
 .dia-inner{display:flex;align-items:center;justify-content:center;width:100%;height:24px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;transition:filter .1s;}
@@ -332,6 +334,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <div class="sep"></div>
   <span class="hint">Clic en celda para marcar</span>
+  <div class="sep"></div>
+  <button class="btn-filter" id="btn-proyeccion" onclick="toggleProyeccion()">📅 Ocultar proyección</button>
   <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
 </div>
@@ -581,10 +585,15 @@ function render(){
   const hoy = hoyLocal();
   const hoyISO = isoDate(hoy);
   const totalDias = semanas*7;
+  const FUTUROS = mostrarProyeccion ? 14 : 0;
   const fechas = [];
+  // Días futuros primero (más lejano a la izquierda)
+  for(let i=FUTUROS;i>=1;i--){
+    const d=new Date(hoy);d.setDate(d.getDate()+i);fechas.push(d);
+  }
+  // Hoy y días pasados
   for(let i=0;i<totalDias;i++){
-    const d=new Date(hoy);d.setDate(d.getDate()-i);
-    fechas.push(d);
+    const d=new Date(hoy);d.setDate(d.getDate()-i);fechas.push(d);
   }
 
   // Agrupar semanas
@@ -629,12 +638,14 @@ function render(){
   html+='</tr><tr>';
   fechas.forEach(d=>{
     const isH=isoDate(d)===hoyISO;
-    html+=`<th class="th-fecha${isH?' th-hoy-col':''}">${d.getDate()}</th>`;
+    const isF=esFestivo(d);
+    html+=`<th class="th-fecha${isH?' th-hoy-col':isF?' th-festivo':''}">${d.getDate()}</th>`;
   });
   html+='</tr><tr>';
   fechas.forEach(d=>{
     const isH=isoDate(d)===hoyISO;
-    html+=`<th class="th-diaSem${isH?' th-hoy-col':''}">${DIAS_SEM[d.getDay()]}</th>`;
+    const isF=esFestivo(d);
+    html+=`<th class="th-diaSem${isH?' th-hoy-col':isF?' th-festivo-dia':''}">${DIAS_SEM[d.getDay()]}${isF?'🎉':''}</th>`;
   });
   html+='</tr></thead><tbody>';
 
@@ -642,7 +653,7 @@ function render(){
   lotesFiltrados.forEach(l=>{
     if(l.finca!==fincaActual){
       fincaActual=l.finca;
-      html+=`<tr class="finca-row"><td colspan="${5+totalDias}">🌴 ${l.finca}</td></tr>`;
+      html+=`<tr class="finca-row"><td colspan="${5+totalDias+FUTUROS}">🌴 ${l.finca}</td></tr>`;
     }
     const key=l.finca+'_'+l.lote;
     const freq=l.tipo==='hibrido'?'Entre 21 y 22 días':'Entre 11 y 12 días';
@@ -669,8 +680,8 @@ function render(){
 
       let cellHtml,clsExtra='';
       if(esFuturo && cs.tipo==='vacio'){
-        cellHtml=`<div class="dia-inner di-vacio" style="color:rgba(0,0,0,.06);">·</div>`;
-        clsExtra=' editable';
+        cellHtml=`<div class="dia-inner di-vacio" style="color:rgba(0,0,0,.1);background:rgba(240,248,255,.4);">·</div>`;
+        clsExtra=' editable futuro-vacio';
       } else if(cs.tipo==='cosechando'){
         const esNuevo = cs.marca==='nuevo';
         cellHtml=`<div class="dia-inner di-cosechando${esNuevo?' es-nuevo':''}">${cs.num}</div>`;
@@ -684,7 +695,8 @@ function render(){
         clsExtra=' editable';
       }
 
-      html+=`<td class="td-dia${isH?' hoy-borde':''}${clsExtra}" data-key="${key}" data-fecha="${dISO}" data-lote="${l.lote}" onclick="onCellClick(event,this)">${cellHtml}</td>`;
+      const isFestivo=esFestivo(d);
+      html+=`<td class="td-dia${isH?' hoy-borde':''}${isFestivo?' festivo-col':''}${clsExtra}" data-key="${key}" data-fecha="${dISO}" data-lote="${l.lote}" onclick="onCellClick(event,this)">${cellHtml}</td>`;
     });
     html+='</tr>';
   });
@@ -822,8 +834,13 @@ function setFinca(f){
   render();
 }
 function cambiarSemanas(d){
-  semanas=Math.max(1,Math.min(8,semanas+d));
-  document.getElementById('weeks-val').textContent=semanas;
+  semanas=Math.max(1,semanas+d);
+  document.getElementById('weeks-val').value=semanas;
+  render();
+}
+function setSemanas(v){
+  semanas=Math.max(1,v);
+  document.getElementById('weeks-val').value=semanas;
   render();
 }
 
@@ -1508,6 +1525,44 @@ function exportarPDF(){
   });
 }
 
+
+
+// =============================================
+// PROYECCIÓN TOGGLE
+// =============================================
+let mostrarProyeccion = true;
+
+function toggleProyeccion(){
+  mostrarProyeccion = !mostrarProyeccion;
+  const btn = document.getElementById('btn-proyeccion');
+  btn.textContent = mostrarProyeccion ? '📅 Ocultar proyección' : '📅 Mostrar proyección';
+  btn.classList.toggle('active', !mostrarProyeccion);
+  render();
+}
+
+
+// =============================================
+// FESTIVOS COLOMBIA
+// =============================================
+const FESTIVOS_CO = new Set([
+  // 2025
+  '2025-01-01','2025-01-06','2025-03-24','2025-04-17','2025-04-18',
+  '2025-05-01','2025-06-02','2025-06-23','2025-06-30','2025-07-20',
+  '2025-08-07','2025-08-18','2025-10-13','2025-11-03','2025-11-17',
+  '2025-12-08','2025-12-25',
+  // 2026
+  '2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03',
+  '2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-07-20',
+  '2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16',
+  '2026-12-08','2026-12-25',
+  // 2027
+  '2027-01-01','2027-01-11','2027-03-22','2027-04-01','2027-04-02',
+  '2027-05-01','2027-05-17','2027-06-07','2027-06-14','2027-07-20',
+  '2027-08-07','2027-08-16','2027-10-18','2027-11-01','2027-11-15',
+  '2027-12-08','2027-12-25',
+]);
+
+function esFestivo(d){ return FESTIVOS_CO.has(isoDate(d)); }
 
 function init(){
   const hoy=hoyLocal();
