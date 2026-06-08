@@ -409,22 +409,22 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="calc-grid">
         <div class="calc-input-row">
           <label class="calc-label">Días disponibles (lun-sáb)</label>
-          <input type="number" class="calc-input" id="calc-dias" value="6" min="1" max="30" oninput="calcularPersonal()"/>
+          <input type="number" class="calc-input" id="calc-dias" value="6" min="1" max="30" oninput="guardarCalc();calcularPersonal()"/>
         </div>
         <div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
         <div class="calc-input-row">
           <label class="calc-label" style="color:#15803d;">🌴 Finca 1 — HA/día/persona</label>
-          <input type="number" class="calc-input" id="calc-rend-f1" value="2.3" step="0.1" min="0.1" oninput="calcularPersonal()" style="border-color:#16a34a;"/>
+          <input type="number" class="calc-input" id="calc-rend-f1" value="2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()" style="border-color:#16a34a;"/>
         </div>
         <div class="calc-input-row">
           <label class="calc-label" style="color:#1d4ed8;">🌴 Finca 2 — HA/día/persona</label>
-          <input type="number" class="calc-input" id="calc-rend-f2" value="2.3" step="0.1" min="0.1" oninput="calcularPersonal()" style="border-color:#2563eb;"/>
+          <input type="number" class="calc-input" id="calc-rend-f2" value="2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()" style="border-color:#2563eb;"/>
         </div>
         <div class="calc-input-row">
           <label class="calc-label" style="color:#7c3aed;">🌴 Finca 3 — HA/día/persona</label>
-          <input type="number" class="calc-input" id="calc-rend-f3" value="2.3" step="0.1" min="0.1" oninput="calcularPersonal()" style="border-color:#7c3aed;"/>
+          <input type="number" class="calc-input" id="calc-rend-f3" value="2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()" style="border-color:#7c3aed;"/>
         </div>
       </div>
       <div class="calc-result">
@@ -1048,7 +1048,7 @@ function setTab(t){
     if(panel) panel.classList.toggle('active', id===t);
   });
   if(t==='dashboard'){ 
-    setTimeout(()=>{ calcularDashboard(); calcularPersonal(); }, 50);
+    setTimeout(()=>{ calcularDashboard(); cargarCalc(); calcularPersonal(); }, 50);
   }
 }
 
@@ -1727,6 +1727,30 @@ function calcularPersonal(){
     document.getElementById('cr-'+ids[i]).textContent = personas;
   });
   document.getElementById('cr-total').textContent = totalPersonas;
+}
+
+
+function guardarCalc(){
+  try{
+    localStorage.setItem('calc_config', JSON.stringify({
+      f1: document.getElementById('calc-rend-f1').value,
+      f2: document.getElementById('calc-rend-f2').value,
+      f3: document.getElementById('calc-rend-f3').value,
+      dias: document.getElementById('calc-dias').value,
+    }));
+  }catch(e){}
+}
+
+function cargarCalc(){
+  try{
+    const d = localStorage.getItem('calc_config');
+    if(!d) return;
+    const c = JSON.parse(d);
+    if(c.f1) document.getElementById('calc-rend-f1').value = c.f1;
+    if(c.f2) document.getElementById('calc-rend-f2').value = c.f2;
+    if(c.f3) document.getElementById('calc-rend-f3').value = c.f3;
+    if(c.dias) document.getElementById('calc-dias').value = c.dias;
+  }catch(e){}
 }
 
 function init(){
