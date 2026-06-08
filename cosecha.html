@@ -1194,12 +1194,7 @@ function exportarPDF(){
   const jspdfLib = window.jspdf || window.jsPDF;
   if(!jspdfLib){ showToast('Libreria PDF no cargada','err'); return; }
   const {jsPDF} = window.jspdf || {jsPDF: window.jsPDF};
-
-  // Verificar html2canvas
-  if(!window.html2canvas){
-    showToast('Error: recarga la pagina e intenta de nuevo','err');
-    return;
-  }
+  if(!window.html2canvas){ showToast('Error: recarga la pagina e intenta de nuevo','err'); return; }
 
   showToast('Generando PDF... espera');
 
@@ -1209,7 +1204,7 @@ function exportarPDF(){
   const fmt = n => n.toLocaleString('es-CO');
   const pct = (a,b) => b>0 ? Math.round(a/b*100)+'%' : '0%';
 
-  // Calculos
+  // ── CALCULOS GENERALES ──
   let nV=0,nA=0,nR=0,nC=0,haEn=0,haFuera=0,haTotal=0;
   const criticos=[], proximas=[];
   const rangos=[
@@ -1238,91 +1233,158 @@ function exportarPDF(){
   const proxH=proximas.filter(p=>p.esHoy).map(p=>'Lote '+p.lote).join(', ');
   const proxM=proximas.filter(p=>!p.esHoy).map(p=>'Lote '+p.lote).join(', ');
 
-  // Construir HTML gerencia
-  const gerHTML = `<div style="width:794px;min-height:1123px;font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;display:flex;flex-direction:column;">
-    <div style="background:#0f1117;padding:28px 32px;text-align:center;">
-      <div style="font-size:32px;font-weight:900;color:#f0c96a;letter-spacing:4px;margin-bottom:6px;">CICLOS DE COSECHA</div>
-      <div style="font-size:14px;color:#94a3b8;margin-bottom:4px;">PALMA GRANDE S.A.S. · Departamento Agronomico</div>
-      <div style="font-size:15px;color:#f0c96a;font-weight:700;">${fecha} · Semana ${sn}</div>
-    </div>
-    <div style="padding:24px 28px;flex:1;display:flex;flex-direction:column;gap:20px;">
+  // ── CALCULOS POR FINCA ──
+  const fincaStats={};
+  ['FINCA 1','FINCA 2','FINCA 3'].forEach(f=>{
+    const ls=LOTES.filter(l=>l.finca===f);
+    let fV=0,fA=0,fR=0,fC=0,fHAen=0,fHAf=0,fHA=0;
+    ls.forEach(l=>{
+      const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+      fHA+=l.ha;
+      if(cs.tipo==='cosechando'){fC++;fHAen+=l.ha;}
+      else if(cs.tipo==='verde'){fV++;fHAen+=l.ha;}
+      else if(cs.tipo==='azul'){fA++;fHAf+=l.ha;}
+      else if(cs.tipo==='rojo'){fR++;fHAf+=l.ha;}
+    });
+    const tot=fV+fA+fR+fC;
+    fincaStats[f]={v:fV+fC,a:fA,r:fR,tot,haEn:fHAen,haF:fHAf,ha:fHA};
+  });
 
+  // ── HTML GERENCIA ──
+  const fincaColors={
+    'FINCA 1':{hdr:'#052e16',txt:'#4ade80',name:'FINCA 1'},
+    'FINCA 2':{hdr:'#1e3a5f',txt:'#60a5fa',name:'FINCA 2'},
+    'FINCA 3':{hdr:'#3b0764',txt:'#c084fc',name:'FINCA 3'},
+  };
+
+  const fincaCols = ['FINCA 1','FINCA 2','FINCA 3'].map(f=>{
+    const s=fincaStats[f];
+    const fc=fincaColors[f];
+    return `<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;flex:1;">
+      <div style="background:${fc.hdr};padding:10px 14px;font-size:14px;font-weight:900;color:${fc.txt};letter-spacing:2px;">🌴 ${fc.name}</div>
+      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:5px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#f0fdf4;border-radius:6px;">
+          <span style="font-size:11px;color:#6b7280;">En ciclo</span>
+          <span style="font-size:13px;font-weight:800;color:#15803d;">${s.v} lotes (${pct(s.v,s.tot)})</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#eff6ff;border-radius:6px;">
+          <span style="font-size:11px;color:#6b7280;">Tolerancia</span>
+          <span style="font-size:13px;font-weight:800;color:#1d4ed8;">${s.a} lotes (${pct(s.a,s.tot)})</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#fef2f2;border-radius:6px;">
+          <span style="font-size:11px;color:#6b7280;">Incumplimiento</span>
+          <span style="font-size:13px;font-weight:800;color:#b91c1c;">${s.r} lotes (${pct(s.r,s.tot)})</span>
+        </div>
+        <div style="height:1px;background:#f3f4f6;margin:3px 0;"></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:#f9fafb;border-radius:6px;font-size:11px;">
+          <span style="color:#6b7280;">HA en ciclo</span>
+          <span style="font-weight:700;color:#15803d;">${fmt(s.haEn)} HA (${pct(s.haEn,s.ha)})</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:#f9fafb;border-radius:6px;font-size:11px;">
+          <span style="color:#6b7280;">HA fuera</span>
+          <span style="font-weight:700;color:#b91c1c;">${fmt(s.haF)} HA (${pct(s.haF,s.ha)})</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;background:#f0f2f5;border-radius:6px;font-size:11px;">
+          <span style="color:#374151;font-weight:600;">Total</span>
+          <span style="font-weight:700;color:#374151;">${fmt(s.ha)} HA</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const gerHTML = `<div style="width:794px;font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;">
+    <div style="background:#0f1117;padding:22px 28px;text-align:center;">
+      <div style="font-size:28px;font-weight:900;color:#f0c96a;letter-spacing:4px;margin-bottom:4px;">CICLOS DE COSECHA</div>
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:3px;">PALMA GRANDE S.A.S. · Departamento Agronomico</div>
+      <div style="font-size:13px;color:#f0c96a;font-weight:700;">${fecha} · Semana ${sn}</div>
+    </div>
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px;">
+
+      <!-- GENERAL -->
       <div>
-        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #e5e7eb;">Estado general de lotes y hectareas</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Estado general</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
           ${[
             {v:nV+nC,l:'Lotes en ciclo',s:pct(nV+nC,lotesActivos),c:'#15803d',bg:'#f0fdf4',bc:'#16a34a'},
             {v:nA,l:'Tolerancia',s:pct(nA,lotesActivos),c:'#1d4ed8',bg:'#eff6ff',bc:'#2563eb'},
             {v:nR,l:'Incumplimiento',s:pct(nR,lotesActivos),c:'#b91c1c',bg:'#fef2f2',bc:'#dc2626'},
-            {v:fmt(haTotal),l:'Total HA',s:'3 fincas · 62 lotes',c:'#b8860b',bg:'#fffbeb',bc:'#b8860b'},
-          ].map(k=>`<div style="background:${k.bg};border-radius:10px;padding:14px 16px;border-left:4px solid ${k.bc};">
-            <div style="font-size:36px;font-weight:800;color:${k.c};line-height:1.1;">${k.v}</div>
-            <div style="font-size:11px;color:#6b7280;margin-top:4px;">${k.l}</div>
-            <div style="font-size:13px;font-weight:700;color:${k.c};margin-top:2px;">${k.s}</div>
+            {v:fmt(haTotal),l:'Total HA',s:'62 lotes · 3 fincas',c:'#b8860b',bg:'#fffbeb',bc:'#b8860b'},
+          ].map(k=>`<div style="background:${k.bg};border-radius:8px;padding:10px 12px;border-left:4px solid ${k.bc};">
+            <div style="font-size:28px;font-weight:900;color:${k.c};line-height:1.1;">${k.v}</div>
+            <div style="font-size:10px;color:#6b7280;margin-top:3px;">${k.l}</div>
+            <div style="font-size:12px;font-weight:700;color:${k.c};margin-top:1px;">${k.s}</div>
           </div>`).join('')}
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="background:#f0fdf4;border-radius:10px;padding:12px 16px;border-left:4px solid #16a34a;">
-            <div style="font-size:28px;font-weight:800;color:#15803d;">${fmt(haEn)} HA</div>
-            <div style="font-size:11px;color:#6b7280;">HA en ciclo · <strong style="color:#15803d;">${pct(haEn,haTotal)} del total</strong></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;border-left:4px solid #16a34a;">
+            <div style="font-size:20px;font-weight:900;color:#15803d;">${fmt(haEn)} HA</div>
+            <div style="font-size:10px;color:#6b7280;">HA en ciclo · <strong style="color:#15803d;">${pct(haEn,haTotal)} del total</strong></div>
           </div>
-          <div style="background:#fef2f2;border-radius:10px;padding:12px 16px;border-left:4px solid #dc2626;">
-            <div style="font-size:28px;font-weight:800;color:#b91c1c;">${fmt(haFuera)} HA</div>
-            <div style="font-size:11px;color:#6b7280;">HA fuera de ciclo · <strong style="color:#b91c1c;">${pct(haFuera,haTotal)} del total</strong></div>
+          <div style="background:#fef2f2;border-radius:8px;padding:8px 12px;border-left:4px solid #dc2626;">
+            <div style="font-size:20px;font-weight:900;color:#b91c1c;">${fmt(haFuera)} HA</div>
+            <div style="font-size:10px;color:#6b7280;">HA fuera de ciclo · <strong style="color:#b91c1c;">${pct(haFuera,haTotal)} del total</strong></div>
           </div>
         </div>
       </div>
 
+      <!-- POR FINCA -->
       <div>
-        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #e5e7eb;">Distribucion de HA por dias del ciclo</div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Estado por finca</div>
+        <div style="display:flex;gap:10px;">${fincaCols}</div>
+      </div>
+
+      <!-- RANGOS -->
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Distribucion de HA por dias del ciclo</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
           ${rangos.map((r,i)=>{
             const cols=['#15803d','#4d7c0f','#854d0e','#9a3412','#b91c1c'];
             const bgs=['#f0fdf4','#f7fee7','#fffbeb','#fff7ed','#fef2f2'];
             const bars=['#16a34a','#84cc16','#eab308','#f97316','#dc2626'];
             const p=haTotalR>0?Math.round(r.ha/haTotalR*100):0;
-            return `<div style="background:${bgs[i]};border-radius:10px;padding:12px;border:1px solid #e5e7eb;">
-              <div style="font-size:10px;color:#6b7280;margin-bottom:6px;">${r.label}</div>
-              <div style="font-size:26px;font-weight:800;color:${cols[i]};line-height:1;">${r.ha>0?fmt(r.ha):'—'}</div>
-              <div style="font-size:11px;color:#9ca3af;margin-top:3px;">${p}%</div>
-              <div style="height:5px;background:#e5e7eb;border-radius:3px;margin-top:8px;">
-                <div style="height:100%;width:${p}%;background:${bars[i]};border-radius:3px;"></div>
+            return `<div style="background:${bgs[i]};border-radius:8px;padding:10px;border:1px solid #e5e7eb;text-align:center;">
+              <div style="font-size:9px;color:#6b7280;margin-bottom:4px;">${r.label}</div>
+              <div style="font-size:20px;font-weight:900;color:${cols[i]};line-height:1;">${r.ha>0?fmt(r.ha):'—'}</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px;">${p}%</div>
+              <div style="height:4px;background:#e5e7eb;border-radius:2px;margin-top:6px;">
+                <div style="height:100%;width:${p}%;background:${bars[i]};border-radius:2px;"></div>
               </div>
             </div>`;
           }).join('')}
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- CRITICOS + PROXIMAS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #e5e7eb;">Lotes criticos</div>
-          ${criticos.slice(0,7).map(c=>`
-          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fef2f2;border-radius:7px;margin-bottom:5px;">
-            <div style="width:10px;height:10px;border-radius:50%;background:#dc2626;flex-shrink:0;"></div>
-            <span style="font-weight:700;font-size:13px;min-width:60px;">Lote ${c.lote}</span>
-            <span style="color:#6b7280;font-size:12px;flex:1;">${c.finca.replace('FINCA ','F')} · ${c.ha} ha</span>
-            <span style="font-weight:800;color:#b91c1c;font-size:13px;">${c.dias} dias</span>
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Lotes criticos</div>
+          ${criticos.slice(0,6).map(c=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:#fef2f2;border-radius:6px;margin-bottom:4px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0;"></div>
+            <span style="font-weight:700;font-size:12px;min-width:52px;">Lote ${c.lote}</span>
+            <span style="color:#6b7280;font-size:11px;flex:1;">${c.finca.replace('FINCA ','F')} · ${c.ha} ha</span>
+            <span style="font-weight:900;color:#b91c1c;font-size:12px;">${c.dias} dias</span>
           </div>`).join('')}
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #e5e7eb;">Proximas entradas</div>
-          ${proxH?`<div style="padding:8px 12px;background:#fef2f2;border-radius:7px;margin-bottom:6px;font-size:13px;">
-            <span style="font-weight:700;color:#b91c1c;">HOY: </span><span>${proxH}</span></div>`:''}
-          ${proxM?`<div style="padding:8px 12px;background:#fff7ed;border-radius:7px;font-size:13px;">
-            <span style="font-weight:700;color:#c2410c;">MANANA: </span><span>${proxM}</span></div>`:''}
-          ${!proxH&&!proxM?`<div style="font-size:12px;color:#9ca3af;font-style:italic;">Sin entradas programadas</div>`:''}
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Proximas entradas</div>
+          ${proxH?`<div style="padding:8px 10px;background:#fef2f2;border-radius:6px;margin-bottom:5px;font-size:12px;">
+            <span style="font-weight:700;color:#b91c1c;">HOY: </span>${proxH}</div>`:''}
+          ${proxM?`<div style="padding:8px 10px;background:#fff7ed;border-radius:6px;font-size:12px;">
+            <span style="font-weight:700;color:#c2410c;">MANANA: </span>${proxM}</div>`:''}
+          ${!proxH&&!proxM?`<div style="font-size:11px;color:#9ca3af;font-style:italic;padding:8px;">Sin entradas programadas</div>`:''}
         </div>
       </div>
 
     </div>
-    <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:10px 28px;display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;">
-      <span>Palma Grande S.A.S. · Departamento Agronomico</span>
-      <span>Sistema de Gestion Agricola</span>
+    <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:8px 22px;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
+      <span>Palma Grande S.A.S. · Dpto. Agronomico</span>
+      <span>Sistema de Gestion Agricola · Generado automaticamente</span>
       <span>Semana ${sn} · ${hoy.getFullYear()} · Pag. 1 de 4</span>
     </div>
   </div>`;
 
-  // Crear contenedor temporal
+  // Contenedor temporal
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-999;background:#fff;';
   wrap.innerHTML = gerHTML;
@@ -1333,7 +1395,6 @@ function exportarPDF(){
   const filtroOrig = filtroFinca;
   const semanasOrig = semanas;
 
-  // Capturar página gerencia
   window.html2canvas(wrap.firstChild,{
     scale:1.5, useCORS:true, backgroundColor:'#fff', logging:false
   }).then(async canvas=>{
@@ -1342,26 +1403,20 @@ function exportarPDF(){
     const imgH=(canvas.height*210)/canvas.width;
     doc.addImage(imgData,'JPEG',0,0,210,Math.min(imgH,297));
 
-    // Páginas por finca
     for(let fi=0;fi<fincas.length;fi++){
       doc.addPage('a4','landscape');
-
-      // Filtrar tabla por finca con 2 semanas
       filtroFinca=fincas[fi];
       semanas=2;
       render();
       await new Promise(r=>setTimeout(r,400));
 
-      // Capturar solo la tabla
       const tableWrap=document.getElementById('table-wrap');
       const snap=document.createElement('div');
       snap.style.cssText='position:fixed;left:-9999px;top:0;background:#fff;width:1122px;';
-
-      // Header mini
       snap.innerHTML=`
         <div style="background:#0f1117;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-family:Arial;font-size:14px;font-weight:900;color:#f0c96a;letter-spacing:2px;">PALMA GRANDE S.A.S.</div>
-          <div style="font-family:Arial;font-size:18px;font-weight:900;color:#fff;letter-spacing:3px;">CICLOS DE COSECHA · ${fincas[fi]}</div>
+          <div style="font-family:Arial;font-size:13px;font-weight:900;color:#f0c96a;letter-spacing:2px;">PALMA GRANDE S.A.S.</div>
+          <div style="font-family:Arial;font-size:17px;font-weight:900;color:#fff;letter-spacing:3px;">CICLOS DE COSECHA · ${fincas[fi]}</div>
           <div style="font-family:Arial;font-size:12px;color:#f0c96a;">${fecha} · Sem ${sn}</div>
         </div>
         <div style="overflow:hidden;">${tableWrap.innerHTML}</div>
@@ -1377,17 +1432,14 @@ function exportarPDF(){
         scale:1.3, useCORS:true, backgroundColor:'#fff', logging:false
       });
       document.body.removeChild(snap);
-
       const snapImg=snapCanvas.toDataURL('image/jpeg',0.92);
       const snapH=(snapCanvas.height*297)/snapCanvas.width;
       doc.addImage(snapImg,'JPEG',0,0,297,Math.min(snapH,210));
     }
 
-    // Restaurar
     filtroFinca=filtroOrig;
     semanas=semanasOrig;
     render();
-
     doc.save('ciclos-cosecha-sem'+sn+'-'+isoDate(hoy)+'.pdf');
     showToast('PDF generado correctamente');
 
@@ -1395,7 +1447,7 @@ function exportarPDF(){
     document.body.removeChild(wrap);
     filtroFinca=filtroOrig;semanas=semanasOrig;render();
     console.error(err);
-    showToast('Error: abre desde GitHub Pages, no local','err');
+    showToast('Error: abre desde GitHub Pages','err');
   });
 }
 
