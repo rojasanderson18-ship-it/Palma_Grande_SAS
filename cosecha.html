@@ -336,7 +336,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="weeks-ctrl">
     <span>Proyección:</span>
     <button onclick="cambiarProyeccion(-1)">−</button>
-    <span class="weeks-val" id="proj-val">2</span>
+    <span class="weeks-val" id="proj-val">0</span>
     <button onclick="cambiarProyeccion(1)">+</button>
   </div>
   <div class="sep"></div>
@@ -1535,7 +1535,7 @@ function exportarPDF(){
 // =============================================
 // PROYECCIÓN TOGGLE
 // =============================================
-let semanasProyeccion = 2;
+let semanasProyeccion = 0;
 
 function cambiarProyeccion(d){
   semanasProyeccion = Math.max(0, semanasProyeccion + d);
