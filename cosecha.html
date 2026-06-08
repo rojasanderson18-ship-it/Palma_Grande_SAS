@@ -232,6 +232,30 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .btn-wa-cancel{background:#f3f4f6;color:#6b7280;border:none;padding:9px 16px;border-radius:8px;font-size:12px;cursor:pointer;}
 .btn-home{display:flex;align-items:center;gap:5px;background:#f8f9fa;border:1px solid #e5e7eb;color:#6b7280;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:500;cursor:pointer;text-decoration:none;flex-shrink:0;}
 .btn-home:hover{border-color:#b8860b;color:#b8860b;}
+
+/* ===== CALCULADORA ===== */
+.calc-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px;}
+.calc-title{font-size:12px;font-weight:600;color:#1a1f2e;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.calc-input-row{display:flex;flex-direction:column;gap:4px;}
+.calc-label{font-size:11px;color:#6b7280;font-weight:500;}
+.calc-input{background:#f8f9fa;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:600;color:#1a1f2e;font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border .2s;}
+.calc-input:focus{border-color:#b8860b;}
+.calc-result{background:#f0f2f5;border-radius:10px;padding:12px 14px;}
+.calc-result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.calc-res-card{background:#fff;border-radius:8px;padding:10px 12px;text-align:center;border:1px solid #e5e7eb;}
+.calc-res-val{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;}
+.calc-res-lbl{font-size:10px;color:#6b7280;margin-top:2px;}
+.crv-gold{color:#b8860b;}.crv-verde{color:#15803d;}.crv-azul{color:#1d4ed8;}.crv-rojo{color:#b91c1c;}
+.calc-finca-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.calc-finca-card{border-radius:8px;padding:10px;border-left:4px solid;}
+.cfc-f1{background:#f0fdf4;border-color:#16a34a;}
+.cfc-f2{background:#eff6ff;border-color:#2563eb;}
+.cfc-f3{background:#faf5ff;border-color:#7c3aed;}
+.calc-finca-name{font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.calc-finca-stat{display:flex;justify-content:space-between;font-size:11px;margin-top:3px;}
+.calc-finca-lbl{color:#6b7280;}
+.calc-finca-val{font-weight:700;}
 </style>
 </head>
 <body>
@@ -376,6 +400,49 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="dash-card">
         <div class="dash-title">🗓️ Próximas entradas</div>
         <div id="dash-proximas"><p style="font-size:11px;color:#9ca3af;font-style:italic;">Sin datos aún</p></div>
+      </div>
+    </div>
+
+    <!-- CALCULADORA PERSONAL -->
+    <div class="calc-card">
+      <div class="calc-title">👷 Calculadora de Personal</div>
+      <div class="calc-grid">
+        <div class="calc-input-row">
+          <label class="calc-label">Rendimiento por persona (HA/día)</label>
+          <input type="number" class="calc-input" id="calc-rendimiento" value="2.3" step="0.1" min="0.1" oninput="calcularPersonal()"/>
+        </div>
+        <div class="calc-input-row">
+          <label class="calc-label">Días disponibles (lun-sáb)</label>
+          <input type="number" class="calc-input" id="calc-dias" value="6" min="1" max="30" oninput="calcularPersonal()"/>
+        </div>
+      </div>
+      <div class="calc-result">
+        <div class="calc-result-grid">
+          <div class="calc-res-card"><div class="calc-res-val crv-rojo" id="cr-total">—</div><div class="calc-res-lbl">Personas total</div></div>
+          <div class="calc-res-card"><div class="calc-res-val crv-verde" id="cr-f1">—</div><div class="calc-res-lbl">Finca 1</div></div>
+          <div class="calc-res-card"><div class="calc-res-val crv-azul" id="cr-f2">—</div><div class="calc-res-lbl">Finca 2</div></div>
+          <div class="calc-res-card"><div class="calc-res-val" style="color:#7c3aed;" id="cr-f3">—</div><div class="calc-res-lbl">Finca 3</div></div>
+        </div>
+        <div class="calc-finca-grid">
+          <div class="calc-finca-card cfc-f1">
+            <div class="calc-finca-name">🌴 Finca 1</div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">HA fuera ciclo</span><span class="calc-finca-val" id="cf1-ha">—</span></div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">HA a cosechar/día</span><span class="calc-finca-val" id="cf1-dia">—</span></div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">Personas</span><span class="calc-finca-val" style="color:#15803d;" id="cf1-per">—</span></div>
+          </div>
+          <div class="calc-finca-card cfc-f2">
+            <div class="calc-finca-name">🌴 Finca 2</div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">HA fuera ciclo</span><span class="calc-finca-val" id="cf2-ha">—</span></div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">HA a cosechar/día</span><span class="calc-finca-val" id="cf2-dia">—</span></div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">Personas</span><span class="calc-finca-val" style="color:#1d4ed8;" id="cf2-per">—</span></div>
+          </div>
+          <div class="calc-finca-card cfc-f3">
+            <div class="calc-finca-name">🌴 Finca 3</div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">HA fuera ciclo</span><span class="calc-finca-val" id="cf3-ha">—</span></div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">HA a cosechar/día</span><span class="calc-finca-val" id="cf3-dia">—</span></div>
+            <div class="calc-finca-stat"><span class="calc-finca-lbl">Personas</span><span class="calc-finca-val" style="color:#7c3aed;" id="cf3-per">—</span></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -970,7 +1037,7 @@ function setTab(t){
     if(panel) panel.classList.toggle('active', id===t);
   });
   if(t==='dashboard'){ 
-    setTimeout(()=>calcularDashboard(), 50);
+    setTimeout(()=>{ calcularDashboard(); calcularPersonal(); }, 50);
   }
 }
 
@@ -1606,6 +1673,59 @@ function toggleEdicion(){
     alert('PIN incorrecto');
   }
 }
+
+// ===== CALCULADORA PERSONAL =====
+function calcularPersonal(){
+  const hoy = hoyLocal();
+  const rendimiento = parseFloat(document.getElementById('calc-rendimiento').value) || 2.3;
+  const dias = parseInt(document.getElementById('calc-dias').value) || 6;
+
+  // Contar dias habiles (lun-sab, sin festivos)
+  let diasHabiles = 0;
+  for(let i=0;i<dias;i++){
+    const d=new Date(hoy);
+    d.setDate(d.getDate()+i);
+    const dow=d.getDay();
+    if(dow!==0 && !esFestivo(d)) diasHabiles++;
+  }
+  if(diasHabiles===0) diasHabiles=1;
+
+  const fincas=['FINCA 1','FINCA 2','FINCA 3'];
+  const ids=['f1','f2','f3'];
+  let totalHA=0, totalPersonas=0;
+
+  fincas.forEach((finca,i)=>{
+    let haFuera=0;
+    LOTES.filter(l=>l.finca===finca).forEach(l=>{
+      const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+      if(cs.tipo==='azul'||cs.tipo==='rojo') haFuera+=l.ha;
+    });
+
+    const haPorDia = haFuera / diasHabiles;
+    const personas = Math.ceil(haPorDia / rendimiento);
+    totalHA += haFuera;
+    totalPersonas += personas;
+
+    document.getElementById('c'+ids[i]+'-ha').textContent = haFuera.toLocaleString('es-CO')+' HA';
+    document.getElementById('c'+ids[i]+'-dia').textContent = haPorDia.toFixed(1)+' HA';
+    document.getElementById('c'+ids[i]+'-per').textContent = personas+' personas';
+  });
+
+  document.getElementById('cr-total').textContent = totalPersonas;
+  document.getElementById('cr-f1').textContent = Math.ceil(LOTES.filter(l=>l.finca==='FINCA 1').reduce((s,l)=>{
+    const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+    return s+(cs.tipo==='azul'||cs.tipo==='rojo'?l.ha:0);
+  },0)/diasHabiles/rendimiento);
+  document.getElementById('cr-f2').textContent = Math.ceil(LOTES.filter(l=>l.finca==='FINCA 2').reduce((s,l)=>{
+    const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+    return s+(cs.tipo==='azul'||cs.tipo==='rojo'?l.ha:0);
+  },0)/diasHabiles/rendimiento);
+  document.getElementById('cr-f3').textContent = Math.ceil(LOTES.filter(l=>l.finca==='FINCA 3').reduce((s,l)=>{
+    const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+    return s+(cs.tipo==='azul'||cs.tipo==='rojo'?l.ha:0);
+  },0)/diasHabiles/rendimiento);
+}
+
 function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
