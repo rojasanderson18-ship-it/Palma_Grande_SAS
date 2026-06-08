@@ -806,25 +806,27 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // =============================================
 // GAS
 // =============================================
-const GAS_URL2='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
+// GAS_URL already declared above
 async function enviarGAS(payload){
-  if(GAS_URL2==='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec') return;
-  try{ await fetch(GAS_URL2,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}}); }catch(e){}
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  try{ await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}}); }catch(e){}
 }
 async function cargarGAS(){
-  if(GAS_URL2==='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec') return;
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
   try{
-    const r=await fetch(GAS_URL2+'?accion=obtenerMarcas');
-    const data=await r.json();
+    const r=await fetch(GAS_URL+'?accion=obtenerCosecha', {
+      method:'GET',
+      redirect:'follow',
+      mode:'cors',
+      credentials:'omit',
+    });
+    const text=await r.text();
+    const data=JSON.parse(text);
     if(data&&data.marcas){
-      marcas={};
-      data.marcas.forEach(row=>{
-        if(!marcas[row.key]) marcas[row.key]={};
-        marcas[row.key][row.fecha]=true;
-      });
+      marcas=data.marcas;
       guardarLocal();
     }
-  }catch(e){}
+  }catch(e){ console.error('Error GAS:',e); }
 }
 
 // =============================================
