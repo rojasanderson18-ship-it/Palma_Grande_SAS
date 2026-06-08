@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"/>
+<title>Palma Grande S.A.S.</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb;}
+.logo-wrap{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:42px;height:42px;background:linear-gradient(145deg,#b8860b,#f0c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(184,134,11,.25);}
+.brand{display:flex;flex-direction:column;}
+.brand-name{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2.5px;color:#b8860b;line-height:1;}
+.brand-sub{font-size:10px;color:#9ca3af;letter-spacing:.8px;text-transform:uppercase;margin-top:1px;}
+.header-info{text-align:right;}
+.header-fecha{font-family:'DM Mono',monospace;font-size:13px;color:#374151;font-weight:500;}
+.header-sem{font-size:10px;color:#9ca3af;margin-top:2px;}
+
+/* HERO */
+.hero{padding:48px 28px 32px;text-align:center;}
+.hero-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#9ca3af;font-weight:500;margin-bottom:10px;}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:5px;color:#1a1f2e;line-height:1;}
+.hero-title span{color:#b8860b;}
+.hero-line{width:48px;height:3px;background:linear-gradient(90deg,#b8860b,#f0c96a);border-radius:2px;margin:16px auto 0;}
+
+/* STATS ROW */
+.stats-row{display:flex;justify-content:center;gap:40px;padding:0 28px 36px;}
+.stat-item{text-align:center;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:#1a1f2e;line-height:1;}
+.stat-lbl{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;}
+
+/* MÓDULOS */
+.modulos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 28px 48px;max-width:960px;margin:0 auto;width:100%;}
+
+.mod-card{border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s;text-decoration:none;display:flex;flex-direction:column;position:relative;}
+.mod-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.14);}
+
+/* Fondos por módulo */
+.mc-cosecha{background:linear-gradient(160deg,#064e20 0%,#0a5c26 50%,#052e16 100%);}
+.mc-mantto{background:linear-gradient(160deg,#1e3a5f 0%,#1e40af 50%,#0f172a 100%);}
+.mc-sanidad{background:linear-gradient(160deg,#4c1d95 0%,#6d28d9 50%,#2e1065 100%);}
+
+.mod-top{padding:32px 24px 24px;flex:1;}
+.mod-emoji{font-size:36px;margin-bottom:16px;display:block;opacity:.9;}
+.mod-titulo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#fff;line-height:1;margin-bottom:6px;}
+.mod-subtitulo{font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.5px;}
+
+.mod-divider{height:1px;background:rgba(255,255,255,.1);margin:0 24px;}
+
+.mod-labores{padding:18px 24px;display:flex;flex-direction:column;gap:8px;}
+.labor-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.labor-name{font-size:12px;color:rgba(255,255,255,.75);font-weight:400;}
+.labor-ciclo{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:10px;}
+
+.mod-footer{padding:14px 24px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}
+.mod-status{font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+.ms-activo{color:#4ade80;}.ms-pronto{color:rgba(255,255,255,.3);}
+.mod-arrow{font-size:18px;color:rgba(255,255,255,.3);transition:color .2s,transform .2s;}
+.mod-card:hover .mod-arrow{color:rgba(255,255,255,.8);transform:translateX(4px);}
+
+/* FOOTER */
+.footer{margin-top:auto;padding:14px 28px;text-align:center;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;background:#fff;}
+
+@media(max-width:640px){
+  .modulos{grid-template-columns:1fr;}
+  .stats-row{gap:24px;}
+  .hero-title{font-size:34px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <div class="logo-icon">🌴</div>
+    <div class="brand">
+      <div class="brand-name">Palma Grande</div>
+      <div class="brand-sub">Sistema de Gestión Agrícola</div>
+    </div>
+  </div>
+  <div class="header-info">
+    <div class="header-fecha" id="hdr-fecha">—</div>
+    <div class="header-sem" id="hdr-sem">—</div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">Panel de control</div>
+  <div class="hero-title">GESTIÓN <span>AGRÍCOLA</span></div>
+  <div class="hero-line"></div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-item"><div class="stat-num">62</div><div class="stat-lbl">Lotes</div></div>
+  <div class="stat-item"><div class="stat-num">3</div><div class="stat-lbl">Fincas</div></div>
+  <div class="stat-item"><div class="stat-num">1.056</div><div class="stat-lbl">Hectáreas</div></div>
+  <div class="stat-item"><div class="stat-num">7</div><div class="stat-lbl">Labores</div></div>
+</div>
+
+<div class="modulos">
+
+  <!-- COSECHA -->
+  <a class="mod-card mc-cosecha" href="cosecha.html">
+    <div class="mod-top">
+      <span class="mod-emoji">🌴</span>
+      <div class="mod-titulo">Cosecha</div>
+      <div class="mod-subtitulo">Control de ciclos por lote</div>
+    </div>
+    <div class="mod-divider"></div>
+    <div class="mod-labores">
+      <div class="labor-row"><span class="labor-name">Guineensis</span><span class="labor-ciclo">11–12 días</span></div>
+      <div class="labor-row"><span class="labor-name">Híbrido</span><span class="labor-ciclo">21–22 días</span></div>
+    </div>
+    <div class="mod-footer">
+      <span class="mod-status ms-activo">● Activo</span>
+      <span class="mod-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- MANTENIMIENTO -->
+  <a class="mod-card mc-mantto" href="mantenimiento.html">
+    <div class="mod-top">
+      <span class="mod-emoji">🔧</span>
+      <div class="mod-titulo">Mantenimiento</div>
+      <div class="mod-subtitulo">Labores culturales del cultivo</div>
+    </div>
+    <div class="mod-divider"></div>
+    <div class="mod-labores">
+      <div class="labor-row"><span class="labor-name">Poda Guineensis</span><span class="labor-ciclo">11 meses</span></div>
+      <div class="labor-row"><span class="labor-name">Poda Híbrido</span><span class="labor-ciclo">8 meses</span></div>
+      <div class="labor-row"><span class="labor-name">Rocería</span><span class="labor-ciclo">3 meses</span></div>
+      <div class="labor-row"><span class="labor-name">Rotospeed</span><span class="labor-ciclo">3 meses</span></div>
+      <div class="labor-row"><span class="labor-name">Rolo</span><span class="labor-ciclo">6 meses</span></div>
+    </div>
+    <div class="mod-footer">
+      <span class="mod-status ms-pronto">● En desarrollo</span>
+      <span class="mod-arrow">→</span>
+    </div>
+  </a>
+
+  <!-- SANIDAD -->
+  <a class="mod-card mc-sanidad" href="sanidad.html">
+    <div class="mod-top">
+      <span class="mod-emoji">🧪</span>
+      <div class="mod-titulo">Sanidad</div>
+      <div class="mod-subtitulo">Monitoreo y control fitosanitario</div>
+    </div>
+    <div class="mod-divider"></div>
+    <div class="mod-labores">
+      <div class="labor-row"><span class="labor-name">Trampas Rhynchophorus</span><span class="labor-ciclo">15 días</span></div>
+      <div class="labor-row"><span class="labor-name">Censo enfermedades</span><span class="labor-ciclo">30 días</span></div>
+      <div class="labor-row"><span class="labor-name">Control PC</span><span class="labor-ciclo">30 días</span></div>
+    </div>
+    <div class="mod-footer">
+      <span class="mod-status ms-pronto">● En desarrollo</span>
+      <span class="mod-arrow">→</span>
+    </div>
+  </a>
+
+</div>
+
+<div class="footer">Palma Grande S.A.S. · 2026</div>
+
+<script>
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function hoyLocal(){
+  const now=new Date();
+  return new Date(now.getTime()+now.getTimezoneOffset()*60000-5*3600000);
+}
+function semanaNum(d){
+  const j1=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-j1)/86400000+j1.getDay()+1)/7);
+}
+const hoy=hoyLocal();
+document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
+document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
+</script>
+</body>
+</html>
