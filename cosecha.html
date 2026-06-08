@@ -1411,12 +1411,13 @@ function exportarPDF(){
       await new Promise(r=>setTimeout(r,400));
 
       // Desactivar position:sticky temporalmente para captura correcta
-      const stickyEls = document.querySelectorAll('.col-finca,.col-lote,.col-ha,.col-freq,.col-estado');
+      const stickyEls = document.querySelectorAll('.col-finca,.col-lote,.col-ha,.col-freq,.col-estado,.ciclos-table thead th');
       const origStyles = [];
       stickyEls.forEach(el=>{
-        origStyles.push({el, pos:el.style.position, left:el.style.left, zIndex:el.style.zIndex});
+        origStyles.push({el, pos:el.style.position, left:el.style.left, top:el.style.top, zIndex:el.style.zIndex});
         el.style.position='relative';
         el.style.left='auto';
+        el.style.top='auto';
         el.style.zIndex='auto';
       });
 
@@ -1460,6 +1461,8 @@ function exportarPDF(){
       tableClone.querySelectorAll('th,td').forEach(el=>{
         el.style.position='relative';
         el.style.left='auto';
+        el.style.top='auto';
+        el.style.zIndex='auto';
       });
       snap.children[1].appendChild(tableClone);
       document.body.appendChild(snap);
@@ -1478,7 +1481,7 @@ function exportarPDF(){
       document.body.removeChild(snap);
 
       // Restaurar sticky
-      origStyles.forEach(s=>{ s.el.style.position=s.pos; s.el.style.left=s.left; s.el.style.zIndex=s.zIndex; });
+      origStyles.forEach(s=>{ s.el.style.position=s.pos; s.el.style.left=s.left; s.el.style.top=s.top||''; s.el.style.zIndex=s.zIndex; });
       tableWrapEl.style.overflow=origOverflow;
       tableWrapEl.style.height=origHeight;
 
