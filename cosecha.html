@@ -51,15 +51,37 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
 .hint{font-size:11px;color:var(--muted);font-style:italic;}
 
-.table-wrap{overflow-x:auto;padding:0 0 40px;}
+.table-wrap{
+  overflow:auto;
+  padding:0;
+  height:calc(100vh - 240px);
+  min-height:300px;
+}
+.ciclos-table thead th{
+  position:sticky;
+  z-index:15;
+  background:var(--surface2);
+}
+.ciclos-table thead tr:nth-child(1) th{top:0;}
+.ciclos-table thead tr:nth-child(2) th{top:23px;}
+.ciclos-table thead tr:nth-child(3) th{top:41px;}
+
+
 .ciclos-table{border-collapse:collapse;font-size:11px;}
 .ciclos-table th,.ciclos-table td{border:1px solid var(--border);white-space:nowrap;}
 
-.col-finca{width:36px;min-width:36px;position:sticky;left:0;z-index:10;background:var(--surface);}
-.col-lote{width:44px;min-width:44px;position:sticky;left:36px;z-index:10;background:var(--surface);}
-.col-ha{width:30px;min-width:30px;position:sticky;left:80px;z-index:10;background:var(--surface);}
-.col-freq{width:72px;min-width:72px;position:sticky;left:110px;z-index:10;background:var(--surface);}
-.col-estado{width:90px;min-width:90px;position:sticky;left:182px;z-index:10;background:var(--surface);}
+
+.col-finca{width:36px;min-width:36px;position:sticky;left:0;z-index:25;background:var(--surface);}
+.col-lote{width:44px;min-width:44px;position:sticky;left:36px;z-index:25;background:var(--surface);}
+.col-ha{width:30px;min-width:30px;position:sticky;left:80px;z-index:25;background:var(--surface);}
+.col-freq{width:72px;min-width:72px;position:sticky;left:110px;z-index:25;background:var(--surface);}
+.col-estado{width:90px;min-width:90px;position:sticky;left:182px;z-index:25;background:var(--surface);}
+/* Corner cells: sticky both top and left */
+.ciclos-table thead th.col-finca,
+.ciclos-table thead th.col-lote,
+.ciclos-table thead th.col-ha,
+.ciclos-table thead th.col-freq,
+.ciclos-table thead th.col-estado{z-index:35;background:var(--surface2);}
 
 .th-semana{background:var(--surface2);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;text-align:center;padding:4px 4px;}
 .th-fecha{background:var(--surface2);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;text-align:center;padding:2px 1px;}
@@ -294,6 +316,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 </div>
 
 <div class="toolbar">
+  <button class="btn-filter" id="btn-toggle-panel" onclick="togglePanel()" style="display:flex;align-items:center;gap:5px;">⬆ Ocultar panel</button>
 
   <button class="btn-filter active" id="bf-todas" onclick="setFinca('todas')">Todas</button>
   <button class="btn-filter" id="bf-f1" onclick="setFinca('FINCA 1')">Finca 1</button>
@@ -1112,6 +1135,25 @@ function enviarWA(){
   cerrarModalWA();
 }
 
+
+function togglePanel(){
+  const els = [
+    document.querySelector('.ind-section'),
+    document.querySelector('.stats-bar'),
+    document.querySelector('.alertas-banner'),
+    document.querySelector('.legend'),
+  ];
+  const btn = document.getElementById('btn-toggle-panel');
+  const hidden = btn.textContent.includes('Mostrar');
+  els.forEach(el=>{ if(el) el.style.display = hidden ? '' : 'none'; });
+  btn.innerHTML = hidden ? '⬆ Ocultar panel' : '⬇ Mostrar panel';
+  // Recalculate table height
+  const toolbar = document.querySelector('.toolbar');
+  const tabs = document.querySelector('.tabs-bar');
+  const usedH = (toolbar?toolbar.offsetHeight:0) + (tabs?tabs.offsetHeight:0) +
+    (hidden?0:els.reduce((s,el)=>s+(el?el.offsetHeight:0),0));
+  document.querySelector('.table-wrap').style.height = (window.innerHeight - usedH - 10) + 'px';
+}
 function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
