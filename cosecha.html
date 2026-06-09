@@ -964,9 +964,10 @@ async function enviarGAS(payload){
     if(p.tipo)  url+='&tipo='+encodeURIComponent(p.tipo);
     if(p.labor) url+='&labor='+encodeURIComponent(p.labor);
     if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
-    console.log('Enviando al GAS:', url.substring(0,120));
+    console.log('Enviando al GAS:', url);
     script.src=url;
     document.body.appendChild(script);
+    script.onload=()=>console.log('Script GAS cargado OK');
   });
 }
 async function cargarGAS(){
