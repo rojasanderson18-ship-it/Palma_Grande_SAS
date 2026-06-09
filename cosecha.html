@@ -943,27 +943,14 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // GAS_URL already declared above
 async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  return new Promise((resolve)=>{
-    const cbName='_cb'+Date.now();
-    const script=document.createElement('script');
-    window[cbName]=(data)=>{
-      delete window[cbName];
-      if(document.body.contains(script)) document.body.removeChild(script);
-      console.log('GAS respuesta:', JSON.stringify(data));
-      resolve(data);
-    };
-    script.onerror=(err)=>{
-      delete window[cbName];
-      if(document.body.contains(script)) document.body.removeChild(script);
-      console.error('GAS error script:', err);
-      resolve(null);
-    };
-    const params=encodeURIComponent(JSON.stringify(payload));
-    const url=GAS_URL+'?payload='+params+'&callback='+cbName;
-    console.log('Enviando GAS:', payload.accion, url.substring(0,80)+'...');
-    script.src=url;
-    document.body.appendChild(script);
-  });
+  try{
+    // no-cors: no podemos leer la respuesta pero el POST llega al GAS
+    await fetch(GAS_URL, {
+      method:'POST',
+      mode:'no-cors',
+      body:JSON.stringify(payload),
+    });
+  }catch(e){ console.error('enviarGAS error:',e); }
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
@@ -1006,12 +993,8 @@ async function sincronizarPendientes(){
   });
   if(todasMarcas.length===0){ showToast('Sin datos para sincronizar'); return; }
   showToast('Sincronizando '+todasMarcas.length+' registros...');
-  const result = await enviarGAS({accion:'sincronizarCosecha',marcas:todasMarcas});
-  if(result&&result.ok){
-    showToast('✓ '+todasMarcas.length+' registros sincronizados');
-  } else {
-    showToast('Error al sincronizar','err');
-  }
+  await enviarGAS({accion:'sincronizarCosecha',marcas:todasMarcas});
+  showToast('✓ Sincronización enviada — verifica en 30 seg');
 }
 
 // =============================================
