@@ -1739,6 +1739,7 @@ function toggleEdicion(){
     document.getElementById('btn-editar').style.color='';
     document.getElementById('btn-editar').style.borderColor='';
     render();
+    publicarAlSheet();
     return;
   }
   const pin=prompt('Ingresa el PIN para editar:');
@@ -1844,15 +1845,25 @@ function init(){
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
   cargarLocal();
-  cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
-  setTimeout(()=>{ cargarCalc(); }, 300);
-  // Auto-sync cada 30 segundos - actualiza desde GAS sin importar el dispositivo
-  setInterval(async ()=>{
-    if(modoEdicion) return;
-    await cargarGAS();
+  // Si localStorage está vacío = otro dispositivo = cargar del Sheet
+  const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
+  if(totalLocal === 0){
+    // Otro dispositivo - cargar del Sheet
+    cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
+    // Actualizar cada 30 segundos
+    setInterval(async ()=>{
+      await cargarGAS();
+      render();
+      actualizarAlertas();
+    }, 30*1000);
+  } else {
+    // Tu PC - usar localStorage, nunca cargar del Sheet
     render();
     actualizarAlertas();
-  }, 30*1000);
+    setInterval(()=>{ if(!modoEdicion) render(); }, 60*1000);
+  }
+  setTimeout(()=>{ cargarCalc(); }, 300);
+
   actualizarAlertas();
 }
 document.addEventListener('DOMContentLoaded',init);
