@@ -943,32 +943,18 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // GAS_URL already declared above
 async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  return new Promise((resolve)=>{
-    const cbName='_cb'+Date.now();
-    const script=document.createElement('script');
-    window[cbName]=(data)=>{
-      delete window[cbName];
-      if(document.body.contains(script)) document.body.removeChild(script);
-      resolve(data);
-    };
-    script.onerror=()=>{
-      delete window[cbName];
-      if(document.body.contains(script)) document.body.removeChild(script);
-      resolve(null);
-    };
-    // Build URL params from payload fields directly
-    const p = payload;
-    let url = GAS_URL+'?callback='+cbName+'&accion='+encodeURIComponent(p.accion||'');
-    if(p.key)   url+='&key='+encodeURIComponent(p.key);
-    if(p.fecha) url+='&fecha='+encodeURIComponent(p.fecha);
-    if(p.tipo)  url+='&tipo='+encodeURIComponent(p.tipo);
-    if(p.labor) url+='&labor='+encodeURIComponent(p.labor);
-    if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
-    console.log('Enviando al GAS:', url);
-    script.src=url;
-    document.body.appendChild(script);
-    script.onload=()=>console.log('Script GAS cargado OK');
-  });
+  // Construir URL con parámetros GET
+  const p = payload;
+  let url = GAS_URL+'?accion='+encodeURIComponent(p.accion||'');
+  if(p.key)    url+='&key='+encodeURIComponent(p.key);
+  if(p.fecha)  url+='&fecha='+encodeURIComponent(p.fecha);
+  if(p.tipo)   url+='&tipo='+encodeURIComponent(p.tipo);
+  if(p.labor)  url+='&labor='+encodeURIComponent(p.labor);
+  if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
+  try{
+    // no-cors: el dato llega al GAS aunque no podamos leer la respuesta
+    await fetch(url, {method:'GET', mode:'no-cors'});
+  }catch(e){ console.error('enviarGAS error:',e); }
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
