@@ -270,10 +270,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <a class="btn-home" href="index.html">← Inicio</a><div class="header-title">CICLOS DE COSECHA</div>
   <button class="btn-filter" style="background:#25d366;color:#fff;border-color:#25d366;font-size:11px;padding:6px 12px;flex-shrink:0;" onclick="abrirModalWA()">📲 Compartir</button>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+  <div style="display:flex;flex-direction:column;align-items:flex-end;">
     <div class="header-fecha" id="hdr-fecha">—</div>
     <div class="header-semana" id="hdr-sem">Semana —</div>
-    <div id="sync-status" style="font-size:10px;font-family:'DM Mono',monospace;"></div>
   </div>
 </div>
 
@@ -370,12 +369,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
   <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
-  <div class="sep"></div>
-  <button class="btn-filter" onclick="forzarSync()" style="color:#2563eb;border-color:#93c5fd;" title="Recargar datos del servidor">🔄 Sincronizar</button>
-  <div class="sep"></div>
-  <button class="btn-filter" onclick="exportarDatos()" style="color:#7c3aed;border-color:#c4b5fd;" title="Descargar respaldo de datos">💾 Respaldo</button>
-  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDatos(event)"/>
-  <button class="btn-filter" onclick="document.getElementById('import-file').click()" style="color:#065f46;border-color:#6ee7b7;" title="Restaurar datos desde respaldo">📂 Restaurar</button>
 </div>
 
 <div class="table-wrap" id="table-wrap"></div>
@@ -957,117 +950,28 @@ async function enviarGAS(payload){
     });
   }catch(e){}
 }
-function setSyncStatus(estado){
-  // estado: 'cargando' | 'ok' | 'error'
-  let el = document.getElementById('sync-status');
-  if(!el) return;
-  if(estado==='cargando'){
-    el.textContent='🔄 Cargando datos...';
-    el.style.color='#b8860b';
-  } else if(estado==='ok'){
-    el.textContent='✓ Sincronizado';
-    el.style.color='#15803d';
-    setTimeout(()=>{ if(el.textContent==='✓ Sincronizado') el.textContent=''; }, 4000);
-  } else {
-    el.textContent='⚠ Sin conexión al servidor';
-    el.style.color='#b91c1c';
-  }
-}
-
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  setSyncStatus('cargando');
   return new Promise((resolve)=>{
     const cbName='_cb'+Date.now();
     const script=document.createElement('script');
-    let resuelto=false;
-
-    // Timeout de 10 segundos
-    const timer = setTimeout(()=>{
-      if(resuelto) return;
-      resuelto=true;
-      delete window[cbName];
-      if(document.body.contains(script)) document.body.removeChild(script);
-      setSyncStatus('error');
-      resolve();
-    }, 10000);
-
     window[cbName]=(data)=>{
-      if(resuelto) return;
-      resuelto=true;
-      clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
       if(data&&data.marcas){
-        const gasKeys = Object.keys(data.marcas);
-        if(gasKeys.length > 0){
-          // Fusionar: GAS gana en conflicto pero no borra datos locales
-          Object.entries(data.marcas).forEach(([k,v])=>{ marcas[k]=Object.assign({},marcas[k]||{},v); });
-          guardarLocal();
-          setSyncStatus('ok');
-        } else {
-          // GAS devolvió vacío — NO sobreescribir datos locales
-          setSyncStatus('error');
-        }
-      } else {
-        setSyncStatus('error');
+        marcas = data.marcas;
+        guardarLocal();
       }
       resolve();
     };
     script.onerror=()=>{
-      if(resuelto) return;
-      resuelto=true;
-      clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
-      setSyncStatus('error');
       resolve();
     };
     script.src=GAS_URL+'?accion=obtenerCosecha&callback='+cbName;
     document.body.appendChild(script);
   });
-}
-
-function exportarDatos(){
-  const hoy = hoyLocal();
-  const nombre = 'ciclos_respaldo_'+isoDate(hoy)+'.json';
-  const json = JSON.stringify(marcas, null, 2);
-  const blob = new Blob([json], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = nombre;
-  a.click();
-  showToast('✓ Respaldo descargado: '+nombre);
-}
-
-function importarDatos(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const data = JSON.parse(e.target.result);
-      const keys = Object.keys(data);
-      if(keys.length === 0){ showToast('El archivo está vacío','err'); return; }
-      // Fusionar con datos actuales
-      keys.forEach(k=>{ marcas[k] = Object.assign({}, marcas[k]||{}, data[k]); });
-      guardarLocal();
-      render();
-      actualizarAlertas();
-      showToast('✓ '+keys.length+' lotes restaurados');
-    }catch(ex){
-      showToast('Error al leer el archivo','err');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value='';
-}
-
-async function forzarSync(){
-  showToast('Cargando datos del servidor...');
-  await cargarGAS();
-  render();
-  actualizarAlertas();
 }
 
 async function sincronizarPendientes(){
@@ -1980,25 +1884,28 @@ function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
-  // Cargar localStorage primero
   cargarLocal();
-  // Si localStorage está vacío, usar datos de respaldo embebidos
-  const totalLocal = Object.keys(marcas).length;
+  // Si localStorage está vacío, cargar respaldo embebido primero
+  const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
   if(totalLocal === 0){
-    Object.entries(DATOS_RESPALDO).forEach(([k,v])=>{ marcas[k]=Object.assign({},v); });
+    marcas = JSON.parse(JSON.stringify(DATOS_RESPALDO));
     guardarLocal();
-  }
-  render();
-  actualizarAlertas();
-  // Siempre sincronizar con GAS al iniciar para que todos los dispositivos tengan los mismos datos
-  cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
-  // Actualizar desde GAS cada 30 segundos en todos los dispositivos
-  setInterval(async ()=>{
-    await cargarGAS();
+    // Intentar actualizar desde GAS por si tiene datos más recientes
+    cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
+    setInterval(async ()=>{
+      await cargarGAS();
+      render();
+      actualizarAlertas();
+    }, 30*1000);
+  } else {
+    // Tu PC - usar localStorage, nunca cargar del Sheet
     render();
     actualizarAlertas();
-  }, 30*1000);
+    setInterval(()=>{ if(!modoEdicion) render(); }, 60*1000);
+  }
   setTimeout(()=>{ cargarCalc(); }, 300);
+
+  actualizarAlertas();
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
