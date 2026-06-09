@@ -270,9 +270,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <a class="btn-home" href="index.html">← Inicio</a><div class="header-title">CICLOS DE COSECHA</div>
   <button class="btn-filter" style="background:#25d366;color:#fff;border-color:#25d366;font-size:11px;padding:6px 12px;flex-shrink:0;" onclick="abrirModalWA()">📲 Compartir</button>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;">
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
     <div class="header-fecha" id="hdr-fecha">—</div>
     <div class="header-semana" id="hdr-sem">Semana —</div>
+    <div id="sync-status" style="font-size:10px;font-family:'DM Mono',monospace;"></div>
   </div>
 </div>
 
@@ -369,6 +370,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
   <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
+  <div class="sep"></div>
+  <button class="btn-filter" onclick="forzarSync()" style="color:#2563eb;border-color:#93c5fd;" title="Recargar datos del servidor">🔄 Sincronizar</button>
 </div>
 
 <div class="table-wrap" id="table-wrap"></div>
@@ -950,28 +953,75 @@ async function enviarGAS(payload){
     });
   }catch(e){}
 }
+function setSyncStatus(estado){
+  // estado: 'cargando' | 'ok' | 'error'
+  let el = document.getElementById('sync-status');
+  if(!el) return;
+  if(estado==='cargando'){
+    el.textContent='🔄 Cargando datos...';
+    el.style.color='#b8860b';
+  } else if(estado==='ok'){
+    el.textContent='✓ Sincronizado';
+    el.style.color='#15803d';
+    setTimeout(()=>{ if(el.textContent==='✓ Sincronizado') el.textContent=''; }, 4000);
+  } else {
+    el.textContent='⚠ Sin conexión al servidor';
+    el.style.color='#b91c1c';
+  }
+}
+
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  setSyncStatus('cargando');
   return new Promise((resolve)=>{
     const cbName='_cb'+Date.now();
     const script=document.createElement('script');
+    let resuelto=false;
+
+    // Timeout de 10 segundos
+    const timer = setTimeout(()=>{
+      if(resuelto) return;
+      resuelto=true;
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      setSyncStatus('error');
+      resolve();
+    }, 10000);
+
     window[cbName]=(data)=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
       if(data&&data.marcas){
         marcas = data.marcas;
         guardarLocal();
+        setSyncStatus('ok');
+      } else {
+        setSyncStatus('error');
       }
       resolve();
     };
     script.onerror=()=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
+      setSyncStatus('error');
       resolve();
     };
     script.src=GAS_URL+'?accion=obtenerCosecha&callback='+cbName;
     document.body.appendChild(script);
   });
+}
+
+async function forzarSync(){
+  showToast('Cargando datos del servidor...');
+  await cargarGAS();
+  render();
+  actualizarAlertas();
 }
 
 async function sincronizarPendientes(){
