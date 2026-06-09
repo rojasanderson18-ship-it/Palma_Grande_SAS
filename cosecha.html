@@ -947,34 +947,29 @@ async function enviarGAS(payload){
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  try{
-    const r=await fetch(GAS_URL+'?accion=obtenerCosecha', {
-      method:'GET',
-      redirect:'follow',
-      mode:'cors',
-      credentials:'omit',
-    });
-    const text=await r.text();
-    const data=JSON.parse(text);
-    if(data&&data.marcas){
-      const marcasGAS=data.marcas;
-      const totalGAS=Object.values(marcasGAS).reduce((s,v)=>s+Object.keys(v).length,0);
-      const totalLocal=Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
-      if(totalGAS>=totalLocal){
-        marcas=marcasGAS;
-        guardarLocal();
-      } else {
-        console.log('GAS tiene menos datos que local ('+totalGAS+' vs '+totalLocal+'), manteniendo local');
-        // Forzar envio de datos locales al GAS
-        sincronizarPendientes();
+  return new Promise((resolve)=>{
+    const cbName='_cb'+Date.now();
+    const script=document.createElement('script');
+    window[cbName]=(data)=>{
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      if(data&&data.marcas){
+        const totalGAS=Object.values(data.marcas).reduce((s,v)=>s+Object.keys(v).length,0);
+        const totalLocal=Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
+        if(totalGAS>=totalLocal){
+          marcas=data.marcas;
+          guardarLocal();
+        } else {
+          console.log('GAS tiene menos datos ('+totalGAS+' vs '+totalLocal+'), sincronizando...');
+          sincronizarPendientes();
+        }
       }
-    }
-    resolve();
+      resolve();
     };
     script.onerror=()=>{
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
-      console.error('Error GAS: no se pudo cargar');
+      console.error('Error GAS: no se pudo conectar');
       resolve();
     };
     script.src=GAS_URL+'?accion=obtenerCosecha&callback='+cbName;
