@@ -940,9 +940,8 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // GAS
 // =============================================
 // GAS_URL already declared above
-async function enviarGAS(payload){
+function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  // Construir URL con parámetros GET
   const p = payload;
   let url = GAS_URL+'?accion='+encodeURIComponent(p.accion||'');
   if(p.key)    url+='&key='+encodeURIComponent(p.key);
@@ -950,10 +949,9 @@ async function enviarGAS(payload){
   if(p.tipo)   url+='&tipo='+encodeURIComponent(p.tipo);
   if(p.labor)  url+='&labor='+encodeURIComponent(p.labor);
   if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
-  try{
-    // no-cors: el dato llega al GAS aunque no podamos leer la respuesta
-    await fetch(url, {method:'GET', mode:'no-cors'});
-  }catch(e){ console.error('enviarGAS error:',e); }
+  // Image beacon: funciona sin CORS, sin bloqueos, en todos los navegadores
+  const img = new Image();
+  img.src = url;
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
