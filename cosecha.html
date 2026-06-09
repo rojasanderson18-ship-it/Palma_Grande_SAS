@@ -1882,27 +1882,19 @@ function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
+  // Cargar localStorage primero para tener datos inmediatos mientras llega GAS
   cargarLocal();
-  // Si localStorage está vacío = otro dispositivo = cargar del Sheet
-  const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
-  if(totalLocal === 0){
-    // Otro dispositivo - cargar del Sheet
-    cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
-    // Actualizar cada 30 segundos
-    setInterval(async ()=>{
-      await cargarGAS();
-      render();
-      actualizarAlertas();
-    }, 30*1000);
-  } else {
-    // Tu PC - usar localStorage, nunca cargar del Sheet
+  render();
+  actualizarAlertas();
+  // Siempre sincronizar con GAS al iniciar para que todos los dispositivos tengan los mismos datos
+  cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
+  // Actualizar desde GAS cada 30 segundos en todos los dispositivos
+  setInterval(async ()=>{
+    await cargarGAS();
     render();
     actualizarAlertas();
-    setInterval(()=>{ if(!modoEdicion) render(); }, 60*1000);
-  }
+  }, 30*1000);
   setTimeout(()=>{ cargarCalc(); }, 300);
-
-  actualizarAlertas();
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
