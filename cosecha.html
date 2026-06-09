@@ -940,18 +940,15 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // GAS
 // =============================================
 // GAS_URL already declared above
-function enviarGAS(payload){
+async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  const p = payload;
-  let url = GAS_URL+'?accion='+encodeURIComponent(p.accion||'');
-  if(p.key)    url+='&key='+encodeURIComponent(p.key);
-  if(p.fecha)  url+='&fecha='+encodeURIComponent(p.fecha);
-  if(p.tipo)   url+='&tipo='+encodeURIComponent(p.tipo);
-  if(p.labor)  url+='&labor='+encodeURIComponent(p.labor);
-  if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
-  // Image beacon: funciona sin CORS, sin bloqueos, en todos los navegadores
-  const img = new Image();
-  img.src = url;
+  try{
+    fetch(GAS_URL, {
+      method:'POST',
+      mode:'no-cors',
+      body:JSON.stringify(payload),
+    });
+  }catch(e){}
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
@@ -962,22 +959,14 @@ async function cargarGAS(){
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
       if(data&&data.marcas){
-        const totalGAS=Object.values(data.marcas).reduce((s,v)=>s+Object.keys(v).length,0);
-        const totalLocal=Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
-        if(totalGAS>=totalLocal){
-          marcas=data.marcas;
-          guardarLocal();
-        } else {
-          console.log('GAS tiene menos datos ('+totalGAS+' vs '+totalLocal+'), sincronizando...');
-          sincronizarPendientes();
-        }
+        marcas = data.marcas;
+        guardarLocal();
       }
       resolve();
     };
     script.onerror=()=>{
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
-      console.error('Error GAS: no se pudo conectar');
       resolve();
     };
     script.src=GAS_URL+'?accion=obtenerCosecha&callback='+cbName;
