@@ -1890,22 +1890,16 @@ function init(){
   if(totalLocal === 0){
     marcas = JSON.parse(JSON.stringify(DATOS_RESPALDO));
     guardarLocal();
-    // Intentar actualizar desde GAS por si tiene datos más recientes
-    cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
-    setInterval(async ()=>{
-      await cargarGAS();
-      render();
-      actualizarAlertas();
-    }, 30*1000);
-  } else {
-    // Tu PC - usar localStorage, nunca cargar del Sheet
-    render();
-    actualizarAlertas();
-    setInterval(()=>{ if(!modoEdicion) render(); }, 60*1000);
   }
-  setTimeout(()=>{ cargarCalc(); }, 300);
-
+  // Todos los dispositivos muestran datos locales de inmediato
+  render();
   actualizarAlertas();
+  // Todos los dispositivos sincronizan con GAS para ver cambios recientes
+  cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
+  setInterval(async ()=>{
+    if(!modoEdicion){ await cargarGAS(); render(); actualizarAlertas(); }
+  }, 30*1000);
+  setTimeout(()=>{ cargarCalc(); }, 300);
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
