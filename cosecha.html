@@ -372,6 +372,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
   <div class="sep"></div>
   <button class="btn-filter" onclick="forzarSync()" style="color:#2563eb;border-color:#93c5fd;" title="Recargar datos del servidor">🔄 Sincronizar</button>
+  <div class="sep"></div>
+  <button class="btn-filter" onclick="exportarDatos()" style="color:#7c3aed;border-color:#c4b5fd;" title="Descargar respaldo de datos">💾 Respaldo</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDatos(event)"/>
+  <button class="btn-filter" onclick="document.getElementById('import-file').click()" style="color:#065f46;border-color:#6ee7b7;" title="Restaurar datos desde respaldo">📂 Restaurar</button>
 </div>
 
 <div class="table-wrap" id="table-wrap"></div>
@@ -995,9 +999,16 @@ async function cargarGAS(){
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
       if(data&&data.marcas){
-        marcas = data.marcas;
-        guardarLocal();
-        setSyncStatus('ok');
+        const gasKeys = Object.keys(data.marcas);
+        if(gasKeys.length > 0){
+          // Fusionar: GAS gana en conflicto pero no borra datos locales
+          Object.entries(data.marcas).forEach(([k,v])=>{ marcas[k]=Object.assign({},marcas[k]||{},v); });
+          guardarLocal();
+          setSyncStatus('ok');
+        } else {
+          // GAS devolvió vacío — NO sobreescribir datos locales
+          setSyncStatus('error');
+        }
       } else {
         setSyncStatus('error');
       }
@@ -1015,6 +1026,41 @@ async function cargarGAS(){
     script.src=GAS_URL+'?accion=obtenerCosecha&callback='+cbName;
     document.body.appendChild(script);
   });
+}
+
+function exportarDatos(){
+  const hoy = hoyLocal();
+  const nombre = 'ciclos_respaldo_'+isoDate(hoy)+'.json';
+  const json = JSON.stringify(marcas, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  a.click();
+  showToast('✓ Respaldo descargado: '+nombre);
+}
+
+function importarDatos(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      const keys = Object.keys(data);
+      if(keys.length === 0){ showToast('El archivo está vacío','err'); return; }
+      // Fusionar con datos actuales
+      keys.forEach(k=>{ marcas[k] = Object.assign({}, marcas[k]||{}, data[k]); });
+      guardarLocal();
+      render();
+      actualizarAlertas();
+      showToast('✓ '+keys.length+' lotes restaurados');
+    }catch(ex){
+      showToast('Error al leer el archivo','err');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value='';
 }
 
 async function forzarSync(){
