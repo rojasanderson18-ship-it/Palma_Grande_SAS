@@ -943,31 +943,30 @@ document.addEventListener('click',()=>{ if(popupOpen) cerrarPopup(); });
 // GAS_URL already declared above
 async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  try{
-    // Usar form submit via iframe - siempre funciona con GAS sin CORS
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = GAS_URL;
-    form.target = '_gas_iframe_';
-    form.style.display = 'none';
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = JSON.stringify(payload);
-    form.appendChild(input);
-    // Iframe destino silencioso
-    let iframe = document.getElementById('_gas_iframe_');
-    if(!iframe){
-      iframe = document.createElement('iframe');
-      iframe.name = '_gas_iframe_';
-      iframe.id = '_gas_iframe_';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-    document.body.appendChild(form);
-    form.submit();
-    setTimeout(()=>{ if(document.body.contains(form)) document.body.removeChild(form); }, 3000);
-  }catch(e){ console.error('enviarGAS error:',e); }
+  return new Promise((resolve)=>{
+    const cbName='_cb'+Date.now();
+    const script=document.createElement('script');
+    window[cbName]=(data)=>{
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve(data);
+    };
+    script.onerror=()=>{
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve(null);
+    };
+    // Build URL params from payload fields directly
+    const p = payload;
+    let url = GAS_URL+'?callback='+cbName+'&accion='+encodeURIComponent(p.accion||'');
+    if(p.key)   url+='&key='+encodeURIComponent(p.key);
+    if(p.fecha) url+='&fecha='+encodeURIComponent(p.fecha);
+    if(p.tipo)  url+='&tipo='+encodeURIComponent(p.tipo);
+    if(p.labor) url+='&labor='+encodeURIComponent(p.labor);
+    if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
+    script.src=url;
+    document.body.appendChild(script);
+  });
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
