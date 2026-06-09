@@ -964,6 +964,7 @@ async function enviarGAS(payload){
     if(p.tipo)  url+='&tipo='+encodeURIComponent(p.tipo);
     if(p.labor) url+='&labor='+encodeURIComponent(p.labor);
     if(p.marcas) url+='&marcas='+encodeURIComponent(JSON.stringify(p.marcas));
+    console.log('Enviando al GAS:', url.substring(0,120));
     script.src=url;
     document.body.appendChild(script);
   });
