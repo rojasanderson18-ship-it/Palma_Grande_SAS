@@ -366,8 +366,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <div class="sep"></div>
   <button class="btn-filter" id="btn-editar" onclick="toggleEdicion()" style="font-weight:600;">🔒 Editar</button>
-  <div class="sep"></div>
-  <button class="btn-filter" onclick="sincronizarPendientes()" style="color:#1d4ed8;border-color:#93c5fd;" title="Forzar sincronización con el servidor">🔄 Sincronizar</button>
+
   <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
 </div>
@@ -1860,11 +1859,13 @@ function init(){
   cargarLocal();
   cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
   setTimeout(()=>{ cargarCalc(); }, 300);
-  setInterval(()=>{
-    if(modoEdicion) return; // No recargar mientras se edita
-    cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
-  },5*60*1000);
-  setInterval(()=>{ if(!modoEdicion) render(); },60*1000);
+  // Auto-sync cada 30 segundos - actualiza desde GAS sin importar el dispositivo
+  setInterval(async ()=>{
+    if(modoEdicion) return;
+    await cargarGAS();
+    render();
+    actualizarAlertas();
+  }, 30*1000);
   actualizarAlertas();
 }
 document.addEventListener('DOMContentLoaded',init);
