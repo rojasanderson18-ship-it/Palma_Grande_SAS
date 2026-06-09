@@ -1754,6 +1754,44 @@ function toggleEdicion(){
   }
 }
 
+// ===== PUBLICAR AL SHEET =====
+async function publicarAlSheet(){
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  const todasMarcas=[];
+  Object.entries(marcas).forEach(([key,fechas])=>{
+    Object.entries(fechas).forEach(([fecha,tipo])=>{
+      todasMarcas.push({key,fecha,tipo});
+    });
+  });
+  if(todasMarcas.length===0) return;
+  showToast('Publicando '+todasMarcas.length+' registros...');
+  // Enviar en lotes de 20 via JSONP GET para evitar CORS
+  const loteSize=20;
+  let enviados=0;
+  for(let i=0;i<todasMarcas.length;i+=loteSize){
+    const lote=todasMarcas.slice(i,i+loteSize);
+    await new Promise((resolve)=>{
+      const cbName='_pub'+Date.now();
+      const script=document.createElement('script');
+      window[cbName]=(data)=>{
+        delete window[cbName];
+        if(document.body.contains(script)) document.body.removeChild(script);
+        resolve(data);
+      };
+      script.onerror=()=>{
+        delete window[cbName];
+        if(document.body.contains(script)) document.body.removeChild(script);
+        resolve(null);
+      };
+      const url=GAS_URL+'?accion=reemplazarLote&inicio='+i+'&callback='+cbName+'&marcas='+encodeURIComponent(JSON.stringify(lote));
+      script.src=url;
+      document.body.appendChild(script);
+    });
+    enviados+=lote.length;
+  }
+  showToast('✓ '+enviados+' registros publicados');
+}
+
 // ===== CALCULADORA PERSONAL =====
 function calcularPersonal(){
   const fincas=['FINCA 1','FINCA 2','FINCA 3'];
