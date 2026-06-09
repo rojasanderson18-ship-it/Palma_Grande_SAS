@@ -194,10 +194,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <button class="btn-filter" id="bf-f3" onclick="setFinca('FINCA 3')">Finca 3</button>
   <div class="sep"></div>
   <div class="weeks-ctrl">
-    <span>Semanas:</span>
-    <button onclick="cambiarSemanas(-1)">−</button>
-    <span class="weeks-val" id="weeks-val">8</span>
-    <button onclick="cambiarSemanas(1)">+</button>
+    <span>Meses:</span>
+    <button onclick="cambiarMeses(-1)">−</button>
+    <span class="weeks-val" id="weeks-val">2</span>
+    <button onclick="cambiarMeses(1)">+</button>
   </div>
   <div class="sep"></div>
   <button class="btn-filter" id="btn-editar" onclick="toggleEdicion()" style="font-weight:600;">🔒 Editar</button>
@@ -285,8 +285,8 @@ const CICLOS = {
   rolo:     {guineensis: 180, hibrido: 180}, // 6 meses
 };
 
-// Tolerancia: 5% del ciclo
-const tolerancia = (ciclo) => Math.round(ciclo * 0.05);
+// Tolerancia: 15 días fijos para todas las labores
+const tolerancia = (ciclo) => 15;
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -295,7 +295,7 @@ const DIAS_SEM = ['D','L','M','M','J','V','S'];
 // marcas[labor][key][fechaISO] = true
 let marcas = {poda:{},roceria:{},rotospeed:{},rolo:{}};
 let laborActual = 'poda';
-let semanas = 8;
+let meses = 2;
 let filtroFinca = 'todas';
 let popupOpen = false;
 
@@ -325,23 +325,19 @@ function semanaNum(d){
 // =============================================
 // LÓGICA DE CELDA
 // =============================================
-function getPrimerDiaBloque(labor, key, desdeFecha){
+function getCicloStartMantto(labor, key, hastaFecha){
   const m = marcas[labor][key]||{};
-  let d = new Date(desdeFecha);
-  d.setHours(0,0,0,0);
-  let ultimoCos = null;
-  for(let i=0;i<600;i++){
-    if(m[isoDate(d)]){ultimoCos=new Date(d);break;}
-    d.setDate(d.getDate()-1);
+  const hastaISO = isoDate(hastaFecha);
+  const todasMarks = Object.keys(m)
+    .filter(iso=>iso<=hastaISO)
+    .sort().reverse();
+  if(todasMarks.length===0) return null;
+  let cicloInicio = todasMarks[0];
+  for(let i=0;i<todasMarks.length;i++){
+    cicloInicio = todasMarks[i];
+    if(m[todasMarks[i]]==='nuevo') break;
   }
-  if(!ultimoCos) return null;
-  let primer = new Date(ultimoCos);
-  while(true){
-    const prev=new Date(primer);prev.setDate(prev.getDate()-1);
-    if(m[isoDate(prev)]) primer=new Date(prev);
-    else break;
-  }
-  return primer;
+  return parseISO(cicloInicio);
 }
 
 function getCellState(labor, key, tipo, fecha){
@@ -350,12 +346,12 @@ function getCellState(labor, key, tipo, fecha){
   const ciclo = CICLOS[labor][tipo];
   const tol = tolerancia(ciclo);
 
-  const primer = getPrimerDiaBloque(labor, key, fecha);
+  const primer = getCicloStartMantto(labor, key, fecha);
   if(!primer) return {tipo:'vacio', num:null};
 
   const diasCiclo = diasEntre(primer, fecha)+1;
 
-  if(m[dISO]) return {tipo:'trabajo', num:diasCiclo};
+  if(m[dISO]) return {tipo:'trabajo', num:diasCiclo, marca:m[dISO]};
 
   const limVerde = ciclo - tol;
   if(diasCiclo <= limVerde) return {tipo:'verde', num:diasCiclo};
@@ -374,7 +370,7 @@ function estadoHoy(labor, key, tipo, hoy){
 function render(){
   const hoy = hoyLocal();
   const hoyISO = isoDate(hoy);
-  const totalDias = semanas*7;
+  const totalDias = diasEnMeses(meses);
   const fechas = [];
   for(let i=0;i<totalDias;i++){
     const d=new Date(hoy);d.setDate(d.getDate()-i);fechas.push(d);
@@ -473,7 +469,8 @@ function render(){
       if(esFuturo){
         cellHtml=`<div class="dia-inner di-vacio">·</div>`;
       } else if(cs.tipo==='trabajo'){
-        cellHtml=`<div class="dia-inner di-trabajo">${cs.num}</div>`;
+        const esNuevo=cs.marca==='nuevo';
+        cellHtml=`<div class="dia-inner di-trabajo" style="${esNuevo?'background:#14532d;':''}">${cs.num}</div>`;
         clsExtra=' editable';
       } else if(cs.tipo==='vacio'){
         cellHtml=`<div class="dia-inner di-vacio">·</div>`;
@@ -523,11 +520,12 @@ function showPopup(e,key,fecha,lote,esTrabajo){
 function cerrarPopup(){document.getElementById('cell-popup').style.display='none';popupOpen=false;}
 document.addEventListener('click',()=>{if(popupOpen)cerrarPopup();});
 
-function marcarTrabajo(key,fecha){
+function marcarTrabajo(key,fecha,tipo){
   if(!marcas[laborActual][key]) marcas[laborActual][key]={};
-  marcas[laborActual][key][fecha]=true;
-  guardarLocal();enviarGAS({accion:'marcarTrabajo',labor:laborActual,key,fecha});
-  cerrarPopup();render();showToast('✓ Trabajo registrado');
+  marcas[laborActual][key][fecha]=tipo||'continuidad';
+  guardarLocal();enviarGAS({accion:'marcarTrabajo',labor:laborActual,key,fecha,tipo:tipo||'continuidad'});
+  cerrarPopup();render();
+  showToast(tipo==='nuevo'?'✓ Nuevo ciclo iniciado':'✓ Continuidad registrada');
 }
 function quitarTrabajo(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
@@ -555,10 +553,22 @@ function setFinca(f){
   document.getElementById(map[f]).classList.add('active');
   render();
 }
-function cambiarSemanas(d){
-  semanas=Math.max(1,semanas+d);
-  document.getElementById('weeks-val').textContent=semanas;
+function cambiarMeses(d){
+  meses=Math.max(1,meses+d);
+  document.getElementById('weeks-val').textContent=meses;
   render();
+}
+
+function diasEnMeses(m){
+  // Calcula el total de días en los últimos m meses
+  const hoy = hoyLocal();
+  let total = 0;
+  for(let i=0;i<m;i++){
+    const d = new Date(hoy.getFullYear(), hoy.getMonth()-i, 1);
+    const diasMes = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    total += diasMes;
+  }
+  return total;
 }
 
 // =============================================
@@ -568,20 +578,24 @@ const LS='mantto_marcas_v1';
 function guardarLocal(){try{localStorage.setItem(LS,JSON.stringify(marcas));}catch(e){}}
 function cargarLocal(){try{const d=localStorage.getItem(LS);if(d)marcas=JSON.parse(d);}catch(e){}}
 async function enviarGAS(payload){
-  if(GAS_URL==='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec') return;
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
   try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});}catch(e){}
 }
 async function cargarGAS(){
-  if(GAS_URL==='https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec') return;
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
   try{
-    const r = await fetch(GAS_URL+'?accion=obtenerMantenimiento');
-    const data = await r.json();
-    if(data && data.marcas){
-      // data.marcas = { poda: { key: { fecha: true } }, ... }
-      marcas = Object.assign({poda:{},roceria:{},rotospeed:{},rolo:{}}, data.marcas);
-      guardarLocal();
+    const r=await fetch(GAS_URL+'?accion=obtenerMantenimiento',{method:'GET',redirect:'follow',mode:'cors',credentials:'omit'});
+    const text=await r.text();
+    const data=JSON.parse(text);
+    if(data&&data.marcas){
+      const totalGAS=Object.values(data.marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
+      const totalLocal=Object.values(marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
+      if(totalGAS>=totalLocal){
+        marcas=Object.assign({poda:{},roceria:{},rotospeed:{},rolo:{}},data.marcas);
+        guardarLocal();
+      }
     }
-  }catch(e){ console.error('Error cargando GAS:', e); }
+  }catch(e){console.error('Error GAS:',e);}
 }
 
 function showToast(msg,tipo){
