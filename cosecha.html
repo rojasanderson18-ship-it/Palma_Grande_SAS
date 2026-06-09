@@ -367,6 +367,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="sep"></div>
   <button class="btn-filter" id="btn-editar" onclick="toggleEdicion()" style="font-weight:600;">🔒 Editar</button>
   <div class="sep"></div>
+  <button class="btn-filter" onclick="sincronizarPendientes()" style="color:#1d4ed8;border-color:#93c5fd;" title="Forzar sincronización con el servidor">🔄 Sincronizar</button>
+  <div class="sep"></div>
   <button class="btn-filter" onclick="exportarPDF()" style="color:#b91c1c;border-color:#fca5a5;">📄 Exportar PDF</button>
 </div>
 
@@ -955,19 +957,49 @@ async function cargarGAS(){
     const text=await r.text();
     const data=JSON.parse(text);
     if(data&&data.marcas){
-      // Solo actualizar si el Sheet tiene MÁS datos que el local
-      // Esto evita que una respuesta vacía o incompleta borre datos locales
-      const marcasGAS = data.marcas;
-      const totalGAS = Object.values(marcasGAS).reduce((s,v)=>s+Object.keys(v).length,0);
-      const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
-      if(totalGAS >= totalLocal){
-        marcas = marcasGAS;
+      const marcasGAS=data.marcas;
+      const totalGAS=Object.values(marcasGAS).reduce((s,v)=>s+Object.keys(v).length,0);
+      const totalLocal=Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
+      if(totalGAS>=totalLocal){
+        marcas=marcasGAS;
         guardarLocal();
       } else {
         console.log('GAS tiene menos datos que local ('+totalGAS+' vs '+totalLocal+'), manteniendo local');
+        // Forzar envio de datos locales al GAS
+        sincronizarPendientes();
       }
     }
-  }catch(e){ console.error('Error GAS:',e); }
+    resolve();
+    };
+    script.onerror=()=>{
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      console.error('Error GAS: no se pudo cargar');
+      resolve();
+    };
+    script.src=GAS_URL+'?accion=obtenerCosecha&callback='+cbName;
+    document.body.appendChild(script);
+  });
+}
+
+async function sincronizarPendientes(){
+  // Enviar todas las marcas locales al GAS
+  const todasMarcas=[];
+  Object.entries(marcas).forEach(([key,fechas])=>{
+    Object.entries(fechas).forEach(([fecha,tipo])=>{
+      todasMarcas.push({key,fecha,tipo});
+    });
+  });
+  if(todasMarcas.length===0) return;
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',
+      body:JSON.stringify({accion:'sincronizarCosecha',marcas:todasMarcas}),
+      headers:{'Content-Type':'text/plain'},
+      redirect:'follow',
+    });
+    showToast('✓ Datos sincronizados');
+  }catch(e){console.error('Error sincronizando:',e);}
 }
 
 // =============================================
