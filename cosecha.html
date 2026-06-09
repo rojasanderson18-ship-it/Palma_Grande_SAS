@@ -406,70 +406,106 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
     <!-- CALCULADORA PERSONAL -->
     <div class="calc-card">
       <div class="calc-title">👷 Calculadora de Personal Cosecha</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div class="calc-input-row">
-          <label class="calc-label">Días para recuperar atraso</label>
-          <input type="number" class="calc-input" id="calc-dias-rec" value="" placeholder="ej: 7" min="1" oninput="guardarCalc();calcularPersonal()"/>
+
+      <!-- GRID POR FINCA -->
+      <div class="calc-finca-grid" style="gap:12px;">
+
+        <!-- FINCA 1 -->
+        <div class="calc-finca-card cfc-f1" style="padding:12px;">
+          <div class="calc-finca-name" style="font-size:13px;margin-bottom:10px;">🌴 FINCA 1</div>
+          <div class="calc-input-row" style="margin-bottom:8px;">
+            <label class="calc-label">HA/día/persona</label>
+            <input type="number" class="calc-input" id="calc-rend-f1" value="" placeholder="ej: 2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div class="calc-input-row" style="margin-bottom:8px;">
+            <label class="calc-label">Días recuperar atraso</label>
+            <input type="number" class="calc-input" id="calc-dias-f1" value="" placeholder="ej: 7" min="1" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div class="calc-input-row" style="margin-bottom:10px;">
+            <label class="calc-label">% Contingencia</label>
+            <input type="number" class="calc-input" id="calc-cont-f1" value="" placeholder="ej: 15" min="0" max="100" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div style="background:#f0f2f5;border-radius:8px;padding:8px 10px;font-size:11px;display:flex;flex-direction:column;gap:4px;" id="res-f1">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Mantener ciclo</span><span id="cf1-mant" style="font-weight:600;color:#15803d;"></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Desatrasar</span><span id="cf1-des" style="font-weight:600;color:#b91c1c;"></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Contingencia</span><span id="cf1-cont" style="font-weight:600;color:#c2410c;"></span></div>
+            <div style="height:1px;background:#e5e7eb;margin:3px 0;"></div>
+            <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;">Total</span><span id="cf1-per" style="font-weight:800;font-size:14px;color:#15803d;"></span></div>
+          </div>
         </div>
-        <div class="calc-input-row">
-          <label class="calc-label">% Contingencia (lluvia, ausencias)</label>
-          <input type="number" class="calc-input" id="calc-contingencia" value="" placeholder="ej: 15" min="0" max="100" oninput="guardarCalc();calcularPersonal()"/>
+
+        <!-- FINCA 2 -->
+        <div class="calc-finca-card cfc-f2" style="padding:12px;">
+          <div class="calc-finca-name" style="font-size:13px;margin-bottom:10px;">🌴 FINCA 2</div>
+          <div class="calc-input-row" style="margin-bottom:8px;">
+            <label class="calc-label">HA/día/persona</label>
+            <input type="number" class="calc-input" id="calc-rend-f2" value="" placeholder="ej: 2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div class="calc-input-row" style="margin-bottom:8px;">
+            <label class="calc-label">Días recuperar atraso</label>
+            <input type="number" class="calc-input" id="calc-dias-f2" value="" placeholder="ej: 7" min="1" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div class="calc-input-row" style="margin-bottom:10px;">
+            <label class="calc-label">% Contingencia</label>
+            <input type="number" class="calc-input" id="calc-cont-f2" value="" placeholder="ej: 15" min="0" max="100" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div style="background:#f0f2f5;border-radius:8px;padding:8px 10px;font-size:11px;display:flex;flex-direction:column;gap:4px;" id="res-f2">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Mantener ciclo</span><span id="cf2-mant" style="font-weight:600;color:#15803d;"></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Desatrasar</span><span id="cf2-des" style="font-weight:600;color:#b91c1c;"></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Contingencia</span><span id="cf2-cont" style="font-weight:600;color:#c2410c;"></span></div>
+            <div style="height:1px;background:#e5e7eb;margin:3px 0;"></div>
+            <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;">Total</span><span id="cf2-per" style="font-weight:800;font-size:14px;color:#1d4ed8;"></span></div>
+          </div>
+        </div>
+
+        <!-- FINCA 3 -->
+        <div class="calc-finca-card cfc-f3" style="padding:12px;">
+          <div class="calc-finca-name" style="font-size:13px;margin-bottom:10px;">🌴 FINCA 3</div>
+          <div class="calc-input-row" style="margin-bottom:8px;">
+            <label class="calc-label">HA/día/persona</label>
+            <input type="number" class="calc-input" id="calc-rend-f3" value="" placeholder="ej: 2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div class="calc-input-row" style="margin-bottom:8px;">
+            <label class="calc-label">Días recuperar atraso</label>
+            <input type="number" class="calc-input" id="calc-dias-f3" value="" placeholder="ej: 7" min="1" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div class="calc-input-row" style="margin-bottom:10px;">
+            <label class="calc-label">% Contingencia</label>
+            <input type="number" class="calc-input" id="calc-cont-f3" value="" placeholder="ej: 15" min="0" max="100" oninput="guardarCalc();calcularPersonal()"/>
+          </div>
+          <div style="background:#f0f2f5;border-radius:8px;padding:8px 10px;font-size:11px;display:flex;flex-direction:column;gap:4px;" id="res-f3">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Mantener ciclo</span><span id="cf3-mant" style="font-weight:600;color:#15803d;"></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Desatrasar</span><span id="cf3-des" style="font-weight:600;color:#b91c1c;"></span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:#6b7280;">Contingencia</span><span id="cf3-cont" style="font-weight:600;color:#c2410c;"></span></div>
+            <div style="height:1px;background:#e5e7eb;margin:3px 0;"></div>
+            <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;">Total</span><span id="cf3-per" style="font-weight:800;font-size:14px;color:#7c3aed;"></span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TOTAL GENERAL -->
+      <div id="calc-result-wrap" style="display:none;margin-top:12px;background:#1a1f2e;border-radius:10px;padding:14px;display:none;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:8px;padding:10px;">
+            <div style="font-family:Bebas Neue,sans-serif;font-size:32px;color:#f0c96a;" id="cr-total"></div>
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;">Total personas/día</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.06);border-radius:8px;padding:10px;">
+            <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:#4ade80;" id="cr-f1"></div>
+            <div style="font-size:10px;color:#94a3b8;">Finca 1</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.06);border-radius:8px;padding:10px;">
+            <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:#60a5fa;" id="cr-f2"></div>
+            <div style="font-size:10px;color:#94a3b8;">Finca 2</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.06);border-radius:8px;padding:10px;">
+            <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:#c084fc;" id="cr-f3"></div>
+            <div style="font-size:10px;color:#94a3b8;">Finca 3</div>
+          </div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
-        <div class="calc-input-row">
-          <label class="calc-label" style="color:#15803d;">Finca 1 — HA/dia/persona</label>
-          <input type="number" class="calc-input" id="calc-rend-f1" value="" placeholder="ej: 2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()" style="border-color:#16a34a;"/>
-        </div>
-        <div class="calc-input-row">
-          <label class="calc-label" style="color:#1d4ed8;">Finca 2 — HA/dia/persona</label>
-          <input type="number" class="calc-input" id="calc-rend-f2" value="" placeholder="ej: 2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()" style="border-color:#2563eb;"/>
-        </div>
-        <div class="calc-input-row">
-          <label class="calc-label" style="color:#7c3aed;">Finca 3 — HA/dia/persona</label>
-          <input type="number" class="calc-input" id="calc-rend-f3" value="" placeholder="ej: 2.3" step="0.1" min="0.1" oninput="guardarCalc();calcularPersonal()" style="border-color:#7c3aed;"/>
-        </div>
-      </div>
-      <div class="calc-result" id="calc-result-wrap" style="display:none;">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
-          <div class="calc-res-card" style="border:2px solid #dc2626;">
-            <div class="calc-res-val crv-rojo" id="cr-total"></div>
-            <div class="calc-res-lbl">TOTAL pers/dia</div>
-          </div>
-          <div class="calc-res-card"><div class="calc-res-val crv-verde" id="cr-f1"></div><div class="calc-res-lbl">Finca 1</div></div>
-          <div class="calc-res-card"><div class="calc-res-val crv-azul" id="cr-f2"></div><div class="calc-res-lbl">Finca 2</div></div>
-          <div class="calc-res-card"><div class="calc-res-val" style="color:#7c3aed;" id="cr-f3"></div><div class="calc-res-lbl">Finca 3</div></div>
-        </div>
-        <div class="calc-finca-grid">
-          <div class="calc-finca-card cfc-f1">
-            <div class="calc-finca-name">FINCA 1</div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Mantener ciclo</span><span class="calc-finca-val" style="color:#15803d;" id="cf1-mant"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Desatrasar</span><span class="calc-finca-val" style="color:#b91c1c;" id="cf1-des"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Subtotal</span><span class="calc-finca-val" id="cf1-sub"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Contingencia</span><span class="calc-finca-val" style="color:#c2410c;" id="cf1-cont"></span></div>
-            <div style="height:1px;background:#e5e7eb;margin:5px 0;"></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl" style="font-weight:700;">Total</span><span class="calc-finca-val" style="font-weight:800;" id="cf1-per"></span></div>
-          </div>
-          <div class="calc-finca-card cfc-f2">
-            <div class="calc-finca-name">FINCA 2</div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Mantener ciclo</span><span class="calc-finca-val" style="color:#15803d;" id="cf2-mant"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Desatrasar</span><span class="calc-finca-val" style="color:#b91c1c;" id="cf2-des"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Subtotal</span><span class="calc-finca-val" id="cf2-sub"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Contingencia</span><span class="calc-finca-val" style="color:#c2410c;" id="cf2-cont"></span></div>
-            <div style="height:1px;background:#e5e7eb;margin:5px 0;"></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl" style="font-weight:700;">Total</span><span class="calc-finca-val" style="font-weight:800;" id="cf2-per"></span></div>
-          </div>
-          <div class="calc-finca-card cfc-f3">
-            <div class="calc-finca-name">FINCA 3</div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Mantener ciclo</span><span class="calc-finca-val" style="color:#15803d;" id="cf3-mant"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Desatrasar</span><span class="calc-finca-val" style="color:#b91c1c;" id="cf3-des"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Subtotal</span><span class="calc-finca-val" id="cf3-sub"></span></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl">Contingencia</span><span class="calc-finca-val" style="color:#c2410c;" id="cf3-cont"></span></div>
-            <div style="height:1px;background:#e5e7eb;margin:5px 0;"></div>
-            <div class="calc-finca-stat"><span class="calc-finca-lbl" style="font-weight:700;">Total</span><span class="calc-finca-val" style="font-weight:800;" id="cf3-per"></span></div>
-          </div>
-        </div>
-      </div>
+
     </div>
 
         <!-- WHATSAPP -->
@@ -1702,23 +1738,29 @@ function toggleEdicion(){
 
 // ===== CALCULADORA PERSONAL =====
 function calcularPersonal(){
-  const v1=document.getElementById('calc-rend-f1').value;
-  const v2=document.getElementById('calc-rend-f2').value;
-  const v3=document.getElementById('calc-rend-f3').value;
-  const vDias=document.getElementById('calc-dias-rec').value;
-  const vCont=document.getElementById('calc-contingencia').value;
-  const wrap=document.getElementById('calc-result-wrap');
-  if(!v1||!v2||!v3){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  const hoy=hoyLocal();
-  const rendFinca=[parseFloat(v1),parseFloat(v2),parseFloat(v3)];
-  const diasRec=parseFloat(vDias)||0;
-  const contPct=parseFloat(vCont)||0;
   const fincas=['FINCA 1','FINCA 2','FINCA 3'];
   const ids=['f1','f2','f3'];
+  const hoy=hoyLocal();
   let totalPersonas=0;
+  let alguienTieneRend=false;
+
   fincas.forEach((finca,i)=>{
-    const rend=rendFinca[i];
+    const vRend=document.getElementById('calc-rend-f'+ids[i].slice(-1)).value;
+    const vDias=document.getElementById('calc-dias-f'+ids[i].slice(-1)).value;
+    const vCont=document.getElementById('calc-cont-f'+ids[i].slice(-1)).value;
+
+    if(!vRend){
+      // Limpiar resultados de esta finca
+      ['mant','des','cont','per'].forEach(k=>{ document.getElementById('c'+ids[i]+'-'+k).textContent=''; });
+      document.getElementById('cr-'+ids[i]).textContent='';
+      return;
+    }
+    alguienTieneRend=true;
+
+    const rend=parseFloat(vRend);
+    const diasRec=parseFloat(vDias)||0;
+    const contPct=parseFloat(vCont)||0;
+
     let haMantDia=0, haRojo=0;
     LOTES.filter(l=>l.finca===finca).forEach(l=>{
       const frecDias=l.tipo==='hibrido'?22:12;
@@ -1726,32 +1768,44 @@ function calcularPersonal(){
       const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
       if(cs.tipo==='rojo') haRojo+=l.ha;
     });
+
     const persMant=haMantDia/rend;
     const persDes=diasRec>0?(haRojo/diasRec/rend):0;
     const subtotal=persMant+persDes;
     const contVal=subtotal*contPct/100;
     const totalFinal=Math.ceil(subtotal+contVal);
     totalPersonas+=totalFinal;
+
     const fmt=n=>n.toFixed(1);
     document.getElementById('c'+ids[i]+'-mant').textContent=Math.ceil(persMant)+' pers/dia ('+fmt(haMantDia)+' HA/dia)';
-    document.getElementById('c'+ids[i]+'-des').textContent=diasRec>0?(Math.ceil(persDes)+' pers/dia — '+fmt(haRojo)+' HA en '+diasRec+' dias'):'— (define dias de recuperacion)';
-    document.getElementById('c'+ids[i]+'-sub').textContent=Math.ceil(subtotal)+' pers/dia';
+    document.getElementById('c'+ids[i]+'-des').textContent=diasRec>0?(Math.ceil(persDes)+' pers/dia — '+fmt(haRojo)+' HA en '+diasRec+' dias'):'— sin dias definidos';
     document.getElementById('c'+ids[i]+'-cont').textContent=contPct>0?('+'+Math.ceil(contVal)+' pers ('+contPct+'%)'):'—';
     document.getElementById('c'+ids[i]+'-per').textContent=totalFinal+' personas/dia';
     document.getElementById('cr-'+ids[i]).textContent=totalFinal;
   });
-  document.getElementById('cr-total').textContent=totalPersonas;
+
+  const wrap=document.getElementById('calc-result-wrap');
+  if(alguienTieneRend){
+    wrap.style.display='block';
+    document.getElementById('cr-total').textContent=totalPersonas;
+  } else {
+    wrap.style.display='none';
+  }
 }
 
 
 function guardarCalc(){
   try{
     localStorage.setItem('calc_config', JSON.stringify({
-      f1:document.getElementById('calc-rend-f1').value,
-      f2:document.getElementById('calc-rend-f2').value,
-      f3:document.getElementById('calc-rend-f3').value,
-      diasRec:document.getElementById('calc-dias-rec').value,
-      cont:document.getElementById('calc-contingencia').value,
+      r1:document.getElementById('calc-rend-f1').value,
+      r2:document.getElementById('calc-rend-f2').value,
+      r3:document.getElementById('calc-rend-f3').value,
+      d1:document.getElementById('calc-dias-f1').value,
+      d2:document.getElementById('calc-dias-f2').value,
+      d3:document.getElementById('calc-dias-f3').value,
+      c1:document.getElementById('calc-cont-f1').value,
+      c2:document.getElementById('calc-cont-f2').value,
+      c3:document.getElementById('calc-cont-f3').value,
     }));
   }catch(e){}
 }
