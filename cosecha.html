@@ -434,7 +434,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
           <div class="calc-res-card" style="border:2px solid #dc2626;">
             <div class="calc-res-val crv-rojo" id="cr-total"></div>
-            <div class="calc-res-lbl">TOTAL personas</div>
+            <div class="calc-res-lbl">TOTAL pers/dia</div>
           </div>
           <div class="calc-res-card"><div class="calc-res-val crv-verde" id="cr-f1"></div><div class="calc-res-lbl">Finca 1</div></div>
           <div class="calc-res-card"><div class="calc-res-val crv-azul" id="cr-f2"></div><div class="calc-res-lbl">Finca 2</div></div>
@@ -1719,25 +1719,26 @@ function calcularPersonal(){
   let totalPersonas=0;
   fincas.forEach((finca,i)=>{
     const rend=rendFinca[i];
-    let haMantDia=0, haFuera=0;
+    let haMantDia=0, haRojo=0;
     LOTES.filter(l=>l.finca===finca).forEach(l=>{
       const frecDias=l.tipo==='hibrido'?22:12;
       haMantDia+=l.ha/frecDias;
       const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
-      if(cs.tipo==='azul'||cs.tipo==='rojo') haFuera+=l.ha;
+      if(cs.tipo==='rojo') haRojo+=l.ha;
     });
     const persMant=haMantDia/rend;
-    const persDes=diasRec>0?(haFuera/diasRec/rend):0;
+    const persDes=diasRec>0?(haRojo/diasRec/rend):0;
     const subtotal=persMant+persDes;
     const contVal=subtotal*contPct/100;
-    const total=Math.ceil(subtotal+contVal);
-    totalPersonas+=total;
-    document.getElementById('c'+ids[i]+'-mant').textContent=Math.ceil(persMant)+' personas';
-    document.getElementById('c'+ids[i]+'-des').textContent=diasRec>0?Math.ceil(persDes)+' personas':'—';
-    document.getElementById('c'+ids[i]+'-sub').textContent=Math.ceil(subtotal)+' personas';
-    document.getElementById('c'+ids[i]+'-cont').textContent=contPct>0?'+'+Math.ceil(contVal)+' ('+contPct+'%)':'—';
-    document.getElementById('c'+ids[i]+'-per').textContent=total+' personas';
-    document.getElementById('cr-'+ids[i]).textContent=total;
+    const totalFinal=Math.ceil(subtotal+contVal);
+    totalPersonas+=totalFinal;
+    const fmt=n=>n.toFixed(1);
+    document.getElementById('c'+ids[i]+'-mant').textContent=Math.ceil(persMant)+' pers/dia ('+fmt(haMantDia)+' HA/dia)';
+    document.getElementById('c'+ids[i]+'-des').textContent=diasRec>0?(Math.ceil(persDes)+' pers/dia — '+fmt(haRojo)+' HA en '+diasRec+' dias'):'— (define dias de recuperacion)';
+    document.getElementById('c'+ids[i]+'-sub').textContent=Math.ceil(subtotal)+' pers/dia';
+    document.getElementById('c'+ids[i]+'-cont').textContent=contPct>0?('+'+Math.ceil(contVal)+' pers ('+contPct+'%)'):'—';
+    document.getElementById('c'+ids[i]+'-per').textContent=totalFinal+' personas/dia';
+    document.getElementById('cr-'+ids[i]).textContent=totalFinal;
   });
   document.getElementById('cr-total').textContent=totalPersonas;
 }
