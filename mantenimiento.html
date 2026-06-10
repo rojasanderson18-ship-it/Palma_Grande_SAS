@@ -153,6 +153,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="header-right">
     <div class="header-fecha" id="hdr-fecha">—</div>
     <div class="header-semana" id="hdr-sem">—</div>
+    <div id="sync-status" style="font-size:9px;color:var(--muted);letter-spacing:.5px;">⬤ local</div>
   </div>
 </div>
 
@@ -579,6 +580,7 @@ function guardarLocal(){try{localStorage.setItem(LS,JSON.stringify(marcas));}cat
 function cargarLocal(){try{const d=localStorage.getItem(LS);if(d)marcas=JSON.parse(d);}catch(e){}}
 async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  setSyncStatus('guardando…','#f0c96a');
   return new Promise((resolve)=>{
     const cbName='_send'+Date.now();
     const script=document.createElement('script');
@@ -588,6 +590,7 @@ async function enviarGAS(payload){
       resuelto=true;
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
+      setSyncStatus('sin conexión','#dc2626');
       resolve();
     },8000);
     window[cbName]=(data)=>{
@@ -596,6 +599,7 @@ async function enviarGAS(payload){
       clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
+      setSyncStatus('guardado ✓','#16a34a');
       resolve(data);
     };
     script.onerror=()=>{
@@ -604,6 +608,7 @@ async function enviarGAS(payload){
       clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
+      setSyncStatus('sin conexión','#dc2626');
       resolve();
     };
     const params = new URLSearchParams();
@@ -770,13 +775,34 @@ function exportarPDFMantto(){
   },300);
 }
 
+const DATOS_RESPALDO = {};
+
+function setSyncStatus(txt,color){
+  const el=document.getElementById('sync-status');
+  if(el){el.textContent='⬤ '+txt;el.style.color=color||'var(--muted)';}
+}
+
 function init(){
   const hoy=hoyLocal();
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
   cargarLocal();
-  cargarGAS().finally(()=>render());
-  setInterval(()=>{ if(!modoEdicion) cargarGAS().finally(()=>render()); },5*60*1000);
+  const totalLocal=Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
+  if(totalLocal===0 && Object.keys(DATOS_RESPALDO).length>0){
+    marcas=JSON.parse(JSON.stringify(DATOS_RESPALDO));
+    guardarLocal();
+  }
+  render();
+  setSyncStatus('sincronizando…','#f0c96a');
+  cargarGAS().finally(()=>{ render(); setSyncStatus('sincronizado','#16a34a'); });
+  setInterval(async()=>{
+    if(!modoEdicion){
+      setSyncStatus('sincronizando…','#f0c96a');
+      await cargarGAS();
+      render();
+      setSyncStatus('sincronizado','#16a34a');
+    }
+  },30*1000);
   setInterval(()=>{ if(!modoEdicion) render(); },60*1000);
 }
 document.addEventListener('DOMContentLoaded',init);
