@@ -530,7 +530,7 @@ function marcarTrabajo(key,fecha,tipo){
 }
 function quitarTrabajo(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
-  guardarLocal();cerrarPopup();render();showToast('Trabajo removido');
+  guardarLocal();enviarGAS({accion:'quitarTrabajo',labor:laborActual,key,fecha});cerrarPopup();render();showToast('Trabajo removido');
 }
 function limpiarCelda(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
