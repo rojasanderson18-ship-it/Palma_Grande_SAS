@@ -739,62 +739,319 @@ function toggleEdicion(){
 // PDF EXPORT
 // =============================================
 function exportarPDFMantto(){
-  const jspdfLib = window.jspdf || window.jsPDF;
-  if(!jspdfLib){ showToast('Libreria PDF no cargada','err'); return; }
-  if(!window.html2canvas){ showToast('Error: recarga la pagina','err'); return; }
   const {jsPDF} = window.jspdf || {jsPDF: window.jsPDF};
-  showToast('Generando PDF...');
+  if(!jsPDF){ showToast('Librería PDF no cargada','err'); return; }
+  showToast('Generando PDF…');
+  setTimeout(()=>{
+    try{ _generarPDFMantto(jsPDF); }
+    catch(e){ console.error(e); showToast('Error al generar PDF','err'); }
+  },80);
+}
 
+function _generarPDFMantto(jsPDF){
   const hoy = hoyLocal();
-  const sn = semanaNum(hoy);
-  const fecha = hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
-  const laborNombre = laborActual.charAt(0).toUpperCase()+laborActual.slice(1);
+  const sn  = semanaNum(hoy);
+  const fechaStr = hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
 
-  const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const LABORES_CFG = [
+    {key:'poda',      nombre:'PODA',      cicloDesc:'Ciclo: ~335 días · Tolerancia: 15 días'},
+    {key:'roceria',   nombre:'ROCERÍA',   cicloDesc:'Ciclo: 90 días · Tolerancia: 15 días'},
+    {key:'rotospeed', nombre:'ROTOSPEED', cicloDesc:'Ciclo: 90 días · Tolerancia: 15 días'},
+    {key:'rolo',      nombre:'ROLO',      cicloDesc:'Ciclo: 180 días · Tolerancia: 15 días'},
+  ];
+  const FINCAS = ['FINCA 1','FINCA 2','FINCA 3'];
 
-  // Desactivar sticky
-  const stickyEls=document.querySelectorAll('.col-finca,.col-lote,.col-ha,.col-freq,.col-estado,.ciclos-table thead th');
-  const origStyles=[];
-  stickyEls.forEach(el=>{
-    origStyles.push({el,pos:el.style.position,left:el.style.left,top:el.style.top,z:el.style.zIndex});
-    el.style.position='relative';el.style.left='auto';el.style.top='auto';el.style.zIndex='auto';
-  });
-  const tw=document.getElementById('table-wrap');
-  const origOv=tw.style.overflow,origH=tw.style.height;
-  tw.style.overflow='visible';tw.style.height='auto';
+  // Color palettes [R,G,B]
+  const CG=[184,134,11], CD=[30,58,95], CV=[22,163,74], CA=[37,99,235],
+        CR=[220,38,38],  CL=[248,249,250], CB=[229,231,235], CM=[107,114,128],
+        CW=[255,255,255], CGOLD=[240,201,106];
 
-  setTimeout(async ()=>{
-    const tableEl=document.querySelector('.ciclos-table');
-    const snapW=tableEl?tableEl.offsetWidth+40:1100;
-    const snap=document.createElement('div');
-    snap.style.cssText=`position:fixed;left:-9999px;top:0;background:#fff;width:${snapW}px;overflow:visible;`;
-    const tableClone=tableEl?tableEl.cloneNode(true):document.createElement('table');
-    tableClone.querySelectorAll('th,td').forEach(el=>{
-      el.style.position='relative';el.style.left='auto';el.style.top='auto';el.style.zIndex='auto';
+  // ── helpers ──────────────────────────────────────────────
+  function computeLabor(labKey){
+    let alDia=0,tol=0,venc=0,sin=0,haAlDia=0,haTol=0,haVenc=0;
+    const criticos=[];
+    const totalHA=LOTES.reduce((s,l)=>s+l.ha,0);
+    LOTES.forEach(l=>{
+      const key=l.finca+'_'+l.lote;
+      const e=estadoHoy(labKey,key,l.tipo,hoy);
+      const cs=getCellState(labKey,key,l.tipo,hoy);
+      if(e==='verde'||e==='trabajo'){alDia++;haAlDia+=l.ha;}
+      else if(e==='azul'){tol++;haTol+=l.ha;}
+      else if(e==='rojo'){venc++;haVenc+=l.ha;criticos.push({lote:l,dias:cs.num});}
+      else sin++;
     });
-    snap.innerHTML=`<div style="background:#0f1117;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-family:Arial;font-size:13px;font-weight:900;color:#f0c96a;letter-spacing:2px;">PALMA GRANDE S.A.S.</div>
-      <div style="font-family:Arial;font-size:17px;font-weight:900;color:#fff;letter-spacing:3px;">MANTENIMIENTO · ${laborNombre.toUpperCase()}</div>
-      <div style="font-family:Arial;font-size:12px;color:#f0c96a;">${fecha} · Sem ${sn}</div>
-    </div><div style="overflow:visible;padding:4px 0;"></div>
-    <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:6px 20px;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
-      <span>Palma Grande S.A.S.</span><span>Semana ${sn} · ${hoy.getFullYear()}</span><span>Mantenimiento · ${laborNombre}</span>
-    </div>`;
-    snap.children[1].appendChild(tableClone);
-    document.body.appendChild(snap);
-    await new Promise(r=>setTimeout(r,400));
-    const canvas=await window.html2canvas(snap,{scale:1.3,useCORS:true,backgroundColor:'#fff',logging:false,width:snap.scrollWidth,height:snap.scrollHeight,windowWidth:snap.scrollWidth+100,windowHeight:snap.scrollHeight+100});
-    document.body.removeChild(snap);
-    origStyles.forEach(s=>{s.el.style.position=s.pos;s.el.style.left=s.left;s.el.style.top=s.top||'';s.el.style.zIndex=s.z;});
-    tw.style.overflow=origOv;tw.style.height=origH;
-    const img=canvas.toDataURL('image/jpeg',0.92);
-    const ratio=canvas.width/canvas.height;
-    let iw=297,ih=297/ratio;
-    if(ih>210){ih=210;iw=210*ratio;}
-    doc.addImage(img,'JPEG',(297-iw)/2,(210-ih)/2,iw,ih);
-    doc.save('mantenimiento-'+laborActual+'-sem'+sn+'-'+isoDate(hoy)+'.pdf');
-    showToast('PDF generado correctamente');
-  },300);
+    criticos.sort((a,b)=>b.dias-a.dias);
+    return {alDia,tol,venc,sin,haAlDia,haTol,haVenc,total:LOTES.length,totalHA,criticos};
+  }
+  function computeFincaLabor(finca,labKey){
+    const ls=LOTES.filter(l=>l.finca===finca);
+    let alDia=0,tol=0,venc=0;
+    ls.forEach(l=>{
+      const key=l.finca+'_'+l.lote;
+      const e=estadoHoy(labKey,key,l.tipo,hoy);
+      if(e==='verde'||e==='trabajo') alDia++;
+      else if(e==='azul') tol++;
+      else if(e==='rojo') venc++;
+    });
+    return {alDia,tol,venc,total:ls.length};
+  }
+  function pct(n,d){ return d>0?Math.round(n/d*100):0; }
+
+  const statsLab={};
+  LABORES_CFG.forEach(lc=>{ statsLab[lc.key]=computeLabor(lc.key); });
+
+  const todosCriticos=[];
+  LABORES_CFG.forEach(lc=>{
+    statsLab[lc.key].criticos.forEach(c=>{
+      todosCriticos.push({...c,laborNombre:lc.nombre});
+    });
+  });
+  todosCriticos.sort((a,b)=>b.dias-a.dias);
+
+  // ── PAGE 1: Gerencia — Portrait A4 ──────────────────────
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, H=297;
+
+  function drawHeader1(){
+    doc.setFillColor(...CD); doc.rect(0,0,W,22,'F');
+    // Left brand
+    doc.setTextColor(...CGOLD); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('PALMA GRANDE S.A.S.',10,8);
+    doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.text('Dpto. Agronómico',10,14);
+    // Center title
+    doc.setTextColor(...CW); doc.setFontSize(15); doc.setFont('helvetica','bold');
+    doc.text('MANTENIMIENTO AGRÍCOLA',W/2,10,{align:'center'});
+    doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.text('Semana '+sn+' · Dpto. Agronómico',W/2,16,{align:'center'});
+    // Right date
+    doc.setTextColor(...CGOLD); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text(fechaStr,W-10,9,{align:'right'});
+    doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+    doc.text('Semana '+sn,W-10,15,{align:'right'});
+  }
+  function drawFooter1(pag,tot){
+    doc.setFillColor(...CL); doc.rect(0,H-9,W,9,'F');
+    doc.setDrawColor(...CB); doc.setLineWidth(0.2); doc.line(0,H-9,W,H-9);
+    doc.setTextColor(...CM); doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.text('Palma Grande S.A.S. · Dpto. Agronómico',8,H-3.5);
+    doc.text('Sistema de Gestión Agrícola · Generado automáticamente',W/2,H-3.5,{align:'center'});
+    doc.text('Semana '+sn+' · '+hoy.getFullYear()+' · Pág. '+pag+' de '+tot,W-8,H-3.5,{align:'right'});
+  }
+
+  drawHeader1();
+
+  // ── Labor cards (4 in a row) ──
+  let y=27;
+  doc.setTextColor(...CM); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+  doc.text('ESTADO POR LABOR — LOTES Y HECTÁREAS',10,y); y+=4;
+
+  const cW=(W-20-6)/4, cH=50;
+  LABORES_CFG.forEach((lc,i)=>{
+    const st=statsLab[lc.key];
+    const cx=10+i*(cW+2), cy=y;
+    doc.setFillColor(...CW); doc.setDrawColor(...CB); doc.setLineWidth(0.3);
+    doc.roundedRect(cx,cy,cW,cH,2,2,'FD');
+    // Card header strip
+    doc.setFillColor(...CL); doc.roundedRect(cx,cy,cW,8,2,2,'F');
+    doc.rect(cx,cy+5,cW,3,'F');
+    doc.setTextColor(...CD); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(lc.nombre,cx+cW/2,cy+5.5,{align:'center'});
+    doc.setTextColor(...CM); doc.setFontSize(4.5); doc.setFont('helvetica','normal');
+    doc.text(lc.cicloDesc,cx+cW/2,cy+10,{align:'center'});
+    // Rows
+    const rows=[
+      {l:'Al día',     v:st.alDia+' lotes ('+pct(st.alDia,st.total)+'%)',  c:CV},
+      {l:'Tolerancia', v:st.tol  +' lotes ('+pct(st.tol,st.total)  +'%)',  c:CA},
+      {l:'Vencido',    v:st.venc +' lotes ('+pct(st.venc,st.total) +'%)',  c:CR},
+      {l:'HA al día',  v:st.haAlDia+' HA ('+pct(st.haAlDia,st.totalHA)+'%)',c:CV},
+      {l:'HA vencido', v:st.haVenc +' HA ('+pct(st.haVenc,st.totalHA) +'%)',c:CR},
+    ];
+    rows.forEach((r,ri)=>{
+      const ry=cy+14+ri*7;
+      doc.setFontSize(5.5); doc.setFont('helvetica','normal'); doc.setTextColor(...CM);
+      doc.text(r.l,cx+3,ry);
+      doc.setFont('helvetica','bold'); doc.setTextColor(...r.c);
+      doc.text(r.v,cx+cW-3,ry,{align:'right'});
+    });
+  });
+  y+=cH+6;
+
+  // ── Estado por finca ──
+  doc.setTextColor(...CM); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+  doc.text('ESTADO POR FINCA',10,y); y+=4;
+
+  const fW=(W-20-4)/3, fH=4+LABORES_CFG.length*16+4;
+  FINCAS.forEach((finca,fi)=>{
+    const fcx=10+fi*(fW+2), fcy=y;
+    doc.setFillColor(...CW); doc.setDrawColor(...CB); doc.setLineWidth(0.3);
+    doc.roundedRect(fcx,fcy,fW,fH,2,2,'FD');
+    doc.setFillColor(...CL); doc.roundedRect(fcx,fcy,fW,8,2,2,'F');
+    doc.rect(fcx,fcy+5,fW,3,'F');
+    doc.setTextColor(...CD); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(finca,fcx+fW/2,fcy+5.5,{align:'center'});
+
+    LABORES_CFG.forEach((lc,li)=>{
+      const fs=computeFincaLabor(finca,lc.key);
+      const lry=fcy+10+li*16;
+      doc.setFontSize(6); doc.setFont('helvetica','bold'); doc.setTextColor(...CD);
+      doc.text(lc.nombre,fcx+3,lry+3);
+      const dotCols=[[CV,fs.alDia],[CA,fs.tol],[CR,fs.venc]];
+      const dsp=(fW-6)/3;
+      dotCols.forEach(([c,cnt],di)=>{
+        const dx=fcx+3+di*dsp+dsp/2;
+        doc.setFillColor(...c); doc.circle(dx,lry+8,3.2,'F');
+        doc.setTextColor(...CW); doc.setFontSize(5); doc.setFont('helvetica','bold');
+        doc.text(String(cnt),dx,lry+9.2,{align:'center'});
+        doc.setTextColor(...CM); doc.setFontSize(4.5); doc.setFont('helvetica','normal');
+        doc.text('('+pct(cnt,fs.total)+'%)',dx,lry+13.5,{align:'center'});
+      });
+    });
+  });
+  y+=fH+6;
+
+  // ── Lotes críticos ──
+  doc.setTextColor(...CM); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+  doc.text('LOTES CRÍTICOS',10,y); y+=4;
+
+  const top6=todosCriticos.slice(0,6);
+  const lcW=(W-24)/2;
+  top6.forEach((c,ci)=>{
+    const col=ci%2, row=Math.floor(ci/2);
+    const cx=10+col*(lcW+4), cy=y+row*12;
+    doc.setFillColor(...CW); doc.setDrawColor(...CB); doc.setLineWidth(0.3);
+    doc.roundedRect(cx,cy,lcW,10,1,1,'FD');
+    doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(...CD);
+    doc.text('Lote '+c.lote.lote,cx+3,cy+6.5);
+    doc.setFontSize(6); doc.setFont('helvetica','normal'); doc.setTextColor(...CM);
+    doc.text(c.laborNombre+'  '+c.lote.finca.replace('FINCA ','F')+' · '+c.lote.ha+' ha',cx+22,cy+6.5);
+    doc.setFont('helvetica','bold'); doc.setTextColor(...CR);
+    doc.text(c.dias+' días',cx+lcW-3,cy+6.5,{align:'right'});
+  });
+
+  drawFooter1(1,5);
+
+  // ── PAGES 2-5: one per labor — Landscape A4 ──────────────
+  const NUM_DIAS=28;
+  const fechas28=[];
+  for(let i=0;i<NUM_DIAS;i++){const d=new Date(hoy);d.setDate(d.getDate()-i);fechas28.push(d);}
+
+  LABORES_CFG.forEach((lc,li)=>{
+    doc.addPage('a4','landscape');
+    const LW=297, LH=210;
+    const st=statsLab[lc.key];
+
+    // Header
+    doc.setFillColor(...CD); doc.rect(0,0,LW,18,'F');
+    doc.setTextColor(...CGOLD); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('PALMA GRANDE S.A.S.',10,7);
+    doc.setFontSize(5.5); doc.setFont('helvetica','normal'); doc.text('S.A.S.',10,12);
+    doc.setTextColor(...CW); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text('MANTENIMIENTO · '+lc.nombre,LW/2,9,{align:'center'});
+    doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.text(lc.cicloDesc,LW/2,14,{align:'center'});
+    doc.setTextColor(...CGOLD); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(fechaStr,LW-10,8,{align:'right'});
+    doc.setFontSize(6); doc.setFont('helvetica','normal');
+    doc.text('Semana '+sn,LW-10,14,{align:'right'});
+
+    // KPI bar
+    const kpis=[
+      {l:'AL DÍA',      v:st.alDia, p:pct(st.alDia,st.total), c:CV},
+      {l:'TOLERANCIA',  v:st.tol,   p:pct(st.tol,st.total),   c:CA},
+      {l:'VENCIDO',     v:st.venc,  p:pct(st.venc,st.total),  c:CR},
+      {l:'SIN REGISTRO',v:st.sin,   p:pct(st.sin,st.total),   c:CM},
+    ];
+    const kW=(LW-20-9)/4, kY=21, kH=14;
+    kpis.forEach((k,ki)=>{
+      const kx=10+ki*(kW+3);
+      doc.setFillColor(...CW); doc.setDrawColor(...CB); doc.setLineWidth(0.3);
+      doc.roundedRect(kx,kY,kW,kH,1,1,'FD');
+      doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.setTextColor(...k.c);
+      doc.text(String(k.v),kx+5,kY+9);
+      doc.setFontSize(5); doc.setFont('helvetica','normal'); doc.setTextColor(...CM);
+      doc.text(k.l,kx+5,kY+12.5);
+      doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...k.c);
+      doc.text(k.p+'%',kx+kW-4,kY+8,{align:'right'});
+    });
+
+    // Table
+    const hoyISO=isoDate(hoy);
+    const head=[[
+      {content:'F',     styles:{halign:'center',fontStyle:'bold',fontSize:5.5}},
+      {content:'LOTE',  styles:{halign:'center',fontStyle:'bold',fontSize:5.5}},
+      {content:'HA',    styles:{halign:'center',fontStyle:'bold',fontSize:5.5}},
+      {content:'ESTADO',styles:{halign:'center',fontStyle:'bold',fontSize:5.5}},
+      ...fechas28.map(d=>{
+        const isH=isoDate(d)===hoyISO;
+        return {content:d.getDate()+'\n'+DIAS_SEM[d.getDay()],
+                styles:{halign:'center',fontSize:5,textColor:isH?CG:CM,fontStyle:isH?'bold':'normal'}};
+      })
+    ]];
+
+    const body=[];
+    let fActual='';
+    LOTES.forEach(l=>{
+      if(l.finca!==fActual){
+        fActual=l.finca;
+        body.push([{content:'  '+l.finca,colSpan:4+NUM_DIAS,
+          styles:{fillColor:[236,242,250],textColor:CD,fontStyle:'bold',fontSize:6,cellPadding:2}}]);
+      }
+      const key=l.finca+'_'+l.lote;
+      const e=estadoHoy(lc.key,key,l.tipo,hoy);
+      let eBadge,eBadgeColor;
+      if(e==='verde'||e==='trabajo'){eBadge='AL DIA';eBadgeColor=CV;}
+      else if(e==='azul'){eBadge='TOL';eBadgeColor=CA;}
+      else if(e==='rojo'){eBadge='VENCIDO';eBadgeColor=CR;}
+      else{eBadge='S/R';eBadgeColor=CM;}
+
+      const row=[
+        {content:l.finca.replace('FINCA ','F'),styles:{textColor:CD,fontStyle:'bold',halign:'center'}},
+        {content:l.lote,styles:{halign:'center'}},
+        {content:l.ha,styles:{halign:'center',textColor:CM}},
+        {content:eBadge,styles:{textColor:eBadgeColor,fontStyle:'bold',halign:'center'}},
+      ];
+      fechas28.forEach(d=>{
+        const cs2=getCellState(lc.key,key,l.tipo,d);
+        let fill=null, tc=null, txt='';
+        if(cs2.tipo==='trabajo'){fill=[30,58,95];tc=CW;txt=cs2.num||'';}
+        else if(cs2.tipo==='verde'){fill=[220,252,231];tc=[20,83,45];txt=cs2.num;}
+        else if(cs2.tipo==='azul'){fill=[219,234,254];tc=[30,58,138];txt=cs2.num;}
+        else if(cs2.tipo==='rojo'){fill=[254,226,226];tc=[127,29,29];txt=cs2.num;}
+        const s={halign:'center',fontSize:5};
+        if(fill) s.fillColor=fill;
+        if(tc)   s.textColor=tc;
+        row.push({content:txt,styles:s});
+      });
+      body.push(row);
+    });
+
+    doc.autoTable({
+      head, body,
+      startY: kY+kH+3,
+      margin:{left:5,right:5,bottom:12},
+      tableWidth:'auto',
+      styles:{fontSize:5.5,cellPadding:1,lineColor:CB,lineWidth:0.1,overflow:'hidden'},
+      headStyles:{fillColor:CL,textColor:CM,fontSize:5.5,fontStyle:'bold',halign:'center'},
+      columnStyles:{
+        0:{cellWidth:6,  halign:'center'},
+        1:{cellWidth:11, halign:'center'},
+        2:{cellWidth:8,  halign:'center'},
+        3:{cellWidth:14, halign:'center'},
+      },
+      didDrawPage:()=>{
+        doc.setFillColor(...CL); doc.rect(0,LH-9,LW,9,'F');
+        doc.setDrawColor(...CB); doc.setLineWidth(0.2); doc.line(0,LH-9,LW,LH-9);
+        doc.setTextColor(...CM); doc.setFontSize(5.5); doc.setFont('helvetica','normal');
+        doc.text('Palma Grande S.A.S. · Dpto. Agronómico',8,LH-3.5);
+        doc.text('Sistema de Gestión Agrícola · Generado automáticamente',LW/2,LH-3.5,{align:'center'});
+        doc.text('Semana '+sn+' · '+hoy.getFullYear()+' · Pág. '+(li+2)+' de 5',LW-8,LH-3.5,{align:'right'});
+      },
+    });
+  });
+
+  doc.save('mantenimiento-sem'+sn+'-'+isoDate(hoy)+'.pdf');
+  showToast('PDF generado — '+5+' páginas');
 }
 
 const DATOS_RESPALDO = {};
