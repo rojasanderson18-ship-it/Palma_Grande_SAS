@@ -579,23 +579,81 @@ function guardarLocal(){try{localStorage.setItem(LS,JSON.stringify(marcas));}cat
 function cargarLocal(){try{const d=localStorage.getItem(LS);if(d)marcas=JSON.parse(d);}catch(e){}}
 async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  try{await fetch(GAS_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});}catch(e){}
+  return new Promise((resolve)=>{
+    const cbName='_send'+Date.now();
+    const script=document.createElement('script');
+    let resuelto=false;
+    const timer=setTimeout(()=>{
+      if(resuelto) return;
+      resuelto=true;
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve();
+    },8000);
+    window[cbName]=(data)=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve(data);
+    };
+    script.onerror=()=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve();
+    };
+    const params = new URLSearchParams();
+    params.set('callback', cbName);
+    Object.entries(payload).forEach(([k,v])=>{
+      params.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
+    });
+    script.src = GAS_URL+'?'+params.toString();
+    document.body.appendChild(script);
+  });
 }
 async function cargarGAS(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  try{
-    const r=await fetch(GAS_URL+'?accion=obtenerMantenimiento',{method:'GET',redirect:'follow',mode:'cors',credentials:'omit'});
-    const text=await r.text();
-    const data=JSON.parse(text);
-    if(data&&data.marcas){
-      const totalGAS=Object.values(data.marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
-      const totalLocal=Object.values(marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
-      if(totalGAS>=totalLocal){
-        marcas=Object.assign({poda:{},roceria:{},rotospeed:{},rolo:{}},data.marcas);
-        guardarLocal();
+  return new Promise((resolve)=>{
+    const cbName='_cb'+Date.now();
+    const script=document.createElement('script');
+    let resuelto=false;
+    const timer=setTimeout(()=>{
+      if(resuelto) return;
+      resuelto=true;
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve();
+    },10000);
+    window[cbName]=(data)=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      if(data&&data.marcas&&Object.keys(data.marcas).length>0){
+        const totalGAS=Object.values(data.marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
+        if(totalGAS>0){
+          marcas=Object.assign({poda:{},roceria:{},rotospeed:{},rolo:{}},data.marcas);
+          guardarLocal();
+        }
       }
-    }
-  }catch(e){console.error('Error GAS:',e);}
+      resolve();
+    };
+    script.onerror=()=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve();
+    };
+    script.src=GAS_URL+'?accion=obtenerMantenimiento&callback='+cbName;
+    document.body.appendChild(script);
+  });
 }
 
 function showToast(msg,tipo){
