@@ -530,11 +530,15 @@ function marcarTrabajo(key,fecha,tipo){
 }
 function quitarTrabajo(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
-  guardarLocal();enviarGAS({accion:'quitarTrabajo',labor:laborActual,key,fecha});cerrarPopup();render();showToast('Trabajo removido');
+  guardarLocal();cerrarPopup();render();showToast('Trabajo removido');
+  setSyncStatus('guardando…','#f0c96a');
+  enviarGAS({accion:'quitarTrabajo',labor:laborActual,key,fecha});
 }
 function limpiarCelda(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
-  guardarLocal();enviarGAS({accion:'quitarTrabajo',labor:laborActual,key,fecha});cerrarPopup();render();
+  guardarLocal();cerrarPopup();render();
+  setSyncStatus('guardando…','#f0c96a');
+  enviarGAS({accion:'quitarTrabajo',labor:laborActual,key,fecha});
 }
 
 // =============================================
