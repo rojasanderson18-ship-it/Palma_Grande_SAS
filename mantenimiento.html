@@ -134,6 +134,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .popup-opt:hover{background:var(--surface2);}
 .pop-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
 .pd-trabajo{background:#1e3a5f;}
+.pd-nuevo{background:#14532d;}
+.pd-cont{background:rgba(30,58,95,.35);}
 .pd-libre{background:transparent;border:1px solid var(--border);}
 .pd-limpiar{background:rgba(220,38,38,.15);}
 .popup-opt.pop-limpiar{color:var(--rojo);font-size:11px;}
@@ -519,10 +521,10 @@ function onCellClick(e,td){
 function showPopup(e,key,fecha,lote,esTrabajo){
   cerrarPopup();
   const popup=document.getElementById('cell-popup');
-  const fd=parseISO(fecha);
   popup.innerHTML=`
     <div class="popup-header">Lote <strong>${lote} · ${fecha.split('-').reverse().join('/')}</strong></div>
-    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}')"><div class="pop-dot pd-trabajo"></div>Marcar trabajo realizado</div>`:''}
+    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}','continuidad')"><div class="pop-dot pd-cont"></div>Continuidad de ciclo</div>`:''}
+    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}','nuevo')"><div class="pop-dot pd-nuevo"></div>Nuevo ciclo (reinicia)</div>`:''}
     ${esTrabajo?`<div class="popup-opt" onclick="quitarTrabajo('${key}','${fecha}')"><div class="pop-dot pd-libre"></div>Quitar trabajo</div>`:''}
     <div class="popup-opt pop-limpiar" onclick="limpiarCelda('${key}','${fecha}')"><div class="pop-dot pd-limpiar"></div>Limpiar celda</div>
   `;
