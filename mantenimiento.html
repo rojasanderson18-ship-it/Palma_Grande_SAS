@@ -719,7 +719,9 @@ function toggleEdicion(){
     document.getElementById('btn-editar').textContent='🔒 Editar';
     document.getElementById('btn-editar').style.color='';
     document.getElementById('btn-editar').style.borderColor='';
-    render();return;
+    render();
+    publicarAlSheet();
+    return;
   }
   const pin=prompt('Ingresa el PIN para editar:');
   if(pin===PIN_EDICION){
@@ -800,6 +802,40 @@ const DATOS_RESPALDO = {};
 function setSyncStatus(txt,color){
   const el=document.getElementById('sync-status');
   if(el){el.textContent='⬤ '+txt;el.style.color=color||'var(--muted)';}
+}
+
+
+function gasJSONP(url){
+  return new Promise((resolve)=>{
+    const cb='_cb'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const s=document.createElement('script');
+    window[cb]=(d)=>{ delete window[cb]; if(document.body.contains(s)) document.body.removeChild(s); resolve(d); };
+    s.onerror=()=>{ delete window[cb]; if(document.body.contains(s)) document.body.removeChild(s); resolve(null); };
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    document.body.appendChild(s);
+  });
+}
+
+async function publicarAlSheet(){
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  const todasMarcas=[];
+  Object.entries(marcas).forEach(([labor,lotes])=>{
+    Object.entries(lotes).forEach(([key,fechas])=>{
+      Object.entries(fechas).forEach(([fecha,tipo])=>{
+        todasMarcas.push({labor,key,fecha,tipo});
+      });
+    });
+  });
+  if(todasMarcas.length===0) return;
+  showToast('Publicando '+todasMarcas.length+' registros...');
+  await gasJSONP(GAS_URL+'?accion=limpiarMantto');
+  let enviados=0;
+  for(let i=0;i<todasMarcas.length;i+=10){
+    const lote=todasMarcas.slice(i,i+10);
+    await gasJSONP(GAS_URL+'?accion=agregarMantto&marcas='+encodeURIComponent(JSON.stringify(lote)));
+    enviados+=lote.length;
+  }
+  showToast('✓ '+enviados+' registros publicados');
 }
 
 function init(){
