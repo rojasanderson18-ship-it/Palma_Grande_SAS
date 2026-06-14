@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Análisis Trampas – Palma Grande</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{overflow-x:hidden;max-width:100%;}
+:root{
+  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#0f172a;--text2:#475569;--muted:#94a3b8;
+  --primary:#1e3a5f;--green:#16a34a;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fef2f2;
+  --amber:#d97706;--amber-bg:#fffbeb;--blue:#2563eb;--blue-bg:#eff6ff;--gold:#b8860b;
+}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0f1117,#1e3a5f);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.hdr-left{display:flex;align-items:center;gap:12px;}
+.hdr-icon{width:40px;height:40px;background:linear-gradient(135deg,#b8860b,#f0c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.hdr-title{font-size:18px;font-weight:800;color:#f0c96a;}
+.hdr-sub{font-size:11px;color:#64748b;}
+.hdr-actions{display:flex;gap:8px;align-items:center;}
+.btn-pdf{background:linear-gradient(135deg,#b8860b,#f0c96a);color:#0f1117;border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;}
+.btn-refresh{background:rgba(255,255,255,.1);color:#f0c96a;border:1px solid rgba(240,201,106,.3);padding:9px 14px;border-radius:10px;font-size:13px;cursor:pointer;font-family:"DM Sans",sans-serif;}
+
+/* TABS */
+.tabs{background:#fff;border-bottom:2px solid var(--border);display:flex;padding:0 12px;position:sticky;top:0;z-index:100;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:14px 20px;font-size:14px;font-weight:600;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;font-family:"DM Sans",sans-serif;}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+
+/* BODY */
+.content{padding:14px 12px;max-width:1400px;margin:0 auto;width:100%;}
+.vista{display:none;}.vista.active{display:block;}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+.kpi{background:#fff;border-radius:14px;padding:16px;border:1px solid var(--border);}
+.kpi-val{font-size:34px;font-weight:900;font-family:"DM Mono",monospace;line-height:1;}
+.kpi-lbl{font-size:12px;color:var(--text2);margin-top:4px;font-weight:500;}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.kpi-trend{font-size:12px;font-weight:700;margin-top:6px;}
+.up{color:var(--red);}.down{color:var(--green);}.neutral{color:var(--muted);}
+
+/* GRID 2 COL */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:768px){.grid2,.grid3{grid-template-columns:1fr;}.hdr-title{font-size:15px;}.kpi-val{font-size:26px;}.hdr-actions{width:100%;justify-content:flex-end;}}
+
+/* CARD */
+.card{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.card-title span{font-size:11px;color:var(--muted);font-weight:400;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{background:var(--primary);color:#fff;padding:9px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.3px;}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);}
+.tbl tr:hover td{background:#f8fafc;}
+.tbl tr:last-child td{border-bottom:none;}
+
+/* BADGE */
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;}
+.b-ok{background:var(--green-bg);color:var(--green);}
+.b-warn{background:var(--amber-bg);color:var(--amber);}
+.b-alert{background:#fff7ed;color:#c2410c;}
+.b-crit{background:var(--red-bg);color:var(--red);}
+.b-gray{background:#f1f5f9;color:var(--text2);}
+
+/* CHART */
+.chart-wrap{position:relative;height:260px;}
+.chart-wrap-tall{position:relative;height:320px;}
+
+/* LOTE BAR */
+.lote-bar{margin-bottom:8px;}
+.lb-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;}
+.lb-name{font-weight:600;}
+.lb-val{color:var(--text2);}
+.lb-track{background:var(--border);border-radius:3px;height:6px;}
+.lb-fill{height:100%;border-radius:3px;}
+.lf-ok{background:linear-gradient(90deg,#16a34a,#22c55e);}
+.lf-warn{background:linear-gradient(90deg,#d97706,#f59e0b);}
+.lf-crit{background:linear-gradient(90deg,#dc2626,#ef4444);}
+
+/* OPERARIO ROW */
+.op-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.op-row:last-child{border-bottom:none;}
+.op-name{font-weight:700;font-size:14px;}
+.op-sub{font-size:12px;color:var(--text2);}
+.op-stats{display:flex;gap:12px;text-align:center;}
+.op-stat-val{font-size:16px;font-weight:800;font-family:"DM Mono",monospace;}
+.op-stat-lbl{font-size:10px;color:var(--muted);}
+
+/* LOADING */
+.loading{text-align:center;padding:60px 24px;color:var(--muted);}
+.loading-spinner{font-size:32px;animation:spin 1s linear infinite;display:inline-block;margin-bottom:12px;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+
+/* SEMAFORO */
+.semaforo{display:flex;gap:6px;align-items:center;font-size:12px;}
+.sem-dot{width:10px;height:10px;border-radius:50%;}
+
+/* PDF EXPORT */
+@media print{.hdr,.tabs,.btn-pdf,.btn-refresh{display:none!important;}.vista{display:block!important;}}
+</style>
+</head>
+<body>
+
+<div class="hdr" id="main-hdr">
+  <div class="hdr-left">
+    <div class="hdr-icon">🪤</div>
+    <div>
+      <div class="hdr-title">Análisis de Trampas</div>
+      <div class="hdr-sub">Rhynchophorus palmarum · Palma Grande S.A.S.</div>
+    </div>
+  </div>
+  <div class="hdr-actions">
+    <div style="color:#94a3b8;font-size:12px;text-align:right;margin-right:8px;" id="ultimo-update"></div>
+    <button class="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
+    <button class="btn-pdf" onclick="exportarPDF()">⬇ Descargar PDF</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="setVista('actual',this)">🔴 Ciclo actual</button>
+  <button class="tab" onclick="setVista('mes',this)">📅 Este mes</button>
+  <button class="tab" onclick="setVista('historico',this)">📊 Histórico</button>
+</div>
+
+<div class="content" id="main-content">
+
+  <!-- CARGANDO -->
+  <div id="loading" class="loading">
+    <div class="loading-spinner">⏳</div>
+    <div style="font-size:15px;font-weight:600;">Cargando datos del campo...</div>
+    <div style="font-size:13px;margin-top:6px;">Consultando registros de operarios</div>
+  </div>
+
+  <!-- VISTA: CICLO ACTUAL -->
+  <div id="vista-actual" class="vista" style="display:none;">
+    <div class="kpi-grid" id="kpi-actual"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">🏆 Capturas por lote <span>Índice cap/trampa</span></div>
+        <div id="lotes-actual"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔴 Alertas activas <span id="fecha-actual-hdr"></span></div>
+        <div id="alertas-actual"></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">📊 Capturas H vs M <span>Ciclo actual</span></div>
+        <div class="chart-wrap"><canvas id="chart-hm-actual"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Estado de trampas</div>
+        <div class="chart-wrap"><canvas id="chart-estado-actual"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">👷 Registro por operario</div>
+      <div id="operarios-actual"></div>
+    </div>
+  </div>
+
+  <!-- VISTA: MES -->
+  <div id="vista-mes" class="vista" style="display:none;">
+    <div class="kpi-grid" id="kpi-mes"></div>
+    <div class="card">
+      <div class="card-title">📈 Capturas diarias del mes <span id="mes-nombre"></span></div>
+      <div class="chart-wrap-tall"><canvas id="chart-mes-daily"></canvas></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">🌴 Capturas acumuladas por finca</div>
+        <div class="chart-wrap"><canvas id="chart-mes-finca"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 Top 10 lotes del mes</div>
+        <div id="top-lotes-mes"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Detalle por ciclo del mes</div>
+      <div style="overflow-x:auto;"><table class="tbl" id="tbl-ciclos-mes">
+        <thead><tr><th>Período</th><th>Revisiones</th><th>Hembras</th><th>Machos</th><th>Total</th><th>IC Promedio</th><th>Estado</th></tr></thead>
+        <tbody id="ciclos-mes-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISTA: HISTÓRICO -->
+  <div id="vista-historico" class="vista" style="display:none;">
+    <div class="kpi-grid" id="kpi-historico"></div>
+    <div class="card">
+      <div class="card-title">📈 Evolución del índice de captura <span>Por ciclo de revisión</span></div>
+      <div class="chart-wrap-tall"><canvas id="chart-hist-ic"></canvas></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">🔴 Tendencia hembras vs machos</div>
+        <div class="chart-wrap"><canvas id="chart-hist-hm"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌴 Capturas totales por finca</div>
+        <div class="chart-wrap"><canvas id="chart-hist-finca"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Historial completo por ciclo</div>
+      <div style="overflow-x:auto;"><table class="tbl">
+        <thead><tr><th>Fecha</th><th>Finca</th><th>Lote</th><th>Trampa</th><th>H</th><th>M</th><th>Total</th><th>Cebo</th><th>Trampa</th><th>Operario</th></tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
+const UMBRAL_ALERTA = 5;
+const UMBRAL_CRITICO = 10;
+
+let historico = [];
+let charts = {};
+let vistaActual = 'actual';
+
+// ── INIT ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', cargarDatos);
+
+function showToast(msg) {
+  let t = document.getElementById('toast-dash');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-dash';
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(() => t.style.opacity = '0', 3000);
+}
+
+function setVista(v, btn) {
+  vistaActual = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.vista').forEach(el => el.style.display = 'none');
+  document.getElementById('vista-' + v).style.display = 'block';
+  renderVista(v);
+}
+
+// ── CARGA DE DATOS ────────────────────────
+function gasJSONP(url) {
+  return new Promise(resolve => {
+    const cb = '_cb' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    window[cb] = d => { delete window[cb]; document.body.contains(s) && document.body.removeChild(s); resolve(d); };
+    s.onerror = () => { delete window[cb]; document.body.contains(s) && document.body.removeChild(s); resolve(null); };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    document.body.appendChild(s);
+  });
+}
+
+async function cargarDatos() {
+  document.getElementById('loading').style.display = 'block';
+  document.querySelectorAll('.vista').forEach(el => el.style.display = 'none');
+
+  const data = await gasJSONP(GAS_URL + '?accion=obtenerTrampasHistorico');
+
+  document.getElementById('loading').style.display = 'none';
+  
+  if (!data || !data.historico || data.historico.length === 0) {
+    historico = [];
+    document.getElementById('vista-' + vistaActual).style.display = 'block';
+    renderVista(vistaActual);
+    if (!data) showToast('⚠️ GAS no responde — actualiza el script');
+    setTimeout(cargarDatos, 2 * 60 * 1000);
+    return;
+  }
+
+  if (!data || !data.historico) {
+    document.getElementById('loading').style.display = 'none';
+    // Sin datos del GAS - mostrar vistas vacías igual
+    historico = [];
+    document.getElementById('vista-' + vistaActual).style.display = 'block';
+    renderVista(vistaActual);
+    showToast('Sin conexión al servidor — mostrando datos locales');
+    return;
+  }
+
+  historico = data.historico;
+  document.getElementById('ultimo-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-CO');
+
+  // Mostrar vista activa
+  document.getElementById('vista-' + vistaActual).style.display = 'block';
+  renderVista(vistaActual);
+
+  // Auto-refresh cada 2 minutos
+  setTimeout(cargarDatos, 2 * 60 * 1000);
+}
+
+// ── HELPERS ───────────────────────────────
+function hoyISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function mesActualISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function cicloActual() {
+  // Últimos 15 días
+  const hoy = new Date();
+  const desde = new Date(hoy); desde.setDate(desde.getDate() - 15);
+  const desdeISO = desde.getFullYear() + '-' + String(desde.getMonth()+1).padStart(2,'0') + '-' + String(desde.getDate()).padStart(2,'0');
+  return historico.filter(r => r.fecha >= desdeISO && r.fecha <= hoyISO());
+}
+
+function badgeIC(ic) {
+  if (ic >= UMBRAL_CRITICO) return '<span class="badge b-crit">CRÍTICO ' + ic.toFixed(1) + '</span>';
+  if (ic >= UMBRAL_ALERTA)  return '<span class="badge b-alert">ALERTA ' + ic.toFixed(1) + '</span>';
+  if (ic >= 3)               return '<span class="badge b-warn">PRECAUCIÓN ' + ic.toFixed(1) + '</span>';
+  return '<span class="badge b-ok">NORMAL ' + ic.toFixed(1) + '</span>';
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ── VISTA ACTUAL ──────────────────────────
+function renderVista(v) {
+  if (v === 'actual') renderActual();
+  if (v === 'mes') renderMes();
+  if (v === 'historico') renderHistorico();
+}
+
+function renderActual() {
+  const datos = cicloActual();
+  if (datos.length === 0) {
+    document.getElementById('kpi-actual').innerHTML = '<div style="color:var(--muted);padding:20px;">Sin registros en los últimos 15 días</div>';
+    return;
+  }
+
+  const totalH = datos.reduce((s,r) => s + (r.hembras||0), 0);
+  const totalM = datos.reduce((s,r) => s + (r.machos||0), 0);
+  const totalCap = totalH + totalM;
+  const trampasUnicas = [...new Set(datos.map(r => r.trampaId))].length;
+  const ic = trampasUnicas > 0 ? (totalCap / trampasUnicas) : 0;
+  const alertas = datos.filter(r => (r.hembras||0)+(r.machos||0) >= UMBRAL_ALERTA).length;
+
+  // KPIs
+  document.getElementById('kpi-actual').innerHTML = `
+    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${trampasUnicas}</div><div class="kpi-lbl">Trampas revisadas</div><div class="kpi-sub">Ciclo 15 días</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">🔴 Hembras capturadas</div><div class="kpi-sub">Total del ciclo</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">🔵 Machos capturados</div><div class="kpi-sub">Total del ciclo</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':ic>=3?'var(--amber)':'var(--green)'};">${ic.toFixed(2)}</div><div class="kpi-lbl">Índice cap/trampa</div><div class="kpi-sub">Umbral alerta: ${UMBRAL_ALERTA}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${alertas>0?'var(--red)':'var(--green)'};">${alertas}</div><div class="kpi-lbl">Trampas en alerta</div><div class="kpi-sub">IC ≥ ${UMBRAL_ALERTA}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--amber);">${totalM>0?(totalH/totalM).toFixed(2):'—'}</div><div class="kpi-lbl">Rel. H:M</div><div class="kpi-sub">&gt;1 = mayor riesgo</div></div>
+  `;
+
+  // Por lote
+  const porLote = {};
+  datos.forEach(r => {
+    const k = (r.finca||'').replace('FINCA ','F') + '_' + r.lote;
+    if (!porLote[k]) porLote[k] = {k, finca:r.finca, lote:r.lote, h:0, m:0, t:0, trampas:new Set()};
+    porLote[k].h += r.hembras||0;
+    porLote[k].m += r.machos||0;
+    porLote[k].t += (r.hembras||0)+(r.machos||0);
+    if (r.trampaId) porLote[k].trampas.add(r.trampaId);
+  });
+  const lotes = Object.values(porLote).sort((a,b) => b.t - a.t);
+  const maxT = lotes[0]?.t || 1;
+
+  document.getElementById('lotes-actual').innerHTML = lotes.map(l => {
+    const ic = l.trampas.size > 0 ? l.t / l.trampas.size : 0;
+    const cls = ic >= UMBRAL_CRITICO ? 'lf-crit' : ic >= UMBRAL_ALERTA ? 'lf-crit' : ic >= 3 ? 'lf-warn' : 'lf-ok';
+    return `<div class="lote-bar">
+      <div class="lb-top">
+        <span class="lb-name">${(l.finca||'').replace('FINCA ','F')} · Lote ${l.lote}</span>
+        <span class="lb-val">H:${l.h} M:${l.m} · IC:${ic.toFixed(1)}</span>
+      </div>
+      <div class="lb-track"><div class="lb-fill ${cls}" style="width:${Math.round(l.t/maxT*100)}%;"></div></div>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Sin datos</div>';
+
+  // Alertas
+  const alertasList = datos.filter(r => (r.hembras||0)+(r.machos||0) >= UMBRAL_ALERTA).sort((a,b) => ((b.hembras||0)+(b.machos||0)) - ((a.hembras||0)+(a.machos||0)));
+  document.getElementById('alertas-actual').innerHTML = alertasList.length === 0
+    ? '<div style="color:var(--green);font-size:13px;text-align:center;padding:20px;">✅ Sin alertas en el ciclo actual</div>'
+    : `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Trampa</th><th>Lote</th><th>H</th><th>M</th><th>IC</th><th>Nivel</th></tr></thead><tbody>
+      ${alertasList.map(r => {
+        const ic = (r.hembras||0)+(r.machos||0);
+        return `<tr><td style="font-weight:700;font-family:'DM Mono',monospace;">${r.trampaId}</td><td>${(r.finca||'').replace('FINCA ','F')} L${r.lote}</td><td style="color:var(--red);">${r.hembras||0}</td><td style="color:var(--blue);">${r.machos||0}</td><td style="font-weight:700;">${ic}</td><td>${badgeIC(ic)}</td></tr>`;
+      }).join('')}
+    </tbody></table></div>`;
+
+  // Chart H vs M por finca
+  const porFinca = {};
+  datos.forEach(r => {
+    const f = (r.finca||'F?').replace('FINCA ','F');
+    if (!porFinca[f]) porFinca[f] = {h:0,m:0};
+    porFinca[f].h += r.hembras||0;
+    porFinca[f].m += r.machos||0;
+  });
+  const fincas = Object.keys(porFinca).sort();
+  destroyChart('chart-hm-actual');
+  charts['chart-hm-actual'] = new Chart(document.getElementById('chart-hm-actual'), {
+    type: 'bar',
+    data: {
+      labels: fincas,
+      datasets: [
+        { label: '🔴 Hembras', data: fincas.map(f => porFinca[f].h), backgroundColor: '#fca5a5', borderColor: '#dc2626', borderWidth: 2, borderRadius: 6 },
+        { label: '🔵 Machos', data: fincas.map(f => porFinca[f].m), backgroundColor: '#93c5fd', borderColor: '#2563eb', borderWidth: 2, borderRadius: 6 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  // Chart estado trampas
+  const estados = {};
+  datos.forEach(r => { const e = r.estadoTrampa||'Sin dato'; estados[e] = (estados[e]||0) + 1; });
+  destroyChart('chart-estado-actual');
+  charts['chart-estado-actual'] = new Chart(document.getElementById('chart-estado-actual'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(estados),
+      datasets: [{ data: Object.values(estados), backgroundColor: ['#86efac','#fcd34d','#fca5a5','#c4b5fd','#94a3b8'], borderWidth: 2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} }
+  });
+
+  // Operarios
+  const porOp = {};
+  datos.forEach(r => {
+    const op = r.operario || 'Desconocido';
+    if (!porOp[op]) porOp[op] = {trampas:0, h:0, m:0};
+    porOp[op].trampas++;
+    porOp[op].h += r.hembras||0;
+    porOp[op].m += r.machos||0;
+  });
+  document.getElementById('operarios-actual').innerHTML = Object.entries(porOp).map(([op,s]) => `
+    <div class="op-row">
+      <div><div class="op-name">👷 ${op}</div><div class="op-sub">${s.trampas} trampas revisadas</div></div>
+      <div class="op-stats">
+        <div><div class="op-stat-val" style="color:var(--red);">${s.h}</div><div class="op-stat-lbl">Hembras</div></div>
+        <div><div class="op-stat-val" style="color:var(--blue);">${s.m}</div><div class="op-stat-lbl">Machos</div></div>
+        <div><div class="op-stat-val">${s.h+s.m}</div><div class="op-stat-lbl">Total</div></div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--muted);padding:16px;text-align:center;">Sin datos de operarios</div>';
+}
+
+// ── VISTA MES ─────────────────────────────
+function renderMes() {
+  const mes = mesActualISO();
+  const datos = historico.filter(r => r.fecha && r.fecha.startsWith(mes));
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('mes-nombre').textContent = meses[new Date().getMonth()] + ' ' + new Date().getFullYear();
+
+  const totalH = datos.reduce((s,r) => s+r.hembras,0);
+  const totalM = datos.reduce((s,r) => s+r.machos,0);
+  const totalCap = totalH + totalM;
+  const trampasUnicas = [...new Set(datos.map(r=>r.trampaId))].length;
+  const ic = trampasUnicas>0 ? (totalCap/trampasUnicas) : 0;
+
+  document.getElementById('kpi-mes').innerHTML = `
+    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${trampasUnicas}</div><div class="kpi-lbl">Trampas revisadas</div><div class="kpi-sub">En el mes</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">Hembras totales</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">Machos totales</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(2)}</div><div class="kpi-lbl">IC promedio mes</div></div>
+    <div class="kpi"><div class="kpi-val">${totalCap}</div><div class="kpi-lbl">Capturas totales</div></div>
+  `;
+
+  // Capturas diarias
+  const porDia = {};
+  datos.forEach(r => {
+    if (!porDia[r.fecha]) porDia[r.fecha] = {h:0,m:0};
+    porDia[r.fecha].h += r.hembras||0;
+    porDia[r.fecha].m += r.machos||0;
+  });
+  const dias = Object.keys(porDia).sort();
+  destroyChart('chart-mes-daily');
+  charts['chart-mes-daily'] = new Chart(document.getElementById('chart-mes-daily'), {
+    type: 'line',
+    data: {
+      labels: dias.map(d => d.slice(8)),
+      datasets: [
+        { label: '🔴 Hembras', data: dias.map(d=>porDia[d].h), borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,.1)', fill:true, tension:.3, pointRadius:4 },
+        { label: '🔵 Machos', data: dias.map(d=>porDia[d].m), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.1)', fill:true, tension:.3, pointRadius:4 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{title:{display:true,text:'Día del mes'}},y:{beginAtZero:true,title:{display:true,text:'Capturas'}}} }
+  });
+
+  // Por finca
+  const porFinca = {};
+  datos.forEach(r => { const f=(r.finca||'?').replace('FINCA ','F'); if(!porFinca[f])porFinca[f]=0; porFinca[f]+=(r.hembras||0)+(r.machos||0); });
+  destroyChart('chart-mes-finca');
+  charts['chart-mes-finca'] = new Chart(document.getElementById('chart-mes-finca'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(porFinca).sort(),
+      datasets: [{ label: 'Capturas totales', data: Object.keys(porFinca).sort().map(f=>porFinca[f]), backgroundColor:['#1e3a5f','#2563eb','#7c3aed'], borderRadius:8 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  // Top lotes
+  const porLote = {};
+  datos.forEach(r => { const k=(r.finca||'').replace('FINCA ','F')+'_Lote'+r.lote; if(!porLote[k])porLote[k]={n:k,t:0,tr:new Set()}; porLote[k].t+=(r.hembras||0)+(r.machos||0); if(r.trampaId)porLote[k].tr.add(r.trampaId); });
+  const topLotes = Object.values(porLote).sort((a,b)=>b.t-a.t).slice(0,10);
+  const maxT = topLotes[0]?.t || 1;
+  document.getElementById('top-lotes-mes').innerHTML = topLotes.map(l => {
+    const ic = l.tr.size>0?l.t/l.tr.size:0;
+    const cls = ic>=UMBRAL_CRITICO?'lf-crit':ic>=UMBRAL_ALERTA?'lf-crit':ic>=3?'lf-warn':'lf-ok';
+    return `<div class="lote-bar"><div class="lb-top"><span class="lb-name">${l.n.replace('_',' · ')}</span><span class="lb-val">${l.t} cap · IC ${ic.toFixed(1)}</span></div><div class="lb-track"><div class="lb-fill ${cls}" style="width:${Math.round(l.t/maxT*100)}%;"></div></div></div>`;
+  }).join('');
+
+  // Ciclos (agrupados por semana del mes)
+  document.getElementById('ciclos-mes-body').innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Datos del mes actual</td></tr>';
+}
+
+// ── VISTA HISTÓRICO ───────────────────────
+function renderHistorico() {
+  if (historico.length === 0) {
+    document.getElementById('kpi-historico').innerHTML = '<div style="color:var(--muted);padding:20px;">Sin datos históricos</div>';
+    return;
+  }
+
+  const totalH = historico.reduce((s,r) => s+r.hembras,0);
+  const totalM = historico.reduce((s,r) => s+r.machos,0);
+  const totalCap = totalH + totalM;
+  const ciclos = [...new Set(historico.map(r => r.fecha))].length;
+  const trampas = [...new Set(historico.map(r => r.trampaId))].length;
+  const ic = trampas>0 ? (totalCap/trampas) : 0;
+
+  document.getElementById('kpi-historico').innerHTML = `
+    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${historico.length}</div><div class="kpi-lbl">Registros totales</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">Hembras históricas</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">Machos históricos</div></div>
+    <div class="kpi"><div class="kpi-val">${totalCap}</div><div class="kpi-lbl">Capturas totales</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(2)}</div><div class="kpi-lbl">IC histórico</div></div>
+    <div class="kpi"><div class="kpi-val">${ciclos}</div><div class="kpi-lbl">Días con registro</div></div>
+  `;
+
+  // IC por fecha
+  const porFecha = {};
+  historico.forEach(r => {
+    if (!porFecha[r.fecha]) porFecha[r.fecha] = {h:0,m:0,tr:new Set()};
+    porFecha[r.fecha].h += r.hembras||0;
+    porFecha[r.fecha].m += r.machos||0;
+    if (r.trampaId) porFecha[r.fecha].tr.add(r.trampaId);
+  });
+  const fechas = Object.keys(porFecha).sort();
+  const icPorFecha = fechas.map(f => porFecha[f].tr.size>0 ? (porFecha[f].h+porFecha[f].m)/porFecha[f].tr.size : 0);
+
+  destroyChart('chart-hist-ic');
+  charts['chart-hist-ic'] = new Chart(document.getElementById('chart-hist-ic'), {
+    type: 'line',
+    data: {
+      labels: fechas,
+      datasets: [
+        { label: 'IC (cap/trampa)', data: icPorFecha, borderColor:'#1e3a5f', backgroundColor:'rgba(30,58,95,.1)', fill:true, tension:.3, pointRadius:3 },
+        { label: 'Umbral alerta', data: fechas.map(() => UMBRAL_ALERTA), borderColor:'#dc2626', borderDash:[5,5], borderWidth:2, pointRadius:0, fill:false },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true,title:{display:true,text:'IC (capturas/trampa)'}}} }
+  });
+
+  // H vs M histórico
+  destroyChart('chart-hist-hm');
+  charts['chart-hist-hm'] = new Chart(document.getElementById('chart-hist-hm'), {
+    type: 'bar',
+    data: {
+      labels: fechas,
+      datasets: [
+        { label: '🔴 Hembras', data: fechas.map(f=>porFecha[f].h), backgroundColor:'rgba(220,38,38,.6)', borderRadius:3 },
+        { label: '🔵 Machos', data: fechas.map(f=>porFecha[f].m), backgroundColor:'rgba(37,99,235,.6)', borderRadius:3 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}} }
+  });
+
+  // Por finca histórico
+  const porFinca = {};
+  historico.forEach(r => { const f=(r.finca||'?').replace('FINCA ','F'); if(!porFinca[f])porFinca[f]=0; porFinca[f]+=(r.hembras||0)+(r.machos||0); });
+  destroyChart('chart-hist-finca');
+  charts['chart-hist-finca'] = new Chart(document.getElementById('chart-hist-finca'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(porFinca).sort(),
+      datasets: [{ data: Object.keys(porFinca).sort().map(f=>porFinca[f]), backgroundColor:['#1e3a5f','#2563eb','#7c3aed'], borderWidth:3 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} }
+  });
+
+  // Tabla histórico (últimos 100)
+  const recientes = [...historico].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,100);
+  document.getElementById('hist-body').innerHTML = recientes.map(r => {
+    const tot = (r.hembras||0)+(r.machos||0);
+    const bg = tot>=UMBRAL_CRITICO?'background:#fef2f2':tot>=UMBRAL_ALERTA?'background:#fff7ed':'';
+    return `<tr style="${bg}"><td>${r.fecha}</td><td>${(r.finca||'').replace('FINCA ','F')}</td><td>${r.lote}</td><td style="font-family:'DM Mono',monospace;font-weight:700;">${r.trampaId}</td><td style="color:var(--red);">${r.hembras||0}</td><td style="color:var(--blue);">${r.machos||0}</td><td style="font-weight:700;">${tot}</td><td>${r.estadoCebo||'—'}</td><td>${r.estadoTrampa||'—'}</td><td>${r.operario||'—'}</td></tr>`;
+  }).join('');
+}
+
+// ── PDF EXPORT ────────────────────────────
+async function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const el = document.getElementById('vista-' + vistaActual);
+  el.style.display = 'block';
+  await new Promise(r => setTimeout(r, 500));
+  const canvas = await html2canvas(el, { scale:1.2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+  const img = canvas.toDataURL('image/jpeg', 0.9);
+  const ratio = canvas.width / canvas.height;
+  let iw = 297, ih = 297/ratio;
+  if (ih > 210) { ih = 210; iw = 210*ratio; }
+  doc.addImage(img, 'JPEG', (297-iw)/2, (210-ih)/2, iw, ih);
+  const hoy = new Date();
+  doc.save('trampas-' + vistaActual + '-' + hoy.toISOString().slice(0,10) + '.pdf');
+}
+</script>
+</body>
+</html>
