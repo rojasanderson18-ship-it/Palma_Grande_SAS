@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sanidad Fitosanitaria – Palma Grande S.A.S.</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb;}
+.logo-wrap{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:42px;height:42px;background:linear-gradient(145deg,#b8860b,#f0c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(184,134,11,.25);}
+.brand{display:flex;flex-direction:column;}
+.brand-name{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2.5px;color:#b8860b;line-height:1;}
+.brand-sub{font-size:10px;color:#9ca3af;letter-spacing:.8px;text-transform:uppercase;margin-top:1px;}
+.header-info{text-align:right;}
+.header-fecha{font-family:'DM Mono',monospace;font-size:13px;color:#374151;font-weight:500;}
+.header-sem{font-size:10px;color:#9ca3af;margin-top:2px;}
+
+/* HERO */
+.hero{padding:48px 28px 32px;text-align:center;}
+.hero-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#9ca3af;font-weight:500;margin-bottom:10px;}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:5px;color:#1a1f2e;line-height:1;}
+.hero-title span{color:#b8860b;}
+.hero-line{width:48px;height:3px;background:linear-gradient(90deg,#b8860b,#f0c96a);border-radius:2px;margin:16px auto 0;}
+
+/* STATS ROW */
+.stats-row{display:flex;justify-content:center;gap:40px;padding:0 28px 36px;}
+.stat-item{text-align:center;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:#1a1f2e;line-height:1;}
+.stat-lbl{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;}
+
+/* MÓDULOS */
+.modulos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 28px 48px;max-width:1100px;margin:0 auto;width:100%;}
+
+.mod-card{border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s;text-decoration:none;display:flex;flex-direction:column;position:relative;}
+.mod-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.14);}
+
+/* Fondos por módulo */
+.mc-cosecha{background:linear-gradient(160deg,#064e20 0%,#0a5c26 50%,#052e16 100%);}
+.mc-mantto{background:linear-gradient(160deg,#1e3a5f 0%,#1e40af 50%,#0f172a 100%);}
+.mc-sanidad{background:linear-gradient(160deg,#4c1d95 0%,#6d28d9 50%,#2e1065 100%);}
+
+.mod-top{padding:32px 24px 24px;flex:1;}
+.mod-emoji{font-size:36px;margin-bottom:16px;display:block;opacity:.9;}
+.mod-titulo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#fff;line-height:1;margin-bottom:6px;}
+.mod-subtitulo{font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.5px;}
+
+.mod-divider{height:1px;background:rgba(255,255,255,.1);margin:0 24px;}
+
+.mod-labores{padding:18px 24px;display:flex;flex-direction:column;gap:8px;}
+.labor-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.labor-name{font-size:12px;color:rgba(255,255,255,.75);font-weight:400;}
+.labor-ciclo{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:10px;}
+
+.mod-footer{padding:14px 24px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}
+.mod-status{font-size:10px;text-transform:uppercase;letter-spacing:1px;}
+.ms-activo{color:#4ade80;}.ms-pronto{color:rgba(255,255,255,.3);}
+.mod-arrow{font-size:18px;color:rgba(255,255,255,.3);transition:color .2s,transform .2s;}
+.mod-card:hover .mod-arrow{color:rgba(255,255,255,.8);transform:translateX(4px);}
+
+/* FOOTER */
+.footer{margin-top:auto;padding:14px 28px;text-align:center;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;background:#fff;}
+
+@media(max-width:640px){
+  .modulos{grid-template-columns:1fr;}
+  .stats-row{gap:24px;}
+  .hero-title{font-size:34px;}
+}
+
+.mc-censo{background:linear-gradient(160deg,#7c2d12 0%,#b45309 50%,#451a03 100%);}
+.mc-taller{background:linear-gradient(160deg,#374151 0%,#4b5563 50%,#111827 100%);}
+.mc-almacen{background:linear-gradient(160deg,#14532d 0%,#166534 50%,#052e16 100%);}
+.mc-pronto{opacity:.55;cursor:not-allowed;pointer-events:none;}
+</style>
+<style>
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;font-family:"DM Sans",sans-serif;transition:background .2s;margin-bottom:28px;}
+.back-btn:hover{background:rgba(255,255,255,.18);}
+
+.dept-hero{background:linear-gradient(160deg,#1a0533 0%,#3b0764 40%,#2e1065 100%);padding:40px 40px 36px;position:relative;overflow:hidden;}
+.dept-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 20%,rgba(139,92,246,.15),transparent);pointer-events:none;}
+.dept-hero-content{position:relative;z-index:1;max-width:900px;}
+.dept-eyebrow{font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px;}
+.dept-title{font-family:"Bebas Neue",sans-serif;font-size:42px;letter-spacing:4px;color:#fff;line-height:1;margin-bottom:8px;}
+.dept-title span{color:#c4b5fd;}
+.dept-sub{font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.5px;margin-bottom:18px;}
+.dept-desc{font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:620px;border-left:2px solid rgba(139,92,246,.5);padding-left:16px;font-style:italic;}
+
+.dept-body{padding:36px 40px 56px;max-width:960px;margin:0 auto;}
+.dept-section-label{font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.dept-section-label::after{content:'';flex:1;height:1px;background:#e5e7eb;}
+
+.sub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+
+.sub-card{border-radius:16px;overflow:hidden;text-decoration:none;display:flex;flex-direction:column;border:1px solid #e5e7eb;background:#fff;transition:transform .25s,box-shadow .25s;}
+.sub-card:hover{transform:translateY(-5px);box-shadow:0 20px 48px rgba(0,0,0,.1);border-color:transparent;}
+
+.sc-accent{height:3px;}
+.sca-ciclos{background:linear-gradient(90deg,#4c1d95,#8b5cf6);}
+.sca-trampas{background:linear-gradient(90deg,#0e7490,#06b6d4);}
+.sca-analisis{background:linear-gradient(90deg,#92400e,#f59e0b);}
+
+.sc-top{padding:26px 24px 20px;flex:1;}
+.sc-emoji{font-size:32px;margin-bottom:16px;display:block;}
+.sc-title{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:2px;color:#1a1f2e;margin-bottom:8px;}
+.sc-desc{font-size:12.5px;color:#6b7280;line-height:1.65;}
+.sc-desc em{color:#374151;font-style:italic;}
+
+.sc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px;}
+.sc-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;background:#f3f4f6;color:#6b7280;}
+
+.sc-footer{padding:14px 24px;border-top:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;}
+.sc-status{font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;}
+.ss-active{color:#16a34a;}
+.ss-new{color:#b8860b;}
+.ss-dot{width:6px;height:6px;border-radius:50%;}
+.ssd-active{background:#16a34a;}
+.ssd-new{background:#b8860b;}
+.sc-arrow{color:#d1d5db;font-size:16px;transition:all .2s;}
+.sub-card:hover .sc-arrow{color:#6d28d9;transform:translateX(3px);}
+
+.info-box{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:20px 24px;margin-top:4px;}
+.ib-title{font-size:12px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.ib-text{font-size:13px;color:#4b5563;line-height:1.65;}
+
+@media(max-width:700px){
+  .dept-hero{padding:28px 20px;}
+  .dept-body{padding:24px 20px 48px;}
+  .sub-grid{grid-template-columns:1fr;}
+  .dept-title{font-size:30px;}
+}
+</style>
+</head>
+<body style="background:#f9fafb;">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-wrap">
+    <div class="logo-icon">🌴</div>
+    <div class="brand">
+      <div class="brand-name">Palma Grande</div>
+      <div class="brand-sub">S.A.S.</div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO DEPARTAMENTO -->
+<div class="dept-hero">
+  <div class="dept-hero-content">
+    <a href="index.html" class="back-btn">← Panel principal</a>
+    <div class="dept-eyebrow">Departamento Agronómico</div>
+    <div class="dept-title">Sanidad <span>Fitosanitaria</span></div>
+    <div class="dept-sub">Manejo Integrado de Plagas y Enfermedades · Palma Grande S.A.S.</div>
+    <div class="dept-desc">
+      Vigilancia epidemiológica en <em>Elaeis guineensis</em> e híbridos. Monitoreo de 
+      <em>Rhynchophorus palmarum</em>, Pudrición del Cogollo y plagas de importancia 
+      económica bajo enfoque MIP.
+    </div>
+  </div>
+</div>
+
+<!-- MÓDULOS -->
+<div class="dept-body">
+
+  <div class="dept-section-label">Módulos activos</div>
+
+  <div class="sub-grid">
+
+    <!-- CICLOS -->
+    <a class="sub-card" href="sanidad.html">
+      <div class="sc-accent sca-ciclos"></div>
+      <div class="sc-top">
+        <span class="sc-emoji">📋</span>
+        <div class="sc-title">Ciclos de Sanidad</div>
+        <div class="sc-desc">
+Control de ciclos fitosanitarios por lote — trampas, censo de enfermedades y Pudrición del Cogollo — con alertas de vencimiento automáticas.
+        </div>
+        <div class="sc-tags">
+          <span class="sc-tag">Trampas · 15 días</span>
+          <span class="sc-tag">Censo · 30 días</span>
+          <span class="sc-tag">Control PC · 30 días</span>
+          <span class="sc-tag">62 lotes</span>
+        </div>
+      </div>
+      <div class="sc-footer">
+        <div class="sc-status ss-active"><div class="ss-dot ssd-active"></div>Activo</div>
+        <span class="sc-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- TRAMPAS -->
+    <a class="sub-card" href="trampas.html">
+      <div class="sc-accent sca-trampas"></div>
+      <div class="sc-top">
+        <span class="sc-emoji">🪤</span>
+        <div class="sc-title">Registro de Trampas</div>
+        <div class="sc-desc">
+Registro de capturas de <em>R. palmarum</em> por sexo, estado del cebo, feromona y trampa. Funciona sin señal con sincronización automática.
+        </div>
+        <div class="sc-tags">
+          <span class="sc-tag">92 trampas</span>
+          <span class="sc-tag">H / M diferenciado</span>
+          <span class="sc-tag">Feromona · 90 días</span>
+          <span class="sc-tag">Offline</span>
+        </div>
+      </div>
+      <div class="sc-footer">
+        <div class="sc-status ss-active"><div class="ss-dot ssd-active"></div>Activo · 3 fincas</div>
+        <span class="sc-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- ANÁLISIS -->
+    <a class="sub-card" href="trampas_dashboard.html">
+      <div class="sc-accent sca-analisis"></div>
+      <div class="sc-top">
+        <span class="sc-emoji">📊</span>
+        <div class="sc-title">Análisis de Trampas</div>
+        <div class="sc-desc">
+Índice de captura por trampa, relación H:M, tendencias por finca y lote, alertas por umbral de acción e informe técnico en PDF.
+        </div>
+        <div class="sc-tags">
+          <span class="sc-tag">IC cap/trampa</span>
+          <span class="sc-tag">Relación H:M</span>
+          <span class="sc-tag">Ciclo · Mes · Histórico</span>
+          <span class="sc-tag">Exportar PDF</span>
+        </div>
+      </div>
+      <div class="sc-footer">
+        <div class="sc-status ss-new"><div class="ss-dot ssd-new"></div>Nuevo</div>
+        <span class="sc-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- INFO BOX -->
+  <div class="info-box">
+    <div class="ib-title">🔬 Protocolo de monitoreo — MIP Palma Grande S.A.S.</div>
+    <div class="ib-text">
+Revisión cada <strong>15 días</strong> · Feromona (Rincoforol) cada <strong>90 días</strong> · IC ≥ 5 = Alerta → inspección de lote · IC ≥ 10 = Crítico → censo palma a palma · H:M &gt; 1 = mayor riesgo de <em>Anillo Rojo</em>.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
