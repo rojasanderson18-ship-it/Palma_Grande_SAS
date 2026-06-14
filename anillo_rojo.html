@@ -375,6 +375,8 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGq
 const LS_KEY = 'palma_anillo_rojo_v1';
 const LS_PEND = 'palma_ar_pendientes_v1';
 
+const PIN_ADMIN = '2105';
+
 const RESPONSABLES = [
   'Anderson Rojas',
   'Juan Carlos Oviedo',
@@ -665,8 +667,9 @@ function renderLista(){
             <div style="color:#475569;margin-top:2px;">Método: ${Array.isArray(p.metodo)?p.metodo.join(' · '):p.metodo}</div>
             ${p.obs?`<div style="color:#475569;margin-top:2px;">"${p.obs}"</div>`:''}
           </div>` :
-          `<button class="btn btn-danger" onclick="iniciarErradicacion('${p.id}')">⚠️ Registrar erradicación</button>`
+          `<button class="btn btn-danger" style="margin-bottom:8px;" onclick="iniciarErradicacion('${p.id}')">⚠️ Registrar erradicación</button>`
         }
+        <button class="btn btn-secondary btn-sm" style="margin-top:8px;color:#94a3b8;border-color:#e2e8f0;" onclick="eliminarPalma('${p.id}')">🗑 Eliminar registro</button>
       </div>
     </div>`;
   }).join('');
@@ -751,6 +754,18 @@ function setFiltro(f,btn){
 }
 
 function filtrar(v){ busqueda=v; renderLista(); }
+
+// ─── ELIMINAR ────────────────────────────
+function eliminarPalma(id){
+  const pin = prompt('PIN de administrador:');
+  if(pin !== PIN_ADMIN){ showToast('PIN incorrecto'); return; }
+  if(!confirm('¿Eliminar el registro '+id+'? Esta acción no se puede deshacer.')) return;
+  palmas = palmas.filter(p=>p.id!==id);
+  guardarLocal();
+  enviarGAS({accion:'eliminarAnilloRojo',id});
+  showToast('Registro eliminado');
+  renderLista();
+}
 
 // ─── GAS ────────────────────────────────
 function gasJSONP(url){
