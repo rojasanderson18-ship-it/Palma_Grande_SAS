@@ -36,7 +36,7 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 .stat-lbl{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;}
 
 /* MÓDULOS */
-.modulos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 28px 48px;max-width:960px;margin:0 auto;width:100%;}
+.modulos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 28px 48px;max-width:1100px;margin:0 auto;width:100%;}
 
 .mod-card{border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s;text-decoration:none;display:flex;flex-direction:column;position:relative;}
 .mod-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.14);}
@@ -72,6 +72,11 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
   .stats-row{gap:24px;}
   .hero-title{font-size:34px;}
 }
+
+.mc-censo{background:linear-gradient(160deg,#7c2d12 0%,#b45309 50%,#451a03 100%);}
+.mc-taller{background:linear-gradient(160deg,#374151 0%,#4b5563 50%,#111827 100%);}
+.mc-almacen{background:linear-gradient(160deg,#14532d 0%,#166534 50%,#052e16 100%);}
+.mc-pronto{opacity:.55;cursor:not-allowed;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -145,7 +150,7 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
   </a>
 
   <!-- SANIDAD -->
-  <a class="mod-card mc-sanidad" href="sanidad.html">
+  <a class="mod-card mc-sanidad" href="sanidad_carpeta.html">
     <div class="mod-top">
       <span class="mod-emoji">🧪</span>
       <div class="mod-titulo">Sanidad</div>
@@ -162,6 +167,59 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
       <span class="mod-arrow">→</span>
     </div>
   </a>
+
+  <!-- CENSO DE PLANTACIÓN -->
+  <div class="mod-card mc-censo mc-pronto">
+    <div class="mod-top">
+      <span class="mod-emoji">🌱</span>
+      <div class="mod-titulo">Censo de Plantación</div>
+      <div class="mod-subtitulo">Estado y estadísticas de palmas</div>
+    </div>
+    <div class="mod-divider"></div>
+    <div class="mod-labores">
+      <div class="labor-row"><span class="labor-name">Estado de palmas</span><span class="labor-ciclo">Por lote</span></div>
+      <div class="labor-row"><span class="labor-name">Producción</span><span class="labor-ciclo">Por palma</span></div>
+    </div>
+    <div class="mod-footer">
+      <span class="mod-status ms-pronto">● En desarrollo</span>
+    </div>
+  </div>
+
+  <!-- TALLER -->
+  <div class="mod-card mc-taller mc-pronto">
+    <div class="mod-top">
+      <span class="mod-emoji">🚜</span>
+      <div class="mod-titulo">Taller</div>
+      <div class="mod-subtitulo">Maquinaria y flota</div>
+    </div>
+    <div class="mod-divider"></div>
+    <div class="mod-labores">
+      <div class="labor-row"><span class="labor-name">Preoperativos</span><span class="labor-ciclo">Diario</span></div>
+      <div class="labor-row"><span class="labor-name">Mantenimiento flota</span><span class="labor-ciclo">Por equipo</span></div>
+      <div class="labor-row"><span class="labor-name">Combustible</span><span class="labor-ciclo">Despachos</span></div>
+    </div>
+    <div class="mod-footer">
+      <span class="mod-status ms-pronto">● En desarrollo</span>
+    </div>
+  </div>
+
+  <!-- ALMACÉN -->
+  <div class="mod-card mc-almacen mc-pronto">
+    <div class="mod-top">
+      <span class="mod-emoji">⛽</span>
+      <div class="mod-titulo">Almacén</div>
+      <div class="mod-subtitulo">Insumos y combustible</div>
+    </div>
+    <div class="mod-divider"></div>
+    <div class="mod-labores">
+      <div class="labor-row"><span class="labor-name">Control combustible</span><span class="labor-ciclo">Despachos</span></div>
+      <div class="labor-row"><span class="labor-name">Insumos agrícolas</span><span class="labor-ciclo">Stock</span></div>
+      <div class="labor-row"><span class="labor-name">Fertilizantes</span><span class="labor-ciclo">Inventario</span></div>
+    </div>
+    <div class="mod-footer">
+      <span class="mod-status ms-pronto">● En desarrollo</span>
+    </div>
+  </div>
 
 </div>
 
