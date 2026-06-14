@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0f1117"/>
+<title>Trampas Rhynchophorus – Palma Grande</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#f0f4f8;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --text2:#475569;
+  --muted:#94a3b8;
+  --primary:#1e3a5f;
+  --primary-light:#eff6ff;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-border:#86efac;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#93c5fd;
+  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fca5a5;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-border:#fcd34d;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;
+  --gold:#b8860b;--gold2:#f0c96a;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.08),0 4px 6px rgba(0,0,0,.05);
+}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ─── HEADER ─── */
+.hdr{background:linear-gradient(135deg,#0f1117 0%,#1e3a5f 100%);padding:0 16px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-icon{width:38px;height:38px;background:linear-gradient(135deg,#b8860b,#f0c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 6px rgba(184,134,11,.4);}
+.hdr-title{font-size:15px;font-weight:800;color:#f0c96a;letter-spacing:.3px;line-height:1.2;}
+.hdr-sub{font-size:11px;color:#64748b;font-weight:400;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.hdr-date{font-family:"DM Mono",monospace;font-size:11px;color:#f0c96a;text-align:right;}
+.offline-pill{background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;display:none;}
+.offline-pill.show{display:flex;align-items:center;gap:3px;}
+
+/* ─── SCREENS ─── */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ─── LOGIN ─── */
+.login-bg{min-height:calc(100vh - 60px);background:linear-gradient(160deg,#0f1117 0%,#1e3a5f 40%,#1e40af 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{background:#fff;border-radius:24px;padding:28px 24px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);}
+.login-logo{text-align:center;margin-bottom:24px;}
+.login-logo-icon{width:64px;height:64px;background:linear-gradient(135deg,#b8860b,#f0c96a);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:12px;box-shadow:0 4px 12px rgba(184,134,11,.3);}
+.login-logo-title{font-size:20px;font-weight:900;color:var(--primary);}
+.login-logo-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.login-divider{height:1px;background:var(--border);margin:20px 0;}
+.login-admin{display:flex;gap:8px;margin-top:16px;}
+
+/* ─── FORM ELEMENTS ─── */
+.fgroup{margin-bottom:14px;}
+.flabel{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:block;}
+.fselect,.finput{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:"DM Sans",sans-serif;background:var(--surface2);color:var(--text);outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;}
+.fselect:focus,.finput:focus{border-color:var(--primary);background:#fff;}
+.fselect-wrap{position:relative;}
+.fselect-wrap::after{content:"▾";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+
+/* ─── BUTTONS ─── */
+.btn{width:100%;padding:14px;border-radius:14px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.3);}
+.btn-secondary{background:var(--surface2);color:var(--primary);border:1.5px solid var(--border);}
+.btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--border);}
+.btn-success{background:var(--green-bg);color:var(--green);border:1.5px solid var(--green-border);}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-border);}
+.btn-sm{padding:9px 16px;font-size:13px;border-radius:10px;width:auto;}
+.btn-icon{width:40px;height:40px;padding:0;border-radius:12px;}
+
+/* ─── TABS (Bottom Nav) ─── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:none;padding:6px 0 10px;z-index:200;box-shadow:0 -2px 10px rgba(0,0,0,.06);}
+.bottom-nav.show{display:flex;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;cursor:pointer;padding:4px 0;color:var(--muted);font-size:10px;font-weight:600;font-family:"DM Sans",sans-serif;transition:color .15s;}
+.nav-item.active{color:var(--primary);}
+.nav-icon{font-size:22px;line-height:1;}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:var(--red);position:absolute;top:0;right:-2px;}
+
+/* ─── TOP TABS ─── */
+.top-tabs{background:#fff;border-bottom:2px solid var(--border);display:flex;padding:0 16px;position:sticky;top:60px;z-index:100;overflow-x:auto;scrollbar-width:none;}
+.top-tabs::-webkit-scrollbar{display:none;}
+.ttab{padding:12px 14px;font-size:13px;font-weight:600;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.ttab.active{color:var(--primary);border-bottom-color:var(--primary);}
+
+/* ─── CARDS ─── */
+.card{background:#fff;border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:12px;}
+.card-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+
+/* ─── TRAMPA ITEM ─── */
+.trampa-card{background:#fff;border-radius:14px;border:1.5px solid var(--border);margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow);transition:border-color .2s;}
+.trampa-card.done{border-color:var(--green-border);background:linear-gradient(135deg,#f0fdf4,#fff);}
+.trampa-card.alert{border-color:var(--red-border);background:linear-gradient(135deg,#fef2f2,#fff);}
+.trampa-card.warn{border-color:var(--amber-border);}
+
+.tc-header{padding:14px 14px 12px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.tc-num{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:"DM Mono",monospace;}
+.tcn-pending{background:var(--primary-light);color:var(--primary);}
+.tcn-done{background:var(--green-bg);color:var(--green);}
+.tcn-alert{background:var(--red-bg);color:var(--red);}
+.tc-info{flex:1;min-width:0;}
+.tc-id{font-size:15px;font-weight:800;color:var(--text);}
+.tc-lote{font-size:12px;color:var(--text2);margin-top:1px;}
+.tc-right{text-align:right;flex-shrink:0;}
+.tc-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;}
+.tcb-pending{background:#f1f5f9;color:var(--text2);}
+.tcb-done{background:var(--green-bg);color:var(--green);}
+.tcb-alert{background:var(--red-bg);color:var(--red);}
+.tc-counts{font-size:11px;color:var(--text2);margin-top:3px;}
+
+/* ─── REGISTRO FORM ─── */
+.tc-form{border-top:1px solid var(--border);padding:16px;background:var(--surface2);}
+
+.conteo-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.conteo-box{background:#fff;border-radius:14px;padding:14px 12px;border:1.5px solid var(--border);text-align:center;box-shadow:var(--shadow);}
+.cb-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.cb-label-h{color:var(--red);}
+.cb-label-m{color:var(--blue);}
+.cb-controls{display:flex;align-items:center;justify-content:center;gap:10px;}
+.cb-btn{width:36px;height:36px;border-radius:50%;border:none;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cb-btn:active{transform:scale(.9);}
+.cb-minus{background:var(--red-bg);color:var(--red);}
+.cb-plus{background:var(--green-bg);color:var(--green);}
+.cb-val{font-size:28px;font-weight:900;min-width:40px;font-family:"DM Mono",monospace;}
+.cbv-h{color:var(--red);}
+.cbv-m{color:var(--blue);}
+
+.section-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
+.option-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.opt-btn{padding:10px 6px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;font-family:"DM Sans",sans-serif;}
+.opt-btn:active{transform:scale(.96);}
+.opt-btn.sel-bueno{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.opt-btn.sel-regular{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
+.opt-btn.sel-malo{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+.opt-btn.sel-sin-cebo{border-color:var(--purple);background:var(--purple-bg);color:var(--purple);}
+.opt-btn.sel-buena{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.opt-btn.sel-dañada{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
+.opt-btn.sel-perdida{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+.opt-btn.sel-reubicar{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
+.obs-input{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:"DM Sans",sans-serif;background:#fff;color:var(--text);outline:none;margin-bottom:12px;}
+.obs-input:focus{border-color:var(--primary);}
+.form-actions{display:flex;gap:8px;}
+
+/* ─── SEARCH & FILTERS ─── */
+.search-bar{padding:12px 16px 0;}
+.search-input{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;background:#fff;outline:none;font-family:"DM Sans",sans-serif;}
+.search-input:focus{border-color:var(--primary);}
+.search-wrap-inner{position:relative;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;}
+
+.chips{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:#fff;color:var(--text2);white-space:nowrap;cursor:pointer;transition:all .15s;}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* ─── PROGRESS BAR ─── */
+.prog-wrap{background:var(--border);border-radius:4px;height:5px;overflow:hidden;margin-top:6px;}
+.prog-bar{height:100%;border-radius:4px;transition:width .3s;}
+.pb-green{background:linear-gradient(90deg,#16a34a,#22c55e);}
+.pb-amber{background:linear-gradient(90deg,#d97706,#f59e0b);}
+.pb-red{background:linear-gradient(90deg,#dc2626,#ef4444);}
+
+/* ─── STAT CARDS ─── */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.stat-card{background:#fff;border-radius:14px;padding:14px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.stat-val{font-size:30px;font-weight:900;line-height:1;font-family:"DM Mono",monospace;}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:4px;font-weight:500;}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ─── ALERTA ITEM ─── */
+.alerta-item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--red-bg);border-radius:10px;margin-bottom:6px;border:1px solid var(--red-border);}
+.ai-icon{font-size:22px;flex-shrink:0;}
+.ai-info{flex:1;}
+.ai-id{font-weight:800;font-size:14px;}
+.ai-sub{font-size:12px;color:var(--text2);}
+.ai-val{font-size:20px;font-weight:900;color:var(--red);font-family:"DM Mono",monospace;}
+
+/* ─── LOTE ROW ─── */
+.lote-row{padding:12px 4px;border-bottom:1px solid var(--border);}
+.lote-row:last-child{border-bottom:none;}
+.lr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.lr-name{font-size:14px;font-weight:700;}
+.lr-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;}
+.lrb-ok{background:var(--green-bg);color:var(--green);}
+.lrb-warn{background:var(--amber-bg);color:var(--amber);}
+.lrb-crit{background:var(--red-bg);color:var(--red);}
+.lr-sub{font-size:11px;color:var(--text2);}
+
+/* ─── ADMIN ─── */
+.trampa-row{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--border);}
+.trampa-row:last-child{border-bottom:none;}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(10px);background:#0f172a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.pb-80{padding-bottom:80px;}
+.px-16{padding:0 16px;}
+.pt-12{padding-top:12px;}
+
+/* ─── EMPTY STATE ─── */
+.empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:14px;font-weight:500;}
+.empty-sub{font-size:13px;margin-top:4px;}
+
+/* ─── FINCA HEADER ─── */
+.finca-hdr{padding:8px 4px;display:flex;align-items:center;gap:6px;margin-top:4px;}
+.finca-hdr-text{font-size:12px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;}
+.finca-hdr-count{font-size:11px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-icon">🪤</div>
+    <div>
+      <div class="hdr-title">Trampas Rhynchophorus</div>
+      <div class="hdr-sub" id="hdr-operario">Palma Grande S.A.S.</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div>
+      <div class="hdr-date" id="hdr-fecha"></div>
+      <div class="offline-pill" id="offline-pill">📵 Sin señal</div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🪤</div>
+        <div class="login-logo-title">Control de Trampas</div>
+        <div class="login-logo-sub">Monitoreo Rhynchophorus palmarum</div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">¿Quién eres?</label>
+        <div class="fselect-wrap">
+          <select class="fselect" id="sel-operario">
+            <option value="">— Seleccionar operario —</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Finca a revisar</label>
+        <div class="fselect-wrap">
+          <select class="fselect" id="sel-finca">
+            <option value="todas">Todas las fincas</option>
+            <option value="FINCA 1">Finca 1</option>
+            <option value="FINCA 2">Finca 2</option>
+            <option value="FINCA 3">Finca 3</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="entrar()">Iniciar registro →</button>
+      <div class="login-divider"></div>
+      <div class="login-admin">
+        <button class="btn btn-ghost" style="flex:1;" onclick="irAdmin()">⚙️ Admin</button>
+        <button class="btn btn-ghost" style="flex:1;" onclick="irDashboard()">📊 Dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTRO SCREEN -->
+<div id="screen-registro" class="screen">
+  <div class="search-bar">
+    <div class="search-wrap-inner">
+      <span class="search-icon">🔍</span>
+      <input type="search" class="search-input" placeholder="Buscar trampa o lote..." oninput="filtrarTrampas(this.value)" id="search-box"/>
+    </div>
+  </div>
+  <div class="chips" id="chips">
+    <div class="chip active" onclick="setFiltro('todas',this)">Todas <span id="chip-count-todas"></span></div>
+    <div class="chip" onclick="setFiltro('pendiente',this)">⏳ Pendientes <span id="chip-count-pendiente"></span></div>
+    <div class="chip" onclick="setFiltro('registrada',this)">✅ Registradas</div>
+    <div class="chip" onclick="setFiltro('alerta',this)">🔴 Alertas</div>
+  </div>
+  <!-- Progress bar -->
+  <div style="padding:0 16px 8px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px;">
+      <span>Progreso del día</span>
+      <span id="prog-text">0 / 0</span>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar pb-green" id="prog-bar" style="width:0%;"></div></div>
+  </div>
+  <div id="lista-trampas" class="pb-80 px-16 pt-12"></div>
+</div>
+
+<!-- DASHBOARD SCREEN -->
+<div id="screen-dashboard" class="screen">
+  <div class="pb-80" style="padding:14px 16px;">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="card">
+      <div class="card-title">📍 Estado por lote</div>
+      <div id="lotes-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔴 Alertas activas</div>
+      <div id="alertas-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 Estado de trampas</div>
+      <div id="estado-trampas"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SCREEN -->
+<div id="screen-admin" class="screen">
+  <div class="pb-80" style="padding:14px 16px;">
+    <div class="card">
+      <div class="card-title">➕ Agregar trampas</div>
+      <div class="fgroup">
+        <label class="flabel">Finca</label>
+        <div class="fselect-wrap">
+          <select class="fselect" id="admin-finca" onchange="cargarLotesAdmin()">
+            <option value="">— Seleccionar —</option>
+            <option value="FINCA 1">Finca 1</option>
+            <option value="FINCA 2">Finca 2</option>
+            <option value="FINCA 3">Finca 3</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Lote</label>
+        <div class="fselect-wrap">
+          <select class="fselect" id="admin-lote"><option value="">— Primero selecciona finca —</option></select>
+        </div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Cantidad</label>
+        <input type="number" class="finput" id="admin-cant" value="1" min="1" max="20"/>
+      </div>
+      <button class="btn btn-primary" onclick="agregarTrampas()">Agregar</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂️ Trampas (<span id="admin-total">0</span>)</div>
+      <div id="admin-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="nav-item active" id="nav-registro" onclick="setScreen('registro')">
+    <span class="nav-icon">📋</span>Registro
+  </button>
+  <button class="nav-item" id="nav-dashboard" onclick="setScreen('dashboard')">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button class="nav-item" id="nav-admin" onclick="setScreen('admin')">
+    <span class="nav-icon">⚙️</span>Admin
+  </button>
+  <button class="nav-item" id="nav-salir" onclick="salir()">
+    <span class="nav-icon">🚪</span>Salir
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
+const LS_T = 'palma_trampas_v1';
+const LS_R = 'palma_trap_reg_v1';
+const LS_P = 'palma_trap_pend_v1';
+
+const OPERARIOS = ['Anderson Rojas','Supervisor'];
+
+const LOTES_FINCA = {
+  'FINCA 1':['1A','2A','3A','4A','5','6','7','8','9','10','11','11A','12','13','14','15','16','17','18','18A'],
+  'FINCA 2':['19','20','21','22','23','24','25','26','27','28','29','30','31','32A','33A','34A','35A','36','37','38','39','40','41'],
+  'FINCA 3':['42','43A','43B','44A','45A','45B','46','47','48','49','50','51','52','53','54','55','56','57','58'],
+};
+
+const UMBRAL_ALERTA = 5;
+const UMBRAL_CRITICO = 10;
+
+// ─── TRAMPAS PRE-CARGADAS ────────────────
+const TRAMPAS_INICIALES = [
+  {id:"TR-001",finca:"FINCA 1",lote:"6",activa:true},
+  {id:"TR-002",finca:"FINCA 1",lote:"6",activa:true},
+  {id:"TR-003",finca:"FINCA 1",lote:"6",activa:true},
+  {id:"TR-004",finca:"FINCA 1",lote:"7",activa:true},
+  {id:"TR-005",finca:"FINCA 1",lote:"7",activa:true},
+  {id:"TR-006",finca:"FINCA 1",lote:"7",activa:true},
+  {id:"TR-007",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-008",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-009",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-010",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-011",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-012",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-013",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-014",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-015",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-016",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-017",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-018",finca:"FINCA 1",lote:"13",activa:true},
+  {id:"TR-019",finca:"FINCA 1",lote:"12",activa:true},
+  {id:"TR-020",finca:"FINCA 1",lote:"12",activa:true},
+  {id:"TR-021",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-022",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-023",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-024",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-025",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-026",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-027",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-028",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-029",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-030",finca:"FINCA 1",lote:"2A",activa:true},
+  {id:"TR-031",finca:"FINCA 1",lote:"1A",activa:true},
+  {id:"TR-032",finca:"FINCA 1",lote:"1A",activa:true},
+  {id:"TR-033",finca:"FINCA 1",lote:"1A",activa:true},
+  {id:"TR-034",finca:"FINCA 1",lote:"18",activa:true},
+  {id:"TR-035",finca:"FINCA 1",lote:"18",activa:true},
+  {id:"TR-036",finca:"FINCA 1",lote:"18",activa:true},
+  {id:"TR-037",finca:"FINCA 2",lote:"32A",activa:true},
+  {id:"TR-038",finca:"FINCA 2",lote:"33A",activa:true},
+  {id:"TR-039",finca:"FINCA 2",lote:"33A",activa:true},
+  {id:"TR-040",finca:"FINCA 2",lote:"33A",activa:true},
+  {id:"TR-041",finca:"FINCA 2",lote:"34A",activa:true},
+  {id:"TR-042",finca:"FINCA 2",lote:"34A",activa:true},
+  {id:"TR-043",finca:"FINCA 2",lote:"35A",activa:true},
+  {id:"TR-044",finca:"FINCA 2",lote:"35A",activa:true},
+  {id:"TR-045",finca:"FINCA 2",lote:"36",activa:true},
+  {id:"TR-046",finca:"FINCA 2",lote:"39",activa:true},
+  {id:"TR-047",finca:"FINCA 2",lote:"39",activa:true},
+  {id:"TR-048",finca:"FINCA 2",lote:"40",activa:true},
+  {id:"TR-049",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-050",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-051",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-052",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-053",finca:"FINCA 2",lote:"19",activa:true},
+  {id:"TR-054",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-055",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-056",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-057",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-058",finca:"FINCA 3",lote:"44A",activa:true},
+  {id:"TR-059",finca:"FINCA 3",lote:"44A",activa:true},
+  {id:"TR-060",finca:"FINCA 3",lote:"45A",activa:true},
+  {id:"TR-061",finca:"FINCA 3",lote:"45A",activa:true},
+  {id:"TR-062",finca:"FINCA 3",lote:"45A",activa:true},
+  {id:"TR-063",finca:"FINCA 3",lote:"58",activa:true},
+  {id:"TR-064",finca:"FINCA 3",lote:"46",activa:true},
+  {id:"TR-065",finca:"FINCA 3",lote:"46",activa:true},
+  {id:"TR-066",finca:"FINCA 3",lote:"46",activa:true},
+  {id:"TR-067",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-068",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-069",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-070",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-071",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-072",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-073",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-074",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-075",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-076",finca:"FINCA 3",lote:"51",activa:true},
+  {id:"TR-077",finca:"FINCA 3",lote:"51",activa:true},
+  {id:"TR-078",finca:"FINCA 3",lote:"51",activa:true},
+  {id:"TR-079",finca:"FINCA 3",lote:"52",activa:true},
+  {id:"TR-080",finca:"FINCA 3",lote:"52",activa:true},
+  {id:"TR-081",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-082",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-083",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-084",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-085",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-086",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-087",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-088",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-089",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-090",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-091",finca:"FINCA 3",lote:"57",activa:true},
+  {id:"TR-092",finca:"FINCA 3",lote:"57",activa:true}
+];
+
+// ─── STATE ───────────────────────────────
+let operario = '';
+let fincaFiltro = 'todas';
+let trampas = [];
+let registros = {};
+let pendientes = [];
+let filtro = 'todas';
+let busqueda = '';
+const conteoTemp = {};
+
+// ─── INIT ────────────────────────────────
+function init(){
+  // Fecha
+  const hoy = new Date();
+  document.getElementById('hdr-fecha').textContent =
+    hoy.getDate()+' '+['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][hoy.getMonth()]+' '+hoy.getFullYear();
+
+  // Operarios
+  const sel = document.getElementById('sel-operario');
+  OPERARIOS.forEach(op=>{ const o=document.createElement('option'); o.value=o.textContent=op; sel.appendChild(o); });
+
+  cargarLocal();
+  cargarCambios();
+
+  // Offline
+  window.addEventListener('online',()=>{ document.getElementById('offline-pill').classList.remove('show'); enviarPendientes(); });
+  window.addEventListener('offline',()=>{ document.getElementById('offline-pill').classList.add('show'); });
+  if(!navigator.onLine) document.getElementById('offline-pill').classList.add('show');
+}
+
+function cargarLocal(){
+  try{
+    const t=localStorage.getItem(LS_T);
+    trampas = t ? JSON.parse(t) : [...TRAMPAS_INICIALES];
+    if(!t) localStorage.setItem(LS_T,JSON.stringify(trampas));
+    const r=localStorage.getItem(LS_R); if(r) registros=JSON.parse(r);
+    const p=localStorage.getItem(LS_P); if(p) pendientes=JSON.parse(p);
+  }catch(e){ trampas=[...TRAMPAS_INICIALES]; }
+}
+
+function guardarLocal(){
+  try{
+    localStorage.setItem(LS_T,JSON.stringify(trampas));
+    localStorage.setItem(LS_R,JSON.stringify(registros));
+    localStorage.setItem(LS_P,JSON.stringify(pendientes));
+  }catch(e){}
+}
+
+function hoyISO(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function getRegHoy(id){ return (registros[hoyISO()]||{})[id]||null; }
+
+// ─── LOGIN ───────────────────────────────
+function entrar(){
+  const op=document.getElementById('sel-operario').value;
+  const fi=document.getElementById('sel-finca').value;
+  if(!op){ showToast('Selecciona tu nombre'); return; }
+  operario=op; fincaFiltro=fi;
+  document.getElementById('hdr-operario').textContent=op;
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('bottom-nav').classList.add('show');
+  setScreen('registro');
+  cargarGAS();
+}
+
+function salir(){
+  operario='';
+  document.getElementById('hdr-operario').textContent='Palma Grande S.A.S.';
+  document.getElementById('bottom-nav').classList.remove('show');
+  ['registro','dashboard','admin'].forEach(s=>document.getElementById('screen-'+s).classList.remove('active'));
+  document.getElementById('screen-login').classList.add('active');
+}
+
+function irAdmin(){
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('bottom-nav').classList.add('show');
+  setScreen('admin');
+}
+
+function irDashboard(){
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('bottom-nav').classList.add('show');
+  setScreen('dashboard');
+}
+
+// ─── SCREENS ────────────────────────────
+function setScreen(s){
+  ['registro','dashboard','admin'].forEach(id=>{
+    document.getElementById('screen-'+id).classList.remove('active');
+    const nb=document.getElementById('nav-'+id);
+    if(nb) nb.classList.remove('active');
+  });
+  document.getElementById('screen-'+s).classList.add('active');
+  const nb=document.getElementById('nav-'+s);
+  if(nb) nb.classList.add('active');
+  if(s==='registro') renderTrampas();
+  if(s==='dashboard') renderDashboard();
+  if(s==='admin') renderAdmin();
+}
+
+// ─── RENDER TRAMPAS ──────────────────────
+function renderTrampas(){
+  const fecha=hoyISO();
+  const regs=registros[fecha]||{};
+  
+  let lista=trampas.filter(t=>{
+    if(fincaFiltro!=='todas'&&t.finca!==fincaFiltro) return false;
+    if(busqueda){
+      const s=busqueda.toLowerCase();
+      if(!t.id.toLowerCase().includes(s)&&!t.lote.toLowerCase().includes(s)&&!t.finca.toLowerCase().includes(s)) return false;
+    }
+    const r=regs[t.id];
+    if(filtro==='pendiente'&&r) return false;
+    if(filtro==='registrada'&&!r) return false;
+    if(filtro==='alerta'){
+      if(!r) return false;
+      if(((r.hembras||0)+(r.machos||0))<UMBRAL_ALERTA) return false;
+    }
+    return true;
+  });
+
+  // Progress
+  const total=trampas.filter(t=>fincaFiltro==='todas'||t.finca===fincaFiltro).length;
+  const done=Object.keys(regs).filter(id=>trampas.find(t=>t.id===id&&(fincaFiltro==='todas'||t.finca===fincaFiltro))).length;
+  const pct=total>0?Math.round(done/total*100):0;
+  document.getElementById('prog-text').textContent=done+' / '+total;
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-bar').className='prog-bar '+(pct<50?'pb-amber':pct<80?'pb-green':'pb-green');
+
+  // Chip counts
+  const pend=trampas.filter(t=>(fincaFiltro==='todas'||t.finca===fincaFiltro)&&!regs[t.id]).length;
+  document.getElementById('chip-count-todas').textContent=total?`(${total})`:'';
+  document.getElementById('chip-count-pendiente').textContent=pend?`(${pend})`:'';
+
+  if(lista.length===0){
+    document.getElementById('lista-trampas').innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">${trampas.length===0?'Sin trampas configuradas':'Sin resultados'}</div><div class="empty-sub">${trampas.length===0?'Ve a Admin para agregar trampas':''}</div></div>`;
+    return;
+  }
+
+  // Agrupar por finca
+  const porFinca={};
+  lista.forEach(t=>{
+    if(!porFinca[t.finca]) porFinca[t.finca]=[];
+    porFinca[t.finca].push(t);
+  });
+
+  let html='';
+  Object.entries(porFinca).forEach(([finca,ts])=>{
+    if(Object.keys(porFinca).length>1){
+      html+=`<div class="finca-hdr"><span>🌴</span><span class="finca-hdr-text">${finca}</span><span class="finca-hdr-count">${ts.length} trampas</span></div>`;
+    }
+    ts.forEach(t=>{
+      const r=regs[t.id];
+      const tot=r?(r.hembras||0)+(r.machos||0):0;
+      const isAlert=r&&tot>=UMBRAL_ALERTA;
+      const cardClass=!r?'':'alerta'&&isAlert?'alert':'done';
+      const numClass=!r?'tcn-pending':isAlert?'tcn-alert':'tcn-done';
+      const badgeClass=!r?'tcb-pending':isAlert?'tcb-alert':'tcb-done';
+      const badgeTxt=!r?'Pendiente':isAlert?'🔴 Alerta '+(tot):('✅ '+tot+' cap.');
+      html+=`<div class="trampa-card ${!r?'':'alert'&&isAlert?'alert':'done'}" id="tc-${t.id}">
+        <div class="tc-header" onclick="toggleForm('${t.id}')">
+          <div class="tc-num ${numClass}">${t.id.replace('TR-','')}</div>
+          <div class="tc-info">
+            <div class="tc-id">${t.id}</div>
+            <div class="tc-lote">${t.finca.replace('FINCA ','F')} · Lote ${t.lote}</div>
+          </div>
+          <div class="tc-right">
+            <div class="tc-badge ${badgeClass}">${badgeTxt}</div>
+            ${r?`<div class="tc-counts">H:${r.hembras||0} · M:${r.machos||0}</div>`:''}
+          </div>
+        </div>
+        <div class="tc-form" id="tf-${t.id}" style="display:none;">
+          ${buildForm(t,r)}
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('lista-trampas').innerHTML=html;
+}
+
+function buildForm(t,r){
+  const h=r?.hembras||0, m=r?.machos||0;
+  const cb=r?.estadoCebo||'', ct=r?.estadoTrampa||'';
+  const cebos=['Bueno','Regular','Malo','Sin cebo'];
+  const estados=['Buena','Dañada','Perdida','Reubicar'];
+  return `
+  <div class="conteo-row">
+    <div class="conteo-box">
+      <div class="cb-label cb-label-h">🔴 Hembras</div>
+      <div class="cb-controls">
+        <button class="cb-btn cb-minus" onclick="cambiar('${t.id}','h',-1)">−</button>
+        <div class="cb-val cbv-h" id="cv-h-${t.id}">${h}</div>
+        <button class="cb-btn cb-plus" onclick="cambiar('${t.id}','h',1)">+</button>
+      </div>
+    </div>
+    <div class="conteo-box">
+      <div class="cb-label cb-label-m">🔵 Machos</div>
+      <div class="cb-controls">
+        <button class="cb-btn cb-minus" onclick="cambiar('${t.id}','m',-1)">−</button>
+        <div class="cb-val cbv-m" id="cv-m-${t.id}">${m}</div>
+        <button class="cb-btn cb-plus" onclick="cambiar('${t.id}','m',1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="section-label">Estado del cebo</div>
+  <div class="option-grid" id="cebo-grid-${t.id}">
+    ${cebos.map(e=>`<button class="opt-btn${cb===e?' sel-'+e.toLowerCase().replace(' ','-'):''}" onclick="selOpt('${t.id}','cebo','${e}',this,'cebo-grid-${t.id}')">${e==='Bueno'?'✅':e==='Regular'?'⚠️':e==='Malo'?'❌':'🚫'} ${e}</button>`).join('')}
+  </div>
+  <div class="section-label">Estado de la trampa</div>
+  <div class="option-grid" id="trap-grid-${t.id}">
+    ${estados.map(e=>`<button class="opt-btn${ct===e?' sel-'+e.toLowerCase():''}" onclick="selOpt('${t.id}','trampa','${e}',this,'trap-grid-${t.id}')">${e==='Buena'?'✅':e==='Dañada'?'🔧':e==='Perdida'?'❓':'📍'} ${e}</button>`).join('')}
+  </div>
+  <input class="obs-input" type="text" placeholder="Observaciones (opcional)" id="obs-${t.id}" value="${r?.obs||''}"/>
+  
+  <div class="section-label">Cambios realizados</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+    <label style="display:flex;align-items:center;gap:10px;background:#f8fafc;padding:12px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;">
+      <input type="checkbox" id="chk-cebo-${t.id}" ${r?.cambioCebo?'checked':''} style="width:20px;height:20px;cursor:pointer;accent-color:var(--green);"/>
+      <div>
+        <div style="font-size:14px;font-weight:600;">🌿 Cambié el cebo hoy</div>
+        <div style="font-size:11px;color:var(--muted);">Próximo cambio: ${proximoCambio(t.id,'cebo')}</div>
+      </div>
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;background:#f8fafc;padding:12px;border-radius:10px;border:1.5px solid ${esHoraFeromona(t.id)?'var(--amber)':'var(--border)'};cursor:pointer;">
+      <input type="checkbox" id="chk-feromona-${t.id}" ${r?.cambioFeromona?'checked':''} style="width:20px;height:20px;cursor:pointer;accent-color:var(--amber);"/>
+      <div>
+        <div style="font-size:14px;font-weight:600;">🧪 Cambié la feromona hoy</div>
+        <div style="font-size:11px;color:${esHoraFeromona(t.id)?'var(--amber)':'var(--muted)'};">${esHoraFeromona(t.id)?'⚠️ TOCA CAMBIAR HOY — ':''}Próximo cambio: ${proximoCambio(t.id,'feromona')}</div>
+      </div>
+    </label>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-success" onclick="guardar('${t.id}')">💾 Guardar</button>
+    ${r?`<button class="btn btn-danger btn-sm" onclick="borrar('${t.id}')">Borrar</button>`:''}
+  </div>`;
+}
+
+function toggleForm(id){
+  const form=document.getElementById('tf-'+id);
+  const open=form.style.display!=='none';
+  document.querySelectorAll('[id^="tf-"]').forEach(f=>f.style.display='none');
+  if(!open){ form.style.display='block'; form.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+
+function cambiar(id,tipo,delta){
+  if(!conteoTemp[id]) conteoTemp[id]={};
+  const r=getRegHoy(id);
+  const cur=conteoTemp[id][tipo]!==undefined?conteoTemp[id][tipo]:(tipo==='h'?r?.hembras:r?.machos)||0;
+  conteoTemp[id][tipo]=Math.max(0,cur+delta);
+  document.getElementById('cv-'+tipo+'-'+id).textContent=conteoTemp[id][tipo];
+}
+
+function selOpt(id,campo,val,btn,gridId){
+  if(!conteoTemp[id]) conteoTemp[id]={};
+  conteoTemp[id][campo]=val;
+  document.getElementById(gridId).querySelectorAll('.opt-btn').forEach(b=>b.className='opt-btn');
+  const cls='sel-'+val.toLowerCase().replace(' ','-');
+  btn.className='opt-btn '+cls;
+}
+
+// ─── CAMBIO CEBO / FEROMONA ─────────────
+const LS_CAMBIOS = 'palma_trap_cambios_v1';
+let cambios = {}; // {trampaId: {cebo:'2026-06-01', feromona:'2026-03-01'}}
+
+function cargarCambios(){
+  try{ const c=localStorage.getItem(LS_CAMBIOS); if(c) cambios=JSON.parse(c); }catch(e){}
+}
+
+function guardarCambios(){
+  try{ localStorage.setItem(LS_CAMBIOS,JSON.stringify(cambios)); }catch(e){}
+}
+
+function proximoCambio(trampaId, tipo){
+  const ultimo = cambios[trampaId]?.[tipo];
+  if(!ultimo) return 'Sin registro';
+  const dias = tipo==='cebo' ? 15 : 90;
+  const d = new Date(ultimo);
+  d.setDate(d.getDate()+dias);
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return d.getDate()+' '+meses[d.getMonth()]+' '+d.getFullYear();
+}
+
+function esHoraFeromona(trampaId){
+  const ultimo = cambios[trampaId]?.feromona;
+  if(!ultimo) return false;
+  const d = new Date(ultimo);
+  d.setDate(d.getDate()+90);
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  d.setHours(0,0,0,0);
+  return d <= hoy;
+}
+
+function guardar(id){
+  const r=getRegHoy(id);
+  const tmp=conteoTemp[id]||{};
+  const h=tmp.h!==undefined?tmp.h:(r?.hembras||0);
+  const m=tmp.m!==undefined?tmp.m:(r?.machos||0);
+  const cb=tmp.cebo||r?.estadoCebo||'';
+  const ct=tmp.trampa||r?.estadoTrampa||'';
+  const obs=document.getElementById('obs-'+id)?.value||'';
+  if(!cb){showToast('⚠️ Selecciona estado del cebo');return;}
+  if(!ct){showToast('⚠️ Selecciona estado de la trampa');return;}
+  const cambioCebo = document.getElementById('chk-cebo-'+id)?.checked || false;
+  const cambioFeromona = document.getElementById('chk-feromona-'+id)?.checked || false;
+  const fecha=hoyISO();
+  if(!registros[fecha]) registros[fecha]={};
+  registros[fecha][id]={hembras:h,machos:m,estadoCebo:cb,estadoTrampa:ct,obs,operario,hora:new Date().toTimeString().slice(0,5),cambioCebo,cambioFeromona};
+  // Registrar fechas de cambio
+  if(cambioCebo){ if(!cambios[id]) cambios[id]={}; cambios[id].cebo=fecha; guardarCambios(); }
+  if(cambioFeromona){ if(!cambios[id]) cambios[id]={}; cambios[id].feromona=fecha; guardarCambios(); }
+  delete conteoTemp[id];
+  guardarLocal();
+  const trampa=trampas.find(t=>t.id===id);
+  const reg_hora = registros[fecha][id];
+  enviarGAS({accion:'registrarTrampa',trampaId:id,fecha,finca:trampa?.finca||'',lote:trampa?.lote||'',hembras:h,machos:m,estadoCebo:cb,estadoTrampa:ct,obs,operario,hora:reg_hora.hora,cambioCebo:reg_hora.cambioCebo,cambioFeromona:reg_hora.cambioFeromona});
+  const tot=h+m;
+  showToast(tot>=UMBRAL_ALERTA?'🔴 Alerta: '+tot+' capturas en '+id:'✅ '+id+' guardada');
+  renderTrampas();
+}
+
+function borrar(id){
+  const fecha=hoyISO();
+  if(registros[fecha]) delete registros[fecha][id];
+  guardarLocal();
+  renderTrampas();
+  showToast('Registro borrado');
+}
+
+// ─── DASHBOARD ───────────────────────────
+function renderDashboard(){
+  const fecha=hoyISO();
+  const regs=registros[fecha]||{};
+  const total=trampas.length;
+  const done=Object.keys(regs).filter(id=>trampas.find(t=>t.id===id)).length;
+  let totalH=0,totalM=0,alertas=0,dañadas=0;
+  Object.values(regs).forEach(r=>{
+    totalH+=r.hembras||0; totalM+=r.machos||0;
+    if((r.hembras||0)+(r.machos||0)>=UMBRAL_ALERTA) alertas++;
+    if(r.estadoTrampa==='Dañada'||r.estadoTrampa==='Perdida') dañadas++;
+  });
+  const ind=done>0?((totalH+totalM)/done).toFixed(1):'—';
+  const indCol=parseFloat(ind)>=UMBRAL_ALERTA?'var(--red)':parseFloat(ind)>=2?'var(--amber)':'var(--green)';
+
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-val" style="color:var(--primary);">${done}<span style="font-size:16px;color:var(--muted);">/${total}</span></div><div class="stat-lbl">Revisadas hoy</div><div class="stat-sub">${Math.round(done/total*100)||0}% completado</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:${indCol};">${ind}</div><div class="stat-lbl">Índice cap/trampa</div><div class="stat-sub">Umbral alerta: ${UMBRAL_ALERTA}</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--red);">${totalH}</div><div class="stat-lbl">🔴 Hembras</div><div class="stat-sub">Total del día</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--blue);">${totalM}</div><div class="stat-lbl">🔵 Machos</div><div class="stat-sub">Total del día</div></div>
+  `;
+
+  // Por lote
+  const porLote={};
+  trampas.forEach(t=>{
+    const k=t.finca+'_'+t.lote;
+    if(!porLote[k]) porLote[k]={finca:t.finca,lote:t.lote,total:0,rev:0,h:0,m:0};
+    porLote[k].total++;
+    const r=regs[t.id];
+    if(r){porLote[k].rev++;porLote[k].h+=r.hembras||0;porLote[k].m+=r.machos||0;}
+  });
+  document.getElementById('lotes-list').innerHTML=Object.values(porLote).sort((a,b)=>(b.h+b.m)-(a.h+a.m)).map(l=>{
+    const ind=l.rev>0?((l.h+l.m)/l.rev).toFixed(1):'—';
+    const pct=l.total>0?Math.round(l.rev/l.total*100):0;
+    const cls=parseFloat(ind)>=UMBRAL_ALERTA?'lrb-crit':parseFloat(ind)>=2?'lrb-warn':'lrb-ok';
+    return `<div class="lote-row">
+      <div class="lr-top">
+        <div>
+          <div class="lr-name">${l.finca.replace('FINCA ','F')} · Lote ${l.lote}</div>
+          <div class="lr-sub">${l.rev}/${l.total} trampas · H:${l.h} M:${l.m}</div>
+        </div>
+        <span class="lr-badge ${cls}">I: ${ind}</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar pb-green" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('')||'<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin datos hoy</div></div>';
+
+  // Alertas
+  const alertList=trampas.filter(t=>{const r=regs[t.id];return r&&(r.hembras||0)+(r.machos||0)>=UMBRAL_ALERTA;}).sort((a,b)=>{const ra=regs[a.id],rb=regs[b.id];return((rb.hembras||0)+(rb.machos||0))-((ra.hembras||0)+(ra.machos||0));});
+  document.getElementById('alertas-list').innerHTML=alertList.length===0
+    ?'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sin alertas hoy</div></div>'
+    :alertList.map(t=>{const r=regs[t.id];const tot=(r.hembras||0)+(r.machos||0);return`<div class="alerta-item"><div class="ai-icon">🚨</div><div class="ai-info"><div class="ai-id">${t.id}</div><div class="ai-sub">${t.finca.replace('FINCA ','F')} · Lote ${t.lote}</div></div><div><div class="ai-val">${tot}</div><div style="font-size:10px;color:var(--text2);">capturas</div></div></div>`;}).join('');
+
+  // Estado trampas
+  const dañadasList=trampas.filter(t=>{const r=regs[t.id];return r&&(r.estadoTrampa==='Dañada'||r.estadoTrampa==='Perdida'||r.estadoTrampa==='Reubicar');});
+  document.getElementById('estado-trampas').innerHTML=dañadasList.length===0
+    ?'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Todas las trampas en buen estado</div></div>'
+    :dañadasList.map(t=>{const r=regs[t.id];return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);"><div><div style="font-weight:700;">${t.id}</div><div style="font-size:12px;color:var(--text2);">${t.finca.replace('FINCA ','F')} · Lote ${t.lote}</div></div><span class="tc-badge" style="background:var(--amber-bg);color:var(--amber);">${r.estadoTrampa}</span></div>`;}).join('');
+}
+
+// ─── ADMIN ──────────────────────────────
+function cargarLotesAdmin(){
+  const f=document.getElementById('admin-finca').value;
+  const s=document.getElementById('admin-lote');
+  s.innerHTML='<option value="">— Seleccionar lote —</option>';
+  if(f&&LOTES_FINCA[f]) LOTES_FINCA[f].forEach(l=>{const o=document.createElement('option');o.value=o.textContent='Lote '+l;s.appendChild(o);});
+}
+
+function agregarTrampas(){
+  const f=document.getElementById('admin-finca').value;
+  const ls=document.getElementById('admin-lote').value;
+  const cant=parseInt(document.getElementById('admin-cant').value)||1;
+  if(!f||!ls){showToast('Selecciona finca y lote');return;}
+  const lote=ls.replace('Lote ','');
+  for(let i=0;i<cant;i++){
+    const n=trampas.length+1;
+    trampas.push({id:'TR-'+String(n).padStart(3,'0'),finca:f,lote,activa:true,fechaAlta:hoyISO()});
+  }
+  guardarLocal();
+  renderAdmin();
+  showToast('✅ '+cant+' trampa(s) agregada(s)');
+  enviarGAS({accion:'sincronizarTrampas',trampas});
+}
+
+function renderAdmin(){
+  document.getElementById('admin-total').textContent=trampas.length;
+  const porFinca={};
+  trampas.forEach(t=>{if(!porFinca[t.finca])porFinca[t.finca]=[];porFinca[t.finca].push(t);});
+  document.getElementById('admin-list').innerHTML=Object.entries(porFinca).map(([f,ts])=>`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:var(--primary);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:6px;">🌴 ${f} — ${ts.length} trampas</div>
+      ${ts.map(t=>`<div class="trampa-row"><div><span style="font-weight:800;font-family:'DM Mono',monospace;">${t.id}</span><span style="font-size:12px;color:var(--text2);margin-left:8px;">Lote ${t.lote}</span></div><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Reasignar</button></div>`).join('')}
+    </div>`).join('')||'<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin trampas</div></div>';
+}
+
+function reasignar(id){
+  const t=trampas.find(x=>x.id===id);
+  if(!t) return;
+  const f=prompt('Nueva finca (FINCA 1/2/3):',t.finca);
+  if(!f||!LOTES_FINCA[f]){showToast('Finca inválida');return;}
+  const l=prompt('Nuevo lote:',t.lote);
+  if(!l||!LOTES_FINCA[f].includes(l)){showToast('Lote inválido');return;}
+  t.finca=f;t.lote=l;
+  guardarLocal();renderAdmin();
+  showToast('✅ '+id+' reasignada');
+  enviarGAS({accion:'sincronizarTrampas',trampas});
+}
+
+// ─── FILTROS ────────────────────────────
+function setFiltro(f,btn){
+  filtro=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrampas();
+}
+
+function filtrarTrampas(v){busqueda=v;renderTrampas();}
+
+// ─── GAS ────────────────────────────────
+function gasJSONP(url){
+  return new Promise(resolve=>{
+    const cb='_cb'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const s=document.createElement('script');
+    window[cb]=d=>{delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(d);};
+    s.onerror=()=>{delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(null);};
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    document.body.appendChild(s);
+  });
+}
+
+function enviarGAS(payload){
+  if(!navigator.onLine){pendientes.push({...payload,ts:Date.now()});guardarLocal();return;}
+  const url=GAS_URL+'?accion='+encodeURIComponent(payload.accion)+'&data='+encodeURIComponent(JSON.stringify(payload));
+  gasJSONP(url).catch(()=>{pendientes.push({...payload,ts:Date.now()});guardarLocal();});
+}
+
+async function cargarGAS(){
+  const d=await gasJSONP(GAS_URL+'?accion=obtenerTrampasRegistros');
+  if(d?.registros){
+    Object.entries(d.registros).forEach(([fecha,regs])=>{
+      if(!registros[fecha]) registros[fecha]={};
+      Object.assign(registros[fecha],regs);
+    });
+    guardarLocal();renderTrampas();
+  }
+}
+
+async function enviarPendientes(){
+  if(!pendientes.length) return;
+  const cola=[...pendientes];pendientes=[];guardarLocal();
+  for(const p of cola) enviarGAS(p);
+  if(pendientes.length===0) showToast('✅ '+cola.length+' registros sincronizados');
+}
+
+// ─── TOAST ──────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
