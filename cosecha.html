@@ -984,17 +984,30 @@ async function cargarGAS(){
   return new Promise((resolve)=>{
     const cbName='_cb'+Date.now();
     const script=document.createElement('script');
+    let resuelto=false;
+    const timer=setTimeout(()=>{
+      if(resuelto) return;
+      resuelto=true;
+      delete window[cbName];
+      if(document.body.contains(script)) document.body.removeChild(script);
+      resolve();
+    },10000);
     window[cbName]=(data)=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
       if(data&&data.marcas&&Object.keys(data.marcas).length>0){
-        // Solo sobreescribir si GAS devuelve datos reales (no vacío)
         marcas = data.marcas;
         guardarLocal();
       }
       resolve();
     };
     script.onerror=()=>{
+      if(resuelto) return;
+      resuelto=true;
+      clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
       resolve();
