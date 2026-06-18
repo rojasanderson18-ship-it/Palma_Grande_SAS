@@ -545,7 +545,8 @@ function renderHistorico() {
   const ic = trampas>0 ? (totalCap/trampas) : 0;
 
   document.getElementById('kpi-historico').innerHTML = `
-    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${historico.length}</div><div class="kpi-lbl">Registros totales</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${trampas}</div><div class="kpi-lbl">Trampas con registro</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--muted);">${historico.length}</div><div class="kpi-lbl">Registros totales</div></div>
     <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">Hembras históricas</div></div>
     <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">Machos históricos</div></div>
     <div class="kpi"><div class="kpi-val">${totalCap}</div><div class="kpi-lbl">Capturas totales</div></div>
