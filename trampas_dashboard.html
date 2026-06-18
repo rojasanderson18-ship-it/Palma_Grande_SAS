@@ -49,8 +49,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 .up{color:var(--red);}.down{color:var(--green);}.neutral{color:var(--muted);}
 
 /* GRID 2 COL */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
 @media(max-width:768px){.grid2,.grid3{grid-template-columns:1fr;}.hdr-title{font-size:15px;}.kpi-val{font-size:26px;}.hdr-actions{width:100%;justify-content:flex-end;}}
 
 /* CARD */
@@ -770,6 +770,12 @@ function agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, st
   return primeraRebanada; // false si ya se usó al menos una rebanada
 }
 
+// helvetica (la fuente usada en el PDF) no soporta emojis: se eliminan de
+// títulos y celdas para evitar texto ilegible (mojibake) en el PDF exportado.
+function quitarEmoji(texto) {
+  return texto.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+}
+
 async function exportarPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
@@ -785,16 +791,65 @@ async function exportarPDF() {
   await new Promise(r => setTimeout(r, 300));
 
   // Cada tarjeta/bloque se captura por separado para poder acomodarlas en
-  // las páginas sin partir ningún gráfico o tabla a la mitad.
-  const bloques = Array.from(el.children).filter(c =>
-    c.id !== 'card-historial-tabla' && c.offsetHeight > 0
-  );
+  // las páginas sin partir ningún gráfico o tabla a la mitad. Los wrappers
+  // grid2/grid3 se "aplanan" en sus tarjetas hijas para que una columna larga
+  // no deje a su vecina corta en blanco durante varias páginas.
+  const bloques = [];
+  Array.from(el.children).forEach(c => {
+    if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) return;
+    if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
+      Array.from(c.children).forEach(nieto => {
+        if (nieto.offsetHeight > 0) bloques.push(nieto);
+      });
+    } else {
+      bloques.push(c);
+    }
+  });
 
   dibujarEncabezadoPDF(doc, nombreVista, pageW);
   let y = topMargin;
   let esPrimerBloqueDePagina = true;
 
   for (const bloque of bloques) {
+    const tabla = bloque.querySelector('table.tbl');
+    if (tabla) {
+      // Las tablas (p. ej. Alertas activas) pueden crecer a cientos de filas; si se
+      // capturaran con html2canvas el canvas resultante podría superar el límite de
+      // altura de la GPU del navegador y renderizarse en blanco. Se dibujan como texto
+      // real con autoTable, igual que la tabla del histórico.
+      if (!esPrimerBloqueDePagina) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
+      const tituloEl = bloque.querySelector('.card-title');
+      const titulo = tituloEl ? quitarEmoji(tituloEl.textContent) : '';
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(30, 41, 59);
+      doc.text(titulo, sideMargin, topMargin);
+      const head = Array.from(tabla.querySelectorAll('thead th')).map(th => quitarEmoji(th.textContent));
+      const body = Array.from(tabla.querySelectorAll('tbody tr')).map(tr =>
+        Array.from(tr.querySelectorAll('td')).map(td => quitarEmoji(td.textContent)));
+      const icColIdx = head.findIndex(t => t === 'IC');
+      doc.autoTable({
+        head: [head],
+        body,
+        startY: topMargin + 4,
+        margin: { left: sideMargin, right: sideMargin, top: topMargin, bottom: bottomMargin },
+        styles: { fontSize: 7.5, cellPadding: 1.6, valign: 'middle' },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell: function (data) {
+          if (data.section === 'body' && icColIdx >= 0) {
+            const ic = parseInt(data.row.raw[icColIdx], 10) || 0;
+            if (ic >= UMBRAL_CRITICO) data.cell.styles.fillColor = [254, 242, 242];
+            else if (ic >= UMBRAL_ALERTA) data.cell.styles.fillColor = [255, 247, 237];
+          }
+        },
+        didDrawPage: () => dibujarEncabezadoPDF(doc, nombreVista, pageW),
+      });
+      y = doc.lastAutoTable.finalY + gap;
+      esPrimerBloqueDePagina = false;
+      continue;
+    }
+
     const canvas = await html2canvas(bloque, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
     const h = canvas.height * imgW / canvas.width;
 
@@ -845,6 +900,7 @@ async function exportarPDF() {
           else if (total >= UMBRAL_ALERTA) data.cell.styles.fillColor = [255,247,237];
         }
       },
+      didDrawPage: () => dibujarEncabezadoPDF(doc, nombreVista + ' · Detalle completo', pageW),
     });
   }
 
