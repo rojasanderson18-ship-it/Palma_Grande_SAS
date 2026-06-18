@@ -954,14 +954,20 @@ function enviarGAS(payload){
 }
 
 async function cargarGAS(){
-  const d=await gasJSONP(GAS_URL+'?accion=obtenerTrampasRegistros');
-  if(d?.registros){
-    Object.entries(d.registros).forEach(([fecha,regs])=>{
+  const [reg,cfg]=await Promise.all([
+    gasJSONP(GAS_URL+'?accion=obtenerTrampasRegistros'),
+    gasJSONP(GAS_URL+'?accion=obtenerConfigTrampas'),
+  ]);
+  if(cfg?.trampas&&cfg.trampas.length>0){
+    trampas=cfg.trampas.map(t=>({id:t.id,finca:t.finca,lote:t.lote,activa:t.activa,fechaAlta:t.fechaAlta}));
+  }
+  if(reg?.registros){
+    Object.entries(reg.registros).forEach(([fecha,regs])=>{
       if(!registros[fecha]) registros[fecha]={};
       Object.assign(registros[fecha],regs);
     });
-    guardarLocal();renderTrampas();
   }
+  guardarLocal();renderTrampas();
 }
 
 async function enviarPendientes(){
