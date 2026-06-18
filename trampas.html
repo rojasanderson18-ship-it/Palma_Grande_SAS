@@ -343,6 +343,14 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
         <label class="flabel">Cantidad</label>
         <input type="number" class="finput" id="admin-cant" value="1" min="1" max="20"/>
       </div>
+      <div class="fgroup">
+        <label class="flabel">Operario asignado</label>
+        <div class="fselect-wrap">
+          <select class="fselect" id="admin-operario">
+            <option value="">— Sin asignar —</option>
+          </select>
+        </div>
+      </div>
       <button class="btn btn-primary" onclick="agregarTrampas()">Agregar</button>
     </div>
     <div class="card">
@@ -390,98 +398,98 @@ const UMBRAL_CRITICO = 10;
 
 // ─── TRAMPAS PRE-CARGADAS ────────────────
 const TRAMPAS_INICIALES = [
-  {id:"TR-001",finca:"FINCA 1",lote:"6",activa:true},
-  {id:"TR-002",finca:"FINCA 1",lote:"6",activa:true},
-  {id:"TR-003",finca:"FINCA 1",lote:"6",activa:true},
-  {id:"TR-004",finca:"FINCA 1",lote:"7",activa:true},
-  {id:"TR-005",finca:"FINCA 1",lote:"7",activa:true},
-  {id:"TR-006",finca:"FINCA 1",lote:"7",activa:true},
-  {id:"TR-007",finca:"FINCA 1",lote:"16",activa:true},
-  {id:"TR-008",finca:"FINCA 1",lote:"16",activa:true},
-  {id:"TR-009",finca:"FINCA 1",lote:"16",activa:true},
-  {id:"TR-010",finca:"FINCA 1",lote:"16",activa:true},
-  {id:"TR-011",finca:"FINCA 1",lote:"16",activa:true},
-  {id:"TR-012",finca:"FINCA 1",lote:"17",activa:true},
-  {id:"TR-013",finca:"FINCA 1",lote:"17",activa:true},
-  {id:"TR-014",finca:"FINCA 1",lote:"17",activa:true},
-  {id:"TR-015",finca:"FINCA 1",lote:"17",activa:true},
-  {id:"TR-016",finca:"FINCA 1",lote:"17",activa:true},
-  {id:"TR-017",finca:"FINCA 1",lote:"17",activa:true},
-  {id:"TR-018",finca:"FINCA 1",lote:"13",activa:true},
-  {id:"TR-019",finca:"FINCA 1",lote:"12",activa:true},
-  {id:"TR-020",finca:"FINCA 1",lote:"12",activa:true},
-  {id:"TR-021",finca:"FINCA 1",lote:"11",activa:true},
-  {id:"TR-022",finca:"FINCA 1",lote:"11",activa:true},
-  {id:"TR-023",finca:"FINCA 1",lote:"11",activa:true},
-  {id:"TR-024",finca:"FINCA 1",lote:"11",activa:true},
-  {id:"TR-025",finca:"FINCA 1",lote:"4A",activa:true},
-  {id:"TR-026",finca:"FINCA 1",lote:"4A",activa:true},
-  {id:"TR-027",finca:"FINCA 1",lote:"4A",activa:true},
-  {id:"TR-028",finca:"FINCA 1",lote:"4A",activa:true},
-  {id:"TR-029",finca:"FINCA 1",lote:"4A",activa:true},
-  {id:"TR-030",finca:"FINCA 1",lote:"2A",activa:true},
-  {id:"TR-031",finca:"FINCA 1",lote:"1A",activa:true},
-  {id:"TR-032",finca:"FINCA 1",lote:"1A",activa:true},
-  {id:"TR-033",finca:"FINCA 1",lote:"1A",activa:true},
-  {id:"TR-034",finca:"FINCA 1",lote:"18",activa:true},
-  {id:"TR-035",finca:"FINCA 1",lote:"18",activa:true},
-  {id:"TR-036",finca:"FINCA 1",lote:"18",activa:true},
-  {id:"TR-037",finca:"FINCA 2",lote:"32A",activa:true},
-  {id:"TR-038",finca:"FINCA 2",lote:"33A",activa:true},
-  {id:"TR-039",finca:"FINCA 2",lote:"33A",activa:true},
-  {id:"TR-040",finca:"FINCA 2",lote:"33A",activa:true},
-  {id:"TR-041",finca:"FINCA 2",lote:"34A",activa:true},
-  {id:"TR-042",finca:"FINCA 2",lote:"34A",activa:true},
-  {id:"TR-043",finca:"FINCA 2",lote:"35A",activa:true},
-  {id:"TR-044",finca:"FINCA 2",lote:"35A",activa:true},
-  {id:"TR-045",finca:"FINCA 2",lote:"36",activa:true},
-  {id:"TR-046",finca:"FINCA 2",lote:"39",activa:true},
-  {id:"TR-047",finca:"FINCA 2",lote:"39",activa:true},
-  {id:"TR-048",finca:"FINCA 2",lote:"40",activa:true},
-  {id:"TR-049",finca:"FINCA 2",lote:"41",activa:true},
-  {id:"TR-050",finca:"FINCA 2",lote:"41",activa:true},
-  {id:"TR-051",finca:"FINCA 2",lote:"41",activa:true},
-  {id:"TR-052",finca:"FINCA 2",lote:"41",activa:true},
-  {id:"TR-053",finca:"FINCA 2",lote:"19",activa:true},
-  {id:"TR-054",finca:"FINCA 3",lote:"42",activa:true},
-  {id:"TR-055",finca:"FINCA 3",lote:"42",activa:true},
-  {id:"TR-056",finca:"FINCA 3",lote:"42",activa:true},
-  {id:"TR-057",finca:"FINCA 3",lote:"42",activa:true},
-  {id:"TR-058",finca:"FINCA 3",lote:"44A",activa:true},
-  {id:"TR-059",finca:"FINCA 3",lote:"44A",activa:true},
-  {id:"TR-060",finca:"FINCA 3",lote:"45A",activa:true},
-  {id:"TR-061",finca:"FINCA 3",lote:"45A",activa:true},
-  {id:"TR-062",finca:"FINCA 3",lote:"45A",activa:true},
-  {id:"TR-063",finca:"FINCA 3",lote:"58",activa:true},
-  {id:"TR-064",finca:"FINCA 3",lote:"46",activa:true},
-  {id:"TR-065",finca:"FINCA 3",lote:"46",activa:true},
-  {id:"TR-066",finca:"FINCA 3",lote:"46",activa:true},
-  {id:"TR-067",finca:"FINCA 3",lote:"48",activa:true},
-  {id:"TR-068",finca:"FINCA 3",lote:"48",activa:true},
-  {id:"TR-069",finca:"FINCA 3",lote:"48",activa:true},
-  {id:"TR-070",finca:"FINCA 3",lote:"48",activa:true},
-  {id:"TR-071",finca:"FINCA 3",lote:"50",activa:true},
-  {id:"TR-072",finca:"FINCA 3",lote:"50",activa:true},
-  {id:"TR-073",finca:"FINCA 3",lote:"50",activa:true},
-  {id:"TR-074",finca:"FINCA 3",lote:"50",activa:true},
-  {id:"TR-075",finca:"FINCA 3",lote:"50",activa:true},
-  {id:"TR-076",finca:"FINCA 3",lote:"51",activa:true},
-  {id:"TR-077",finca:"FINCA 3",lote:"51",activa:true},
-  {id:"TR-078",finca:"FINCA 3",lote:"51",activa:true},
-  {id:"TR-079",finca:"FINCA 3",lote:"52",activa:true},
-  {id:"TR-080",finca:"FINCA 3",lote:"52",activa:true},
-  {id:"TR-081",finca:"FINCA 3",lote:"54",activa:true},
-  {id:"TR-082",finca:"FINCA 3",lote:"54",activa:true},
-  {id:"TR-083",finca:"FINCA 3",lote:"54",activa:true},
-  {id:"TR-084",finca:"FINCA 3",lote:"54",activa:true},
-  {id:"TR-085",finca:"FINCA 3",lote:"56",activa:true},
-  {id:"TR-086",finca:"FINCA 3",lote:"56",activa:true},
-  {id:"TR-087",finca:"FINCA 3",lote:"56",activa:true},
-  {id:"TR-088",finca:"FINCA 3",lote:"56",activa:true},
-  {id:"TR-089",finca:"FINCA 3",lote:"56",activa:true},
-  {id:"TR-090",finca:"FINCA 3",lote:"56",activa:true},
-  {id:"TR-091",finca:"FINCA 3",lote:"57",activa:true},
-  {id:"TR-092",finca:"FINCA 3",lote:"57",activa:true}
+  {id:"TR-001",finca:"FINCA 1",lote:"6",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-002",finca:"FINCA 1",lote:"6",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-003",finca:"FINCA 1",lote:"6",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-004",finca:"FINCA 1",lote:"7",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-005",finca:"FINCA 1",lote:"7",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-006",finca:"FINCA 1",lote:"7",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-007",finca:"FINCA 1",lote:"16",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-008",finca:"FINCA 1",lote:"16",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-009",finca:"FINCA 1",lote:"16",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-010",finca:"FINCA 1",lote:"16",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-011",finca:"FINCA 1",lote:"16",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-012",finca:"FINCA 1",lote:"17",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-013",finca:"FINCA 1",lote:"17",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-014",finca:"FINCA 1",lote:"17",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-015",finca:"FINCA 1",lote:"17",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-016",finca:"FINCA 1",lote:"17",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-017",finca:"FINCA 1",lote:"17",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-018",finca:"FINCA 1",lote:"13",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-019",finca:"FINCA 1",lote:"12",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-020",finca:"FINCA 1",lote:"12",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-021",finca:"FINCA 1",lote:"11",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-022",finca:"FINCA 1",lote:"11",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-023",finca:"FINCA 1",lote:"11",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-024",finca:"FINCA 1",lote:"11",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-025",finca:"FINCA 1",lote:"4A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-026",finca:"FINCA 1",lote:"4A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-027",finca:"FINCA 1",lote:"4A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-028",finca:"FINCA 1",lote:"4A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-029",finca:"FINCA 1",lote:"4A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-030",finca:"FINCA 1",lote:"2A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-031",finca:"FINCA 1",lote:"1A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-032",finca:"FINCA 1",lote:"1A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-033",finca:"FINCA 1",lote:"1A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-034",finca:"FINCA 1",lote:"18",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-035",finca:"FINCA 1",lote:"18",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-036",finca:"FINCA 1",lote:"18",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-037",finca:"FINCA 2",lote:"32A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-038",finca:"FINCA 2",lote:"33A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-039",finca:"FINCA 2",lote:"33A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-040",finca:"FINCA 2",lote:"33A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-041",finca:"FINCA 2",lote:"34A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-042",finca:"FINCA 2",lote:"34A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-043",finca:"FINCA 2",lote:"35A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-044",finca:"FINCA 2",lote:"35A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-045",finca:"FINCA 2",lote:"36",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-046",finca:"FINCA 2",lote:"39",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-047",finca:"FINCA 2",lote:"39",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-048",finca:"FINCA 2",lote:"40",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-049",finca:"FINCA 2",lote:"41",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-050",finca:"FINCA 2",lote:"41",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-051",finca:"FINCA 2",lote:"41",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-052",finca:"FINCA 2",lote:"41",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-053",finca:"FINCA 2",lote:"19",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-054",finca:"FINCA 3",lote:"42",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-055",finca:"FINCA 3",lote:"42",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-056",finca:"FINCA 3",lote:"42",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-057",finca:"FINCA 3",lote:"42",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-058",finca:"FINCA 3",lote:"44A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-059",finca:"FINCA 3",lote:"44A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-060",finca:"FINCA 3",lote:"45A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-061",finca:"FINCA 3",lote:"45A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-062",finca:"FINCA 3",lote:"45A",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-063",finca:"FINCA 3",lote:"58",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-064",finca:"FINCA 3",lote:"46",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-065",finca:"FINCA 3",lote:"46",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-066",finca:"FINCA 3",lote:"46",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-067",finca:"FINCA 3",lote:"48",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-068",finca:"FINCA 3",lote:"48",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-069",finca:"FINCA 3",lote:"48",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-070",finca:"FINCA 3",lote:"48",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-071",finca:"FINCA 3",lote:"50",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-072",finca:"FINCA 3",lote:"50",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-073",finca:"FINCA 3",lote:"50",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-074",finca:"FINCA 3",lote:"50",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-075",finca:"FINCA 3",lote:"50",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-076",finca:"FINCA 3",lote:"51",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-077",finca:"FINCA 3",lote:"51",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-078",finca:"FINCA 3",lote:"51",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-079",finca:"FINCA 3",lote:"52",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-080",finca:"FINCA 3",lote:"52",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-081",finca:"FINCA 3",lote:"54",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-082",finca:"FINCA 3",lote:"54",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-083",finca:"FINCA 3",lote:"54",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-084",finca:"FINCA 3",lote:"54",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-085",finca:"FINCA 3",lote:"56",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-086",finca:"FINCA 3",lote:"56",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-087",finca:"FINCA 3",lote:"56",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-088",finca:"FINCA 3",lote:"56",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-089",finca:"FINCA 3",lote:"56",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-090",finca:"FINCA 3",lote:"56",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-091",finca:"FINCA 3",lote:"57",activa:true,operario:"Anderson Rojas"},
+  {id:"TR-092",finca:"FINCA 3",lote:"57",activa:true,operario:"Anderson Rojas"}
 ];
 
 // ─── STATE ───────────────────────────────
@@ -504,6 +512,8 @@ function init(){
   // Operarios
   const sel = document.getElementById('sel-operario');
   OPERARIOS.forEach(op=>{ const o=document.createElement('option'); o.value=o.textContent=op; sel.appendChild(o); });
+  const selAdmin = document.getElementById('admin-operario');
+  OPERARIOS.forEach(op=>{ const o=document.createElement('option'); o.value=o.textContent=op; selAdmin.appendChild(o); });
 
   cargarLocal();
   cargarCambios();
@@ -593,6 +603,7 @@ function renderTrampas(){
   const regs=registros[fecha]||{};
   
   let lista=trampas.filter(t=>{
+    if(operario!=='Supervisor'&&t.operario!==operario) return false;
     if(fincaFiltro!=='todas'&&t.finca!==fincaFiltro) return false;
     if(busqueda){
       const s=busqueda.toLowerCase();
@@ -608,16 +619,17 @@ function renderTrampas(){
     return true;
   });
 
-  // Progress
-  const total=trampas.filter(t=>fincaFiltro==='todas'||t.finca===fincaFiltro).length;
-  const done=Object.keys(regs).filter(id=>trampas.find(t=>t.id===id&&(fincaFiltro==='todas'||t.finca===fincaFiltro))).length;
+  // Progress (respeta el filtro por operario asignado)
+  const propias=t=>(operario==='Supervisor'||t.operario===operario)&&(fincaFiltro==='todas'||t.finca===fincaFiltro);
+  const total=trampas.filter(propias).length;
+  const done=Object.keys(regs).filter(id=>trampas.find(t=>t.id===id&&propias(t))).length;
   const pct=total>0?Math.round(done/total*100):0;
   document.getElementById('prog-text').textContent=done+' / '+total;
   document.getElementById('prog-bar').style.width=pct+'%';
   document.getElementById('prog-bar').className='prog-bar '+(pct<50?'pb-amber':pct<80?'pb-green':'pb-green');
 
   // Chip counts
-  const pend=trampas.filter(t=>(fincaFiltro==='todas'||t.finca===fincaFiltro)&&!regs[t.id]).length;
+  const pend=trampas.filter(t=>propias(t)&&!regs[t.id]).length;
   document.getElementById('chip-count-todas').textContent=total?`(${total})`:'';
   document.getElementById('chip-count-pendiente').textContent=pend?`(${pend})`:'';
 
@@ -889,11 +901,12 @@ function agregarTrampas(){
   const f=document.getElementById('admin-finca').value;
   const ls=document.getElementById('admin-lote').value;
   const cant=parseInt(document.getElementById('admin-cant').value)||1;
+  const op=document.getElementById('admin-operario').value;
   if(!f||!ls){showToast('Selecciona finca y lote');return;}
   const lote=ls.replace('Lote ','');
   for(let i=0;i<cant;i++){
     const n=trampas.length+1;
-    trampas.push({id:'TR-'+String(n).padStart(3,'0'),finca:f,lote,activa:true,fechaAlta:hoyISO()});
+    trampas.push({id:'TR-'+String(n).padStart(3,'0'),finca:f,lote,activa:true,operario:op,fechaAlta:hoyISO()});
   }
   guardarLocal();
   renderAdmin();
@@ -908,7 +921,7 @@ function renderAdmin(){
   document.getElementById('admin-list').innerHTML=Object.entries(porFinca).map(([f,ts])=>`
     <div style="margin-bottom:12px;">
       <div style="font-size:12px;font-weight:800;color:var(--primary);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:6px;">🌴 ${f} — ${ts.length} trampas</div>
-      ${ts.map(t=>`<div class="trampa-row"><div><span style="font-weight:800;font-family:'DM Mono',monospace;">${t.id}</span><span style="font-size:12px;color:var(--text2);margin-left:8px;">Lote ${t.lote}</span></div><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Reasignar</button></div>`).join('')}
+      ${ts.map(t=>`<div class="trampa-row"><div><span style="font-weight:800;font-family:'DM Mono',monospace;">${t.id}</span><span style="font-size:12px;color:var(--text2);margin-left:8px;">Lote ${t.lote}</span><span style="font-size:11px;color:${t.operario?'var(--primary)':'var(--red)'};margin-left:8px;">${t.operario||'Sin asignar'}</span></div><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-sm" onclick="asignarOperario('${t.id}')">Operario</button><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Lote</button></div></div>`).join('')}
     </div>`).join('')||'<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin trampas</div></div>';
 }
 
@@ -922,6 +935,18 @@ function reasignar(id){
   t.finca=f;t.lote=l;
   guardarLocal();renderAdmin();
   showToast('✅ '+id+' reasignada');
+  enviarGAS({accion:'sincronizarTrampas',trampas});
+}
+
+function asignarOperario(id){
+  const t=trampas.find(x=>x.id===id);
+  if(!t) return;
+  const op=prompt('Operario asignado ('+OPERARIOS.join(' / ')+'):',t.operario||'');
+  if(op===null) return;
+  if(op&&OPERARIOS.indexOf(op)<0){showToast('Operario inválido');return;}
+  t.operario=op;
+  guardarLocal();renderAdmin();
+  showToast('✅ '+id+' asignada a '+(op||'nadie'));
   enviarGAS({accion:'sincronizarTrampas',trampas});
 }
 
