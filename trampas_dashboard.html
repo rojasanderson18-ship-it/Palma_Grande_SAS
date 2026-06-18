@@ -145,6 +145,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
   <!-- VISTA: CICLO ACTUAL -->
   <div id="vista-actual" class="vista" style="display:none;">
     <div class="kpi-grid" id="kpi-actual"></div>
+    <div id="analisis-agronomico-actual"></div>
     <div class="grid2">
       <div class="card">
         <div class="card-title">🏆 Capturas por lote <span>Índice cap/trampa</span></div>
@@ -174,6 +175,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
   <!-- VISTA: MES -->
   <div id="vista-mes" class="vista" style="display:none;">
     <div class="kpi-grid" id="kpi-mes"></div>
+    <div id="analisis-agronomico-mes"></div>
     <div class="card">
       <div class="card-title">📈 Capturas diarias del mes <span id="mes-nombre"></span></div>
       <div class="chart-wrap-tall"><canvas id="chart-mes-daily"></canvas></div>
@@ -351,8 +353,10 @@ function renderActual() {
   const datos = cicloActual();
   if (datos.length === 0) {
     document.getElementById('kpi-actual').innerHTML = '<div style="color:var(--muted);padding:20px;">Sin registros en los últimos 15 días</div>';
+    document.getElementById('analisis-agronomico-actual').innerHTML = '';
     return;
   }
+  renderAnalisisAgronomico(datos, 'analisis-agronomico-actual');
 
   const totalH = datos.reduce((s,r) => s + (r.hembras||0), 0);
   const totalM = datos.reduce((s,r) => s + (r.machos||0), 0);
@@ -466,6 +470,7 @@ function renderActual() {
 function renderMes() {
   const mes = mesActualISO();
   const datos = historico.filter(r => r.fecha && r.fecha.startsWith(mes));
+  renderAnalisisAgronomico(datos, 'analisis-agronomico-mes');
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('mes-nombre').textContent = meses[new Date().getMonth()] + ' ' + new Date().getFullYear();
 
@@ -553,19 +558,19 @@ function renderMes() {
 }
 
 // ── ANÁLISIS AGRONÓMICO ───────────────────
-function renderAnalisisAgronomico() {
-  const cont = document.getElementById('analisis-agronomico');
-  if (historico.length === 0) { cont.innerHTML = ''; return; }
+function renderAnalisisAgronomico(datos, contId) {
+  const cont = document.getElementById(contId);
+  if (!datos || datos.length === 0) { cont.innerHTML = ''; return; }
 
-  const fechas = [...new Set(historico.map(r => r.fecha))].sort();
+  const fechas = [...new Set(datos.map(r => r.fecha))].sort();
   const mitad = Math.ceil(fechas.length/2);
   const fechasPrevias = fechas.slice(0, mitad);
   const fechasRecientes = fechas.slice(mitad);
 
   function calcIC(listaFechas) {
-    const datos = historico.filter(r => listaFechas.includes(r.fecha));
-    const tot = datos.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
-    const tr = new Set(datos.map(r => r.trampaId)).size;
+    const sub = datos.filter(r => listaFechas.includes(r.fecha));
+    const tot = sub.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
+    const tr = new Set(sub.map(r => r.trampaId)).size;
     return tr>0 ? tot/tr : 0;
   }
   const icReciente = calcIC(fechasRecientes.length ? fechasRecientes : fechas);
@@ -575,7 +580,7 @@ function renderAnalisisAgronomico() {
   const tendenciaIcon = variacion>10?'⚠️':variacion<-10?'✅':'➖';
 
   const porFinca = {};
-  historico.forEach(r => {
+  datos.forEach(r => {
     const f = r.finca || 'Sin finca';
     if(!porFinca[f]) porFinca[f] = {tot:0, tr:new Set()};
     porFinca[f].tot += (r.hembras||0)+(r.machos||0);
@@ -587,7 +592,7 @@ function renderAnalisisAgronomico() {
   const fincaCritica = fincasIC[0];
 
   const porLote = {};
-  historico.forEach(r => {
+  datos.forEach(r => {
     const k = (r.finca||'?')+' · Lote '+(r.lote||'?');
     if(!porLote[k]) porLote[k] = {tot:0, tr:new Set()};
     porLote[k].tot += (r.hembras||0)+(r.machos||0);
@@ -645,7 +650,7 @@ function renderHistorico() {
     document.getElementById('analisis-agronomico').innerHTML = '';
     return;
   }
-  renderAnalisisAgronomico();
+  renderAnalisisAgronomico(historico, 'analisis-agronomico');
 
   const totalH = historico.reduce((s,r) => s+r.hembras,0);
   const totalM = historico.reduce((s,r) => s+r.machos,0);
@@ -740,10 +745,40 @@ function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   doc.text('Rhynchophorus palmarum  ·  Vista: ' + nombreVista + '  ·  Generado: ' + fechaStr, 8, 13.5);
 }
 
+function agregarImagenPaginada(doc, canvas, pageW, pageH, nombreVista) {
+  const imgWmm = pageW - 16;
+  const pxPerMm = canvas.width / imgWmm;
+  const startYmm = 20;
+  const bottomMarginMm = 8;
+  const availableHmm = pageH - startYmm - bottomMarginMm;
+  const pxPerPage = Math.floor(availableHmm * pxPerMm);
+  const totalHpx = canvas.height;
+
+  let offsetPx = 0;
+  let primeraPagina = true;
+  while (offsetPx < totalHpx) {
+    if (!primeraPagina) doc.addPage();
+    dibujarEncabezadoPDF(doc, nombreVista, pageW);
+
+    const sliceHpx = Math.min(pxPerPage, totalHpx - offsetPx);
+    const slice = document.createElement('canvas');
+    slice.width = canvas.width;
+    slice.height = sliceHpx;
+    slice.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceHpx, 0, 0, canvas.width, sliceHpx);
+
+    const sliceHmm = sliceHpx / pxPerMm;
+    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 8, startYmm, imgWmm, sliceHmm);
+
+    offsetPx += sliceHpx;
+    primeraPagina = false;
+  }
+}
+
 async function exportarPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const nombreVista = vistaActual==='actual' ? 'Ciclo actual' : vistaActual==='mes' ? 'Este mes' : 'Histórico';
 
   const el = document.getElementById('vista-' + vistaActual);
@@ -760,10 +795,7 @@ async function exportarPDF() {
 
   if (tablaGrande) tablaGrande.style.display = prevDisplay;
 
-  dibujarEncabezadoPDF(doc, nombreVista, pageW);
-  const imgW = pageW - 16;
-  const imgH = canvas.height * imgW / canvas.width;
-  doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 8, 20, imgW, imgH);
+  agregarImagenPaginada(doc, canvas, pageW, pageH, nombreVista);
 
   if (vistaActual === 'historico' && historico.length > 0) {
     const filas = [...historico].sort((a,b) => b.fecha.localeCompare(a.fecha)).map(r => {
