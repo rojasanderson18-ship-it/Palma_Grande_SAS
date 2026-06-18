@@ -948,20 +948,32 @@ function renderAdmin(){
       ${ts.map(t=>`<div class="trampa-row"><div><span style="font-weight:800;font-family:'DM Mono',monospace;">${t.id}</span><span style="font-size:12px;color:var(--text2);margin-left:8px;">Lote ${t.lote}</span></div><div style="display:flex;gap:6px;align-items:center;"><select class="fselect" style="font-size:11px;padding:4px 6px;" onchange="asignarOperario('${t.id}',this.value)">
         <option value="">— Sin asignar —</option>
         ${OPERARIOS.map(op=>`<option value="${op}" ${t.operario===op?'selected':''}>${op}</option>`).join('')}
-      </select><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Lote</button></div></div>`).join('')}
+      </select><button class="btn btn-ghost btn-sm" onclick="reasignarFinca('${t.id}')">Finca</button><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Lote</button></div></div>`).join('')}
     </div>`).join('')||'<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin trampas</div></div>';
 }
 
 function reasignar(id){
   const t=trampas.find(x=>x.id===id);
   if(!t) return;
-  const f=prompt('Nueva finca (FINCA 1/2/3):',t.finca);
-  if(!f||!LOTES_FINCA[f]){showToast('Finca inválida');return;}
-  const l=prompt('Nuevo lote:',t.lote);
-  if(!l||!LOTES_FINCA[f].includes(l)){showToast('Lote inválido');return;}
-  t.finca=f;t.lote=l;
+  const l=prompt('Nuevo lote para '+id+' ('+t.finca+'):\n'+LOTES_FINCA[t.finca].join(', '),t.lote);
+  if(l===null) return;
+  if(!l||!LOTES_FINCA[t.finca].includes(l)){showToast('Lote inválido para '+t.finca);return;}
+  t.lote=l;
   guardarLocal();renderAdmin();
-  showToast('✅ '+id+' reasignada');
+  showToast('✅ '+id+' movida a Lote '+l);
+  enviarGAS({accion:'sincronizarTrampas',trampas});
+}
+
+function reasignarFinca(id){
+  const t=trampas.find(x=>x.id===id);
+  if(!t) return;
+  const f=prompt('Nueva finca para '+id+' (FINCA 1 / FINCA 2 / FINCA 3):',t.finca);
+  if(f===null) return;
+  if(!f||!LOTES_FINCA[f]){showToast('Finca inválida');return;}
+  t.finca=f;
+  t.lote=LOTES_FINCA[f][0];
+  guardarLocal();renderAdmin();
+  showToast('✅ '+id+' movida a '+f+' (revisa el lote)');
   enviarGAS({accion:'sincronizarTrampas',trampas});
 }
 
