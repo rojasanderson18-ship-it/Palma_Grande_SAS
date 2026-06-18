@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -214,7 +215,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
         <div class="chart-wrap"><canvas id="chart-hist-finca"></canvas></div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" id="card-historial-tabla">
       <div class="card-title">📋 Historial completo por ciclo</div>
       <div style="overflow-x:auto;"><table class="tbl">
         <thead><tr><th>Fecha</th><th>Finca</th><th>Lote</th><th>Trampa</th><th>H</th><th>M</th><th>Total</th><th>Cebo</th><th>Trampa</th><th>Operario</th></tr></thead>
@@ -724,18 +725,73 @@ function renderHistorico() {
 }
 
 // ── PDF EXPORT ────────────────────────────
+function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
+  const hoy = new Date();
+  const fechaStr = hoy.toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' });
+  doc.setFillColor(15,17,23);
+  doc.rect(0, 0, pageW, 16, 'F');
+  doc.setTextColor(240,201,106);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.text('Análisis de Trampas — Palma Grande S.A.S.', 8, 9.5);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(190,190,190);
+  doc.text('Rhynchophorus palmarum  ·  Vista: ' + nombreVista + '  ·  Generado: ' + fechaStr, 8, 13.5);
+}
+
 async function exportarPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const nombreVista = vistaActual==='actual' ? 'Ciclo actual' : vistaActual==='mes' ? 'Este mes' : 'Histórico';
+
   const el = document.getElementById('vista-' + vistaActual);
   el.style.display = 'block';
-  await new Promise(r => setTimeout(r, 500));
-  const canvas = await html2canvas(el, { scale:1.2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
-  const img = canvas.toDataURL('image/jpeg', 0.9);
-  const ratio = canvas.width / canvas.height;
-  let iw = 297, ih = 297/ratio;
-  if (ih > 210) { ih = 210; iw = 210*ratio; }
-  doc.addImage(img, 'JPEG', (297-iw)/2, (210-ih)/2, iw, ih);
+  await new Promise(r => setTimeout(r, 300));
+
+  // Oculta la tabla larga del histórico antes de capturar el resumen visual,
+  // porque esa tabla se exporta aparte como tabla real (paginada y legible).
+  const tablaGrande = document.getElementById('card-historial-tabla');
+  let prevDisplay;
+  if (tablaGrande) { prevDisplay = tablaGrande.style.display; tablaGrande.style.display = 'none'; }
+
+  const canvas = await html2canvas(el, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+
+  if (tablaGrande) tablaGrande.style.display = prevDisplay;
+
+  dibujarEncabezadoPDF(doc, nombreVista, pageW);
+  const imgW = pageW - 16;
+  const imgH = canvas.height * imgW / canvas.width;
+  doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 8, 20, imgW, imgH);
+
+  if (vistaActual === 'historico' && historico.length > 0) {
+    const filas = [...historico].sort((a,b) => b.fecha.localeCompare(a.fecha)).map(r => {
+      const total = (r.hembras||0) + (r.machos||0);
+      return [r.fecha, (r.finca||'').replace('FINCA ','F'), r.lote||'—', r.trampaId||'—',
+        String(r.hembras||0), String(r.machos||0), String(total),
+        r.estadoCebo||'—', r.estadoTrampa||'—', r.operario||'—'];
+    });
+    doc.addPage();
+    dibujarEncabezadoPDF(doc, nombreVista + ' · Detalle completo', pageW);
+    doc.autoTable({
+      head: [['Fecha','Finca','Lote','Trampa','Hembras','Machos','Total','Cebo','Trampa','Operario']],
+      body: filas,
+      startY: 20,
+      margin: { left:8, right:8 },
+      styles: { fontSize:7.5, cellPadding:1.8, valign:'middle' },
+      headStyles: { fillColor:[30,58,95], textColor:255, fontStyle:'bold', fontSize:8 },
+      alternateRowStyles: { fillColor:[248,250,252] },
+      didParseCell: function(data){
+        if (data.section === 'body') {
+          const total = parseInt(data.row.raw[6], 10) || 0;
+          if (total >= UMBRAL_CRITICO) data.cell.styles.fillColor = [254,242,242];
+          else if (total >= UMBRAL_ALERTA) data.cell.styles.fillColor = [255,247,237];
+        }
+      },
+    });
+  }
+
   const hoy = new Date();
   doc.save('trampas-' + vistaActual + '-' + hoy.toISOString().slice(0,10) + '.pdf');
 }
