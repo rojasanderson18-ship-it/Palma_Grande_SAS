@@ -575,12 +575,15 @@ function entrar(){
 
 function salir(){
   operario='';
+  adminDesbloqueado=false;
   document.getElementById('hdr-operario').textContent='Palma Grande S.A.S.';
   document.getElementById('bottom-nav').classList.remove('show');
   ['registro','dashboard','admin'].forEach(s=>document.getElementById('screen-'+s).classList.remove('active'));
   document.getElementById('screen-login').classList.add('active');
 }
 
+const PIN_ADMIN = '2105';
+let adminDesbloqueado = false;
 function irAdmin(){
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('bottom-nav').classList.add('show');
@@ -595,6 +598,11 @@ function irDashboard(){
 
 // ─── SCREENS ────────────────────────────
 function setScreen(s){
+  if(s==='admin' && !adminDesbloqueado){
+    const pin=prompt('Ingresa el PIN de administrador:');
+    if(pin!==PIN_ADMIN){ if(pin!==null) showToast('PIN incorrecto'); return; }
+    adminDesbloqueado=true;
+  }
   ['registro','dashboard','admin'].forEach(id=>{
     document.getElementById('screen-'+id).classList.remove('active');
     const nb=document.getElementById('nav-'+id);
@@ -932,7 +940,10 @@ function renderAdmin(){
   document.getElementById('admin-list').innerHTML=Object.entries(porFinca).map(([f,ts])=>`
     <div style="margin-bottom:12px;">
       <div style="font-size:12px;font-weight:800;color:var(--primary);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:6px;">🌴 ${f} — ${ts.length} trampas</div>
-      ${ts.map(t=>`<div class="trampa-row"><div><span style="font-weight:800;font-family:'DM Mono',monospace;">${t.id}</span><span style="font-size:12px;color:var(--text2);margin-left:8px;">Lote ${t.lote}</span><span style="font-size:11px;color:${t.operario?'var(--primary)':'var(--red)'};margin-left:8px;">${t.operario||'Sin asignar'}</span></div><div style="display:flex;gap:6px;"><button class="btn btn-ghost btn-sm" onclick="asignarOperario('${t.id}')">Operario</button><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Lote</button></div></div>`).join('')}
+      ${ts.map(t=>`<div class="trampa-row"><div><span style="font-weight:800;font-family:'DM Mono',monospace;">${t.id}</span><span style="font-size:12px;color:var(--text2);margin-left:8px;">Lote ${t.lote}</span></div><div style="display:flex;gap:6px;align-items:center;"><select class="fselect" style="font-size:11px;padding:4px 6px;" onchange="asignarOperario('${t.id}',this.value)">
+        <option value="">— Sin asignar —</option>
+        ${OPERARIOS.map(op=>`<option value="${op}" ${t.operario===op?'selected':''}>${op}</option>`).join('')}
+      </select><button class="btn btn-ghost btn-sm" onclick="reasignar('${t.id}')">Lote</button></div></div>`).join('')}
     </div>`).join('')||'<div class="empty"><div class="empty-icon">⚙️</div><div class="empty-text">Sin trampas</div></div>';
 }
 
@@ -949,12 +960,9 @@ function reasignar(id){
   enviarGAS({accion:'sincronizarTrampas',trampas});
 }
 
-function asignarOperario(id){
+function asignarOperario(id,op){
   const t=trampas.find(x=>x.id===id);
   if(!t) return;
-  const op=prompt('Operario asignado ('+OPERARIOS.join(' / ')+'):',t.operario||'');
-  if(op===null) return;
-  if(op&&OPERARIOS.indexOf(op)<0){showToast('Operario inválido');return;}
   t.operario=op;
   guardarLocal();renderAdmin();
   showToast('✅ '+id+' asignada a '+(op||'nadie'));
@@ -995,7 +1003,7 @@ async function cargarGAS(){
     gasJSONP(GAS_URL+'?accion=obtenerConfigTrampas'),
   ]);
   if(cfg?.trampas&&cfg.trampas.length>0){
-    trampas=cfg.trampas.map(t=>({id:t.id,finca:t.finca,lote:t.lote,activa:t.activa,fechaAlta:t.fechaAlta}));
+    trampas=cfg.trampas.map(t=>({id:t.id,finca:t.finca,lote:t.lote,activa:t.activa,operario:t.operario,fechaAlta:t.fechaAlta}));
   }
   if(reg?.registros){
     Object.entries(reg.registros).forEach(([fecha,regs])=>{
