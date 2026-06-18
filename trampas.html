@@ -603,6 +603,11 @@ function irDashboard(){
 
 // ─── SCREENS ────────────────────────────
 function setScreen(s){
+  if(s==='registro' && !operario){
+    showToast('Selecciona tu nombre para registrar');
+    salir();
+    return;
+  }
   if(s==='admin' && !adminDesbloqueado){
     const pin=prompt('Ingresa el PIN de administrador:');
     if(pin!==PIN_ADMIN){ if(pin!==null) showToast('PIN incorrecto'); return; }
