@@ -745,33 +745,29 @@ function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   doc.text('Rhynchophorus palmarum  ·  Vista: ' + nombreVista + '  ·  Generado: ' + fechaStr, 8, 13.5);
 }
 
-function agregarImagenPaginada(doc, canvas, pageW, pageH, nombreVista) {
+function agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, startYmm) {
   const imgWmm = pageW - 16;
   const pxPerMm = canvas.width / imgWmm;
-  const startYmm = 20;
   const bottomMarginMm = 8;
   const availableHmm = pageH - startYmm - bottomMarginMm;
   const pxPerPage = Math.floor(availableHmm * pxPerMm);
   const totalHpx = canvas.height;
 
   let offsetPx = 0;
-  let primeraPagina = true;
+  let primeraRebanada = true;
   while (offsetPx < totalHpx) {
-    if (!primeraPagina) doc.addPage();
-    dibujarEncabezadoPDF(doc, nombreVista, pageW);
-
+    if (!primeraRebanada) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
     const sliceHpx = Math.min(pxPerPage, totalHpx - offsetPx);
     const slice = document.createElement('canvas');
     slice.width = canvas.width;
     slice.height = sliceHpx;
     slice.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceHpx, 0, 0, canvas.width, sliceHpx);
-
     const sliceHmm = sliceHpx / pxPerMm;
-    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 8, startYmm, imgWmm, sliceHmm);
-
+    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 8, primeraRebanada ? startYmm : 20, imgWmm, sliceHmm);
     offsetPx += sliceHpx;
-    primeraPagina = false;
+    primeraRebanada = false;
   }
+  return primeraRebanada; // false si ya se usó al menos una rebanada
 }
 
 async function exportarPDF() {
@@ -780,22 +776,50 @@ async function exportarPDF() {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const nombreVista = vistaActual==='actual' ? 'Ciclo actual' : vistaActual==='mes' ? 'Este mes' : 'Histórico';
+  const topMargin = 20, bottomMargin = 8, sideMargin = 8, gap = 4;
+  const imgW = pageW - sideMargin*2;
+  const availableH = pageH - topMargin - bottomMargin;
 
   const el = document.getElementById('vista-' + vistaActual);
   el.style.display = 'block';
   await new Promise(r => setTimeout(r, 300));
 
-  // Oculta la tabla larga del histórico antes de capturar el resumen visual,
-  // porque esa tabla se exporta aparte como tabla real (paginada y legible).
-  const tablaGrande = document.getElementById('card-historial-tabla');
-  let prevDisplay;
-  if (tablaGrande) { prevDisplay = tablaGrande.style.display; tablaGrande.style.display = 'none'; }
+  // Cada tarjeta/bloque se captura por separado para poder acomodarlas en
+  // las páginas sin partir ningún gráfico o tabla a la mitad.
+  const bloques = Array.from(el.children).filter(c =>
+    c.id !== 'card-historial-tabla' && c.offsetHeight > 0
+  );
 
-  const canvas = await html2canvas(el, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+  dibujarEncabezadoPDF(doc, nombreVista, pageW);
+  let y = topMargin;
+  let esPrimerBloqueDePagina = true;
 
-  if (tablaGrande) tablaGrande.style.display = prevDisplay;
+  for (const bloque of bloques) {
+    const canvas = await html2canvas(bloque, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+    const h = canvas.height * imgW / canvas.width;
 
-  agregarImagenPaginada(doc, canvas, pageW, pageH, nombreVista);
+    if (h > availableH) {
+      // Bloque más alto que una página completa: se reparte en varias páginas.
+      if (!esPrimerBloqueDePagina) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
+      agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, topMargin);
+      // La página actual queda con la última rebanada del bloque: se marca como "llena"
+      // para que el siguiente bloque empiece en una página nueva, sin dejar páginas en blanco.
+      y = pageH;
+      esPrimerBloqueDePagina = false;
+      continue;
+    }
+
+    if (!esPrimerBloqueDePagina && y + h > pageH - bottomMargin) {
+      doc.addPage();
+      dibujarEncabezadoPDF(doc, nombreVista, pageW);
+      y = topMargin;
+      esPrimerBloqueDePagina = true;
+    }
+
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', sideMargin, y, imgW, h);
+    y += h + gap;
+    esPrimerBloqueDePagina = false;
+  }
 
   if (vistaActual === 'historico' && historico.length > 0) {
     const filas = [...historico].sort((a,b) => b.fecha.localeCompare(a.fecha)).map(r => {
