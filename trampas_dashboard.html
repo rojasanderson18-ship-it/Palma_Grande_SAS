@@ -199,6 +199,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
   <!-- VISTA: HISTÓRICO -->
   <div id="vista-historico" class="vista" style="display:none;">
     <div class="kpi-grid" id="kpi-historico"></div>
+    <div id="analisis-agronomico"></div>
     <div class="card">
       <div class="card-title">📈 Evolución del índice de captura <span>Por ciclo de revisión</span></div>
       <div class="chart-wrap-tall"><canvas id="chart-hist-ic"></canvas></div>
@@ -527,15 +528,123 @@ function renderMes() {
   }).join('');
 
   // Ciclos (agrupados por semana del mes)
-  document.getElementById('ciclos-mes-body').innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Datos del mes actual</td></tr>';
+  const semanas = {};
+  datos.forEach(r => {
+    const dia = parseInt(r.fecha.slice(8,10),10) || 1;
+    const semNum = Math.ceil(dia/7);
+    const key = 'Semana '+semNum;
+    if(!semanas[key]) semanas[key] = {revisiones:0,h:0,m:0,tr:new Set()};
+    semanas[key].revisiones++;
+    semanas[key].h += r.hembras||0;
+    semanas[key].m += r.machos||0;
+    if(r.trampaId) semanas[key].tr.add(r.trampaId);
+  });
+  const filasCiclo = Object.keys(semanas)
+    .sort((a,b)=>parseInt(a.split(' ')[1])-parseInt(b.split(' ')[1]))
+    .map(k => {
+      const s = semanas[k];
+      const total = s.h+s.m;
+      const ic = s.tr.size>0 ? total/s.tr.size : 0;
+      const estado = ic>=UMBRAL_CRITICO?'🔴 Crítico':ic>=UMBRAL_ALERTA?'🟡 Alerta':'🟢 Normal';
+      return `<tr><td>${k}</td><td>${s.revisiones}</td><td>${s.h}</td><td>${s.m}</td><td>${total}</td><td>${ic.toFixed(2)}</td><td>${estado}</td></tr>`;
+    }).join('');
+  document.getElementById('ciclos-mes-body').innerHTML = filasCiclo || '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Sin datos del mes actual</td></tr>';
+}
+
+// ── ANÁLISIS AGRONÓMICO ───────────────────
+function renderAnalisisAgronomico() {
+  const cont = document.getElementById('analisis-agronomico');
+  if (historico.length === 0) { cont.innerHTML = ''; return; }
+
+  const fechas = [...new Set(historico.map(r => r.fecha))].sort();
+  const mitad = Math.ceil(fechas.length/2);
+  const fechasPrevias = fechas.slice(0, mitad);
+  const fechasRecientes = fechas.slice(mitad);
+
+  function calcIC(listaFechas) {
+    const datos = historico.filter(r => listaFechas.includes(r.fecha));
+    const tot = datos.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
+    const tr = new Set(datos.map(r => r.trampaId)).size;
+    return tr>0 ? tot/tr : 0;
+  }
+  const icReciente = calcIC(fechasRecientes.length ? fechasRecientes : fechas);
+  const icPrevio = calcIC(fechasPrevias);
+  const variacion = icPrevio>0 ? ((icReciente-icPrevio)/icPrevio*100) : 0;
+  const tendenciaTxt = variacion>10?'al alza':variacion<-10?'a la baja':'estable';
+  const tendenciaIcon = variacion>10?'⚠️':variacion<-10?'✅':'➖';
+
+  const porFinca = {};
+  historico.forEach(r => {
+    const f = r.finca || 'Sin finca';
+    if(!porFinca[f]) porFinca[f] = {tot:0, tr:new Set()};
+    porFinca[f].tot += (r.hembras||0)+(r.machos||0);
+    if(r.trampaId) porFinca[f].tr.add(r.trampaId);
+  });
+  const fincasIC = Object.keys(porFinca)
+    .map(f => ({f, ic: porFinca[f].tr.size>0 ? porFinca[f].tot/porFinca[f].tr.size : 0}))
+    .sort((a,b) => b.ic-a.ic);
+  const fincaCritica = fincasIC[0];
+
+  const porLote = {};
+  historico.forEach(r => {
+    const k = (r.finca||'?')+' · Lote '+(r.lote||'?');
+    if(!porLote[k]) porLote[k] = {tot:0, tr:new Set()};
+    porLote[k].tot += (r.hembras||0)+(r.machos||0);
+    if(r.trampaId) porLote[k].tr.add(r.trampaId);
+  });
+  const lotesIC = Object.entries(porLote)
+    .map(([k,v]) => ({k, ic: v.tr.size>0 ? v.tot/v.tr.size : 0}))
+    .sort((a,b) => b.ic-a.ic).slice(0,3);
+
+  const nivelGeneral = icReciente>=UMBRAL_CRITICO?'CRÍTICO':icReciente>=UMBRAL_ALERTA?'EN ALERTA':'CONTROLADO';
+  const colorNivel = icReciente>=UMBRAL_CRITICO?'var(--red)':icReciente>=UMBRAL_ALERTA?'#d97706':'var(--green)';
+
+  const recomendaciones = [];
+  if (icReciente>=UMBRAL_CRITICO) {
+    recomendaciones.push('Intensificar la frecuencia de revisión de trampas (cada 5-7 días) en los lotes críticos y evaluar control complementario.');
+  } else if (icReciente>=UMBRAL_ALERTA) {
+    recomendaciones.push('Mantener monitoreo semanal estricto; reforzar el cambio de feromonas y cebo en los puntos con mayor índice de captura.');
+  } else {
+    recomendaciones.push('Mantener el programa de monitoreo actual; el nivel de presión poblacional se encuentra dentro de parámetros aceptables.');
+  }
+  if (variacion>10) {
+    recomendaciones.push('La tendencia ascendente sugiere una posible fuente de reinfestación cercana; se recomienda inspección de campo en los lotes con mayor incremento.');
+  }
+  if (fincaCritica) {
+    recomendaciones.push(`Priorizar ${fincaCritica.f} por concentrar el mayor índice de captura promedio (IC ${fincaCritica.ic.toFixed(2)}).`);
+  }
+
+  cont.innerHTML = `
+    <div class="card" style="border-left:4px solid ${colorNivel};">
+      <div class="card-title">🎓 Análisis Agronómico <span>Informe técnico — Picudo de la palma (Rhynchophorus)</span></div>
+      <p style="margin:0 0 10px;line-height:1.6;">
+        Con base en el monitoreo registrado, el índice de captura promedio actual es de <b>${icReciente.toFixed(2)}</b> insectos/trampa,
+        lo que ubica la presión poblacional en un nivel <b style="color:${colorNivel};">${nivelGeneral}</b>.
+        Respecto al período anterior (IC ${icPrevio.toFixed(2)}), la tendencia es <b>${tendenciaTxt}</b> ${tendenciaIcon}
+        (${variacion>=0?'+':''}${variacion.toFixed(1)}%).
+      </p>
+      <p style="margin:0 0 10px;line-height:1.6;">
+        ${fincaCritica ? `La finca con mayor presión es <b>${fincaCritica.f}</b> (IC ${fincaCritica.ic.toFixed(2)}).` : ''}
+        Los lotes que requieren mayor atención son: ${lotesIC.map(l => `<b>${l.k}</b> (IC ${l.ic.toFixed(2)})`).join(', ')}.
+      </p>
+      <div style="margin-top:8px;">
+        <div style="font-weight:700;color:var(--primary);margin-bottom:4px;">Recomendaciones técnicas:</div>
+        <ul style="margin:0;padding-left:18px;line-height:1.6;">
+          ${recomendaciones.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
 }
 
 // ── VISTA HISTÓRICO ───────────────────────
 function renderHistorico() {
   if (historico.length === 0) {
     document.getElementById('kpi-historico').innerHTML = '<div style="color:var(--muted);padding:20px;">Sin datos históricos</div>';
+    document.getElementById('analisis-agronomico').innerHTML = '';
     return;
   }
+  renderAnalisisAgronomico();
 
   const totalH = historico.reduce((s,r) => s+r.hembras,0);
   const totalM = historico.reduce((s,r) => s+r.machos,0);
