@@ -585,6 +585,11 @@ function salir(){
 const PIN_ADMIN = '2105';
 let adminDesbloqueado = false;
 function irAdmin(){
+  if(!adminDesbloqueado){
+    const pin=prompt('Ingresa el PIN de administrador:');
+    if(pin!==PIN_ADMIN){ if(pin!==null) showToast('PIN incorrecto'); return; }
+    adminDesbloqueado=true;
+  }
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('bottom-nav').classList.add('show');
   setScreen('admin');
@@ -645,7 +650,7 @@ function renderTrampas(){
   const pct=total>0?Math.round(done/total*100):0;
   document.getElementById('prog-text').textContent=done+' / '+total;
   document.getElementById('prog-bar').style.width=pct+'%';
-  document.getElementById('prog-bar').className='prog-bar '+(pct<50?'pb-amber':pct<80?'pb-green':'pb-green');
+  document.getElementById('prog-bar').className='prog-bar '+(pct<50?'pb-amber':'pb-green');
 
   // Chip counts
   const pend=trampas.filter(t=>propias(t)&&!regs[t.id]).length;
@@ -673,11 +678,11 @@ function renderTrampas(){
       const r=regs[t.id];
       const tot=r?(r.hembras||0)+(r.machos||0):0;
       const isAlert=r&&tot>=UMBRAL_ALERTA;
-      const cardClass=!r?'':'alerta'&&isAlert?'alert':'done';
+      const cardClass=!r?'':isAlert?'alert':'done';
       const numClass=!r?'tcn-pending':isAlert?'tcn-alert':'tcn-done';
       const badgeClass=!r?'tcb-pending':isAlert?'tcb-alert':'tcb-done';
       const badgeTxt=!r?'Pendiente':isAlert?'🔴 Alerta '+(tot):('✅ '+tot+' cap.');
-      html+=`<div class="trampa-card ${!r?'':'alert'&&isAlert?'alert':'done'}" id="tc-${t.id}">
+      html+=`<div class="trampa-card ${cardClass}" id="tc-${t.id}">
         <div class="tc-header" onclick="toggleForm('${t.id}')">
           <div class="tc-num ${numClass}">${t.id.replace('TR-','')}</div>
           <div class="tc-info">
