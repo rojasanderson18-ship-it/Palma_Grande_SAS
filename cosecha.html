@@ -534,6 +534,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <!-- PANEL MAPA -->
 <div class="tab-panel" id="tab-mapa">
   <div class="map-wrap">
+    <div class="toolbar" style="padding:0 0 12px;border-bottom:none;">
+      <button class="btn-filter active" id="bfm-todas" onclick="setFincaMapa('todas')">Todas</button>
+      <button class="btn-filter" id="bfm-f1" onclick="setFincaMapa('FINCA 1')">Finca 1</button>
+      <button class="btn-filter" id="bfm-f2" onclick="setFincaMapa('FINCA 2')">Finca 2</button>
+      <button class="btn-filter" id="bfm-f3" onclick="setFincaMapa('FINCA 3')">Finca 3</button>
+    </div>
     <div id="mapa-cosecha"></div>
     <div class="map-leg">
       <span style="text-transform:uppercase;letter-spacing:.7px;color:#9ca3af;">Referencias:</span>
@@ -1196,6 +1202,14 @@ function setTab(t){
 // ===== MAPA =====
 let mapaCosecha = null;
 let mapaLayer = null;
+let filtroMapa = 'todas';
+function setFincaMapa(f){
+  filtroMapa = f;
+  ['todas','f1','f2','f3'].forEach(id=>document.getElementById('bfm-'+id).classList.remove('active'));
+  const map={'todas':'bfm-todas','FINCA 1':'bfm-f1','FINCA 2':'bfm-f2','FINCA 3':'bfm-f3'};
+  document.getElementById(map[f]).classList.add('active');
+  renderMapa();
+}
 const ESTADO_COLOR = {
   cosechando:{fill:'#1e3a5f',border:'#2d5a8e'},
   verde:{fill:'#16a34a',border:'#15803d'},
@@ -1224,7 +1238,8 @@ function renderMapa(){
     }).addTo(mapaCosecha);
   }
   if(mapaLayer) mapaCosecha.removeLayer(mapaLayer);
-  mapaLayer = L.geoJSON(LOTES_GEOJSON, {
+  const geoData = filtroMapa==='todas' ? LOTES_GEOJSON : {type:'FeatureCollection',features:LOTES_GEOJSON.features.filter(f=>f.properties.finca===filtroMapa)};
+  mapaLayer = L.geoJSON(geoData, {
     style: estiloLote,
     onEachFeature: (feature, layer) => {
       const finca = feature.properties.finca;
@@ -1243,6 +1258,29 @@ function renderMapa(){
   }).addTo(mapaCosecha);
   mapaCosecha.fitBounds(mapaLayer.getBounds(), {padding:[20,20]});
   setTimeout(()=>mapaCosecha.invalidateSize(), 100);
+}
+
+// Mapa estático (sin tiles, solo polígonos) para captura en el PDF
+async function capturarMapaPDF(filtroF, anchoPx, altoPx){
+  const div = document.createElement('div');
+  div.style.cssText = `position:fixed;left:-9999px;top:0;width:${anchoPx}px;height:${altoPx}px;background:#eef2f6;`;
+  document.body.appendChild(div);
+  const tmpMap = L.map(div, {zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, fadeAnimation:false});
+  const geoData = filtroF==='todas' ? LOTES_GEOJSON : {type:'FeatureCollection',features:LOTES_GEOJSON.features.filter(f=>f.properties.finca===filtroF)};
+  const layer = L.geoJSON(geoData, {
+    style: estiloLote,
+    onEachFeature: (feature, lyr) => {
+      const c = lyr.getBounds().getCenter();
+      L.marker(c, {icon: L.divIcon({className:'lote-label-pdf', html:`<div style="font-size:11px;font-weight:700;color:#1a1f2e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;">${feature.properties.lote}</div>`, iconSize:[40,16]})}).addTo(tmpMap);
+    }
+  }).addTo(tmpMap);
+  tmpMap.fitBounds(layer.getBounds(), {padding:[14,14]});
+  tmpMap.invalidateSize();
+  await new Promise(r=>setTimeout(r,350));
+  const canvas = await window.html2canvas(div, {scale:1.6, useCORS:true, backgroundColor:'#eef2f6', logging:false});
+  tmpMap.remove();
+  document.body.removeChild(div);
+  return canvas.toDataURL('image/jpeg',0.92);
 }
 
 // ===== ALERTAS BANNER =====
@@ -1691,7 +1729,7 @@ function exportarPDF(){
     <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:8px 22px;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
       <span>Palma Grande S.A.S. · Dpto. Agronomico</span>
       <span>Sistema de Gestion Agricola · Generado automaticamente</span>
-      <span>Semana ${sn} · ${hoy.getFullYear()} · Pag. 1 de 4</span>
+      <span>Semana ${sn} · ${hoy.getFullYear()} · Pag. 1 de 5</span>
     </div>
   </div>`;
 
@@ -1713,6 +1751,24 @@ function exportarPDF(){
     const imgData=canvas.toDataURL('image/jpeg',0.95);
     const imgH=(canvas.height*210)/canvas.width;
     doc.addImage(imgData,'JPEG',0,0,210,Math.min(imgH,297));
+
+    // ── PÁGINA MAPA ──
+    if(typeof L !== 'undefined' && typeof LOTES_GEOJSON !== 'undefined'){
+      doc.addPage('a4','landscape');
+      const mapImg = await capturarMapaPDF('todas', 1100, 680);
+      doc.setFillColor(15,17,23);
+      doc.rect(0,0,297,16,'F');
+      doc.setTextColor(240,201,106);
+      doc.setFontSize(13);
+      doc.text('MAPA DE LOTES · ESTADO DE CICLO', 148.5, 10, {align:'center'});
+      const mRatio = 1100/680;
+      let mW=277, mH=277/mRatio;
+      if(mH>270){ mH=270; mW=270*mRatio; }
+      doc.addImage(mapImg,'JPEG',(297-mW)/2,18,mW,mH);
+      doc.setFontSize(8);
+      doc.setTextColor(120,120,120);
+      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, 205, {align:'center'});
+    }
 
     for(let fi=0;fi<fincas.length;fi++){
       doc.addPage('a4','landscape');
@@ -1762,7 +1818,7 @@ function exportarPDF(){
         <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:6px 20px;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
           <span>Palma Grande S.A.S.</span>
           <span>Semana ${sn} · ${hoy.getFullYear()}</span>
-          <span>Pag. ${fi+2} de 4</span>
+          <span>Pag. ${fi+3} de 5</span>
         </div>`;
 
       // Clonar tabla con estilos correctos
