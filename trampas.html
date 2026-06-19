@@ -605,6 +605,7 @@ function irAdmin(){
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('bottom-nav').classList.add('show');
   setScreen('admin');
+  if(navigator.onLine) enviarPendientes().then(cargarGAS); else cargarGAS();
 }
 
 function irDashboard(){
@@ -945,14 +946,17 @@ function agregarTrampas(){
   const op=document.getElementById('admin-operario').value;
   if(!f||!ls){showToast('Selecciona finca y lote');return;}
   const lote=ls.replace('Lote ','');
+  const nuevas=[];
   for(let i=0;i<cant;i++){
     const n=trampas.length+1;
-    trampas.push({id:'TR-'+String(n).padStart(3,'0'),finca:f,lote,activa:true,operario:op,fechaAlta:hoyISO()});
+    const t={id:'TR-'+String(n).padStart(3,'0'),finca:f,lote,activa:true,operario:op,fechaAlta:hoyISO()};
+    trampas.push(t);
+    nuevas.push(t);
   }
   guardarLocal();
   renderAdmin();
   showToast('✅ '+cant+' trampa(s) agregada(s)');
-  enviarGAS({accion:'sincronizarTrampas',trampas});
+  nuevas.forEach(t=>enviarGAS({accion:'actualizarTrampaCfg',...t}));
 }
 
 function renderAdmin(){
@@ -978,7 +982,7 @@ function reasignar(id){
   t.lote=l;
   guardarLocal();renderAdmin();
   showToast('✅ '+id+' movida a Lote '+l);
-  enviarGAS({accion:'sincronizarTrampas',trampas});
+  enviarGAS({accion:'actualizarTrampaCfg',...t});
 }
 
 function reasignarFinca(id){
@@ -991,7 +995,7 @@ function reasignarFinca(id){
   t.lote=LOTES_FINCA[f][0];
   guardarLocal();renderAdmin();
   showToast('✅ '+id+' movida a '+f+' (revisa el lote)');
-  enviarGAS({accion:'sincronizarTrampas',trampas});
+  enviarGAS({accion:'actualizarTrampaCfg',...t});
 }
 
 function asignarOperario(id,op){
@@ -1000,7 +1004,7 @@ function asignarOperario(id,op){
   t.operario=op;
   guardarLocal();renderAdmin();
   showToast('✅ '+id+' asignada a '+(op||'nadie'));
-  enviarGAS({accion:'sincronizarTrampas',trampas});
+  enviarGAS({accion:'actualizarTrampaCfg',...t});
 }
 
 // ─── FILTROS ────────────────────────────
@@ -1058,6 +1062,7 @@ async function cargarGAS(){
     });
   }
   guardarLocal();renderTrampas();
+  if(document.getElementById('screen-admin').classList.contains('active')) renderAdmin();
 }
 
 async function enviarPendientes(){
