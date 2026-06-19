@@ -947,6 +947,7 @@ function cerrarPopup(){
 function marcarCosechando(key,fecha,tipo){
   if(!marcas[key]) marcas[key]={};
   marcas[key][fecha]=tipo||'continuidad';
+  notarPendiente(key,fecha);
   guardarLocal();
   enviarGAS({accion:'marcarCosechando',key,fecha,tipo});
   cerrarPopup();render();
@@ -955,6 +956,7 @@ function marcarCosechando(key,fecha,tipo){
 
 function quitarMarca(key,fecha){
   if(marcas[key]) delete marcas[key][fecha];
+  notarPendiente(key,fecha);
   guardarLocal();
   enviarGAS({accion:'quitarMarca',key,fecha});
   cerrarPopup();render();
@@ -963,6 +965,7 @@ function quitarMarca(key,fecha){
 
 function limpiarCelda(key,fecha){
   if(marcas[key]) delete marcas[key][fecha];
+  notarPendiente(key,fecha);
   guardarLocal();
   cerrarPopup();render();
 }
@@ -1031,13 +1034,32 @@ async function cargarGAS(){
       clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
-      if(data&&data.marcas&&Object.keys(data.marcas).length>0){
-        // Mezclar en vez de reemplazar: cada marca se envía a GAS sin esperar
-        // confirmación, así que un refresco rápido podía traer del servidor una
-        // copia aún sin las marcas recién hechas y borrarlas localmente.
+      if(data&&data.marcas){
+        // Mezcla celda por celda y fecha por fecha: las ediciones marcadas como
+        // "pendientes" (hechas hace menos de PENDIENTE_TTL) se protegen y gana lo
+        // local, para no perder un cambio que aún no llegó al servidor. El resto
+        // de las celdas confía en el servidor (incluye borrados hechos desde otro
+        // equipo, que de otro modo nunca se reflejarían aquí).
+        const ahora=Date.now();
         const keys=new Set([...Object.keys(marcas||{}),...Object.keys(data.marcas)]);
         const merged={};
-        keys.forEach(k=>{ merged[k]=Object.assign({},data.marcas[k]||{},(marcas&&marcas[k])||{}); });
+        keys.forEach(key=>{
+          const localFechas=(marcas&&marcas[key])||{};
+          const srvFechas=data.marcas[key]||{};
+          const fechas=new Set([...Object.keys(localFechas),...Object.keys(srvFechas)]);
+          const mergedFechas={};
+          fechas.forEach(fecha=>{
+            const id=key+'|'+fecha;
+            const ts=pendientes[id];
+            const esPendiente=ts&&(ahora-ts<PENDIENTE_TTL);
+            if(esPendiente){
+              if(localFechas[fecha]!==undefined) mergedFechas[fecha]=localFechas[fecha];
+            } else {
+              if(srvFechas[fecha]!==undefined) mergedFechas[fecha]=srvFechas[fecha];
+            }
+          });
+          if(Object.keys(mergedFechas).length>0) merged[key]=mergedFechas;
+        });
         marcas = merged;
         guardarLocal();
       }
@@ -1075,6 +1097,22 @@ async function sincronizarPendientes(){
 const LS='ciclos_marcas_v1';
 function guardarLocal(){try{localStorage.setItem(LS,JSON.stringify(marcas));}catch(e){}}
 function cargarLocal(){try{const d=localStorage.getItem(LS);if(d)marcas=JSON.parse(d);}catch(e){}}
+
+// Ediciones recientes: solo se protegen de ser pisadas por el servidor durante
+// PENDIENTE_TTL ms. Pasado ese tiempo, manda el servidor (así un borrado hecho
+// en otro equipo sí se refleja aquí al refrescar, en vez de quedar "local gana"
+// para siempre).
+const LS_PEND='ciclos_pendientes_v1';
+const PENDIENTE_TTL=60000;
+let pendientes={};
+function cargarPendientes(){try{const d=localStorage.getItem(LS_PEND);if(d)pendientes=JSON.parse(d);}catch(e){pendientes={};}}
+function guardarPendientes(){try{localStorage.setItem(LS_PEND,JSON.stringify(pendientes));}catch(e){}}
+function notarPendiente(key,fecha){
+  pendientes[key+'|'+fecha]=Date.now();
+  const ahora=Date.now();
+  Object.keys(pendientes).forEach(id=>{ if(ahora-pendientes[id]>PENDIENTE_TTL) delete pendientes[id]; });
+  guardarPendientes();
+}
 
 // =============================================
 // FILTROS
@@ -2148,6 +2186,7 @@ function init(){
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
   cargarLocal();
+  cargarPendientes();
   // Si localStorage está vacío, cargar respaldo embebido primero
   const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
   if(totalLocal === 0){

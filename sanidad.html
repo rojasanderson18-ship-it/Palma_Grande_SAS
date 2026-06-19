@@ -541,18 +541,21 @@ document.addEventListener('click',()=>{if(popupOpen)cerrarPopup();});
 function marcarTrabajo(key,fecha,tipo){
   if(!marcas[laborActual][key]) marcas[laborActual][key]={};
   marcas[laborActual][key][fecha]=tipo||'continuidad';
+  notarPendiente(laborActual,key,fecha);
   guardarLocal();enviarGAS({accion:'marcarSanidad',labor:laborActual,key,fecha,tipo:tipo||'continuidad'});
   cerrarPopup();render();
   showToast(tipo==='nuevo'?'✓ Nuevo ciclo iniciado':'✓ Continuidad registrada');
 }
 function quitarTrabajo(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
+  notarPendiente(laborActual,key,fecha);
   guardarLocal();cerrarPopup();render();showToast('Trabajo removido');
   setSyncStatus('guardando…','#f0c96a');
   enviarGAS({accion:'quitarSanidad',labor:laborActual,key,fecha});
 }
 function limpiarCelda(key,fecha){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
+  notarPendiente(laborActual,key,fecha);
   guardarLocal();cerrarPopup();render();
   setSyncStatus('guardando…','#f0c96a');
   enviarGAS({accion:'quitarSanidad',labor:laborActual,key,fecha});
@@ -599,6 +602,22 @@ function diasEnMeses(m){
 const LS='sanidad_marcas_v1';
 function guardarLocal(){try{localStorage.setItem(LS,JSON.stringify(marcas));}catch(e){}}
 function cargarLocal(){try{const d=localStorage.getItem(LS);if(d)marcas=JSON.parse(d);}catch(e){}}
+
+// Ediciones recientes: solo se protegen de ser pisadas por el servidor durante
+// PENDIENTE_TTL ms. Pasado ese tiempo, manda el servidor (así un borrado hecho
+// en otro equipo sí se refleja aquí al refrescar, en vez de quedar "local gana"
+// para siempre).
+const LS_PEND='sanidad_pendientes_v1';
+const PENDIENTE_TTL=60000;
+let pendientes={};
+function cargarPendientes(){try{const d=localStorage.getItem(LS_PEND);if(d)pendientes=JSON.parse(d);}catch(e){pendientes={};}}
+function guardarPendientes(){try{localStorage.setItem(LS_PEND,JSON.stringify(pendientes));}catch(e){}}
+function notarPendiente(labor,key,fecha){
+  pendientes[labor+'|'+key+'|'+fecha]=Date.now();
+  const ahora=Date.now();
+  Object.keys(pendientes).forEach(id=>{ if(ahora-pendientes[id]>PENDIENTE_TTL) delete pendientes[id]; });
+  guardarPendientes();
+}
 async function enviarGAS(payload){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
   setSyncStatus('guardando…','#f0c96a');
@@ -660,24 +679,40 @@ async function cargarGAS(){
       clearTimeout(timer);
       delete window[cbName];
       if(document.body.contains(script)) document.body.removeChild(script);
-      if(data&&data.marcas&&Object.keys(data.marcas).length>0){
-        const totalGAS=Object.values(data.marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
-        if(totalGAS>0){
-          // Mezclar en vez de reemplazar: si hay marcas locales recién hechas que
-          // aún no llegaron al servidor (cada celda envía su propia petición async,
-          // sin esperar confirmación), un reemplazo total las borraba al refrescar.
-          const labores=new Set([...Object.keys(marcas||{}),...Object.keys(data.marcas||{})]);
-          const merged={trampas:{},censo:{},controlpc:{}};
-          labores.forEach(lab=>{
-            merged[lab]=merged[lab]||{};
-            const localLab=(marcas&&marcas[lab])||{};
-            const srvLab=data.marcas[lab]||{};
-            const keys=new Set([...Object.keys(localLab),...Object.keys(srvLab)]);
-            keys.forEach(k=>{ merged[lab][k]=Object.assign({},srvLab[k]||{},localLab[k]||{}); });
+      if(data&&data.marcas){
+        // Mezcla celda por celda y fecha por fecha: las ediciones marcadas como
+        // "pendientes" (hechas hace menos de PENDIENTE_TTL) se protegen y gana lo
+        // local, para no perder un cambio que aún no llegó al servidor. El resto
+        // de las celdas confía en el servidor (incluye borrados hechos desde otro
+        // equipo, que de otro modo nunca se reflejarían aquí).
+        const ahora=Date.now();
+        const labores=new Set([...Object.keys(marcas||{}),...Object.keys(data.marcas||{})]);
+        const merged={trampas:{},censo:{},controlpc:{}};
+        labores.forEach(lab=>{
+          merged[lab]=merged[lab]||{};
+          const localLab=(marcas&&marcas[lab])||{};
+          const srvLab=data.marcas[lab]||{};
+          const keys=new Set([...Object.keys(localLab),...Object.keys(srvLab)]);
+          keys.forEach(key=>{
+            const localFechas=localLab[key]||{};
+            const srvFechas=srvLab[key]||{};
+            const fechas=new Set([...Object.keys(localFechas),...Object.keys(srvFechas)]);
+            const mergedFechas={};
+            fechas.forEach(fecha=>{
+              const id=lab+'|'+key+'|'+fecha;
+              const ts=pendientes[id];
+              const esPendiente=ts&&(ahora-ts<PENDIENTE_TTL);
+              if(esPendiente){
+                if(localFechas[fecha]!==undefined) mergedFechas[fecha]=localFechas[fecha];
+              } else {
+                if(srvFechas[fecha]!==undefined) mergedFechas[fecha]=srvFechas[fecha];
+              }
+            });
+            if(Object.keys(mergedFechas).length>0) merged[lab][key]=mergedFechas;
           });
-          marcas=merged;
-          guardarLocal();
-        }
+        });
+        marcas=merged;
+        guardarLocal();
       }
       resolve();
     };
@@ -838,6 +873,7 @@ function init(){
   document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
   cargarLocal();
+  cargarPendientes();
   const totalLocal=Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
   if(totalLocal===0 && Object.keys(DATOS_RESPALDO).length>0){
     marcas=JSON.parse(JSON.stringify(DATOS_RESPALDO));
