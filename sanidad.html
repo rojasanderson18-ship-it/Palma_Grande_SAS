@@ -382,7 +382,7 @@ const TRAMPAS_INICIALES = [
   {id:"TR-091",finca:"FINCA 3",lote:"57",activa:true},
   {id:"TR-092",finca:"FINCA 3",lote:"57",activa:true},
 ];
-let trampasList = TRAMPAS_INICIALES.filter(t=>t.activa!==false).map(t=>({id:t.id,finca:t.finca,lote:t.lote}));
+let trampasList = TRAMPAS_INICIALES.map(t=>({id:t.id,finca:t.finca,lote:t.lote,activa:t.activa!==false}));
 
 // Ciclos en días por labor y tipo
 const CICLOS = {
@@ -476,13 +476,15 @@ function estadoHoy(labor, key, tipo, hoy){
 // y control PC cada fila sigue siendo un lote.
 function filasActuales(){
   if(laborActual==='trampas'){
+    // Las trampas dadas de baja NO se ocultan: siguen mostrando su historial
+    // en el tablero, solo se marcan como "INACTIVA" y no cuentan en alertas.
     return trampasList
       .filter(t=>filtroFinca==='todas'||t.finca===filtroFinca)
-      .map(t=>({finca:t.finca,lote:t.lote,ha:null,tipo:'guineensis',label:t.id,key:t.id}))
+      .map(t=>({finca:t.finca,lote:t.lote,ha:null,tipo:'guineensis',label:t.id,key:t.id,activa:t.activa!==false}))
       .sort((a,b)=> a.finca.localeCompare(b.finca) || a.label.localeCompare(b.label,'es',{numeric:true}));
   }
   return LOTES.filter(l=>filtroFinca==='todas'||l.finca===filtroFinca)
-    .map(l=>({finca:l.finca,lote:l.lote,ha:l.ha,tipo:l.tipo,label:l.lote,key:l.finca+'_'+l.lote}));
+    .map(l=>({finca:l.finca,lote:l.lote,ha:l.ha,tipo:l.tipo,label:l.lote,key:l.finca+'_'+l.lote,activa:true}));
 }
 
 // =============================================
@@ -509,9 +511,9 @@ function render(){
   const esTrampas = laborActual==='trampas';
   const etiquetaFila = esTrampas?'Trampa':'Lote';
 
-  // Stats
+  // Stats (las trampas/lotes inactivos no cuentan, pero siguen visibles en la tabla)
   let stV=0,stA=0,stR=0,stT=0;
-  lotesFiltrados.forEach(row=>{
+  lotesFiltrados.filter(row=>row.activa!==false).forEach(row=>{
     const e=estadoHoy(laborActual,row.key,row.tipo,hoy);
     stT++;
     if(e==='verde'||e==='trabajo') stV++;
@@ -525,7 +527,7 @@ function render(){
 
   // Alertas
   const pills=[];
-  lotesFiltrados.forEach(row=>{
+  lotesFiltrados.filter(row=>row.activa!==false).forEach(row=>{
     const cs=getCellState(laborActual,row.key,row.tipo,hoy);
     if(cs.tipo==='rojo') pills.push(`<span class="alerta-pill ap-rojo">🔴 ${etiquetaFila} ${row.label} · ${cs.num} días</span>`);
   });
@@ -568,13 +570,14 @@ function render(){
     const cicloLabel = ciclo>=300?(Math.round(ciclo/30)+' meses'):ciclo>=60?(Math.round(ciclo/30)+' meses'):(ciclo+' días');
     const eH=estadoHoy(laborActual,key,row.tipo,hoy);
     let bCls,bTxt;
-    if(eH==='trabajo'){bCls='b-cos';bTxt='TRABAJO';}
+    if(row.activa===false){bCls='b-sin';bTxt='INACTIVA';}
+    else if(eH==='trabajo'){bCls='b-cos';bTxt='TRABAJO';}
     else if(eH==='verde'){bCls='b-en';bTxt='EN CICLO';}
     else if(eH==='azul'){bCls='b-tol';bTxt='TOLERANCIA';}
     else if(eH==='rojo'){bCls='b-inc';bTxt='INCUMPLIMIENTO';}
     else{bCls='b-sin';bTxt='SIN REGISTRO';}
 
-    html+='<tr>';
+    html+=`<tr${row.activa===false?' style="opacity:.55;"':''}>`;
     html+=`<td class="td-finca col-finca">${row.finca.replace('FINCA ','F')}</td>`;
     html+=`<td class="td-lote col-lote">${row.label}</td>`;
     html+=`<td class="td-ha col-ha">${esTrampas?row.lote:row.ha}</td>`;
@@ -989,12 +992,12 @@ async function cargarConfigTrampas(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
   const data=await gasJSONP(GAS_URL+'?accion=obtenerConfigTrampas');
   if(data&&data.trampas&&data.trampas.length>0){
-    const activas=data.trampas.filter(t=>t.activa!==false).map(t=>({id:t.id,finca:t.finca,lote:t.lote}));
-    if(activas.length>0){
-      trampasList=activas;
-      configTrampasCargada=true;
-      if(laborActual==='trampas') render();
-    }
+    // No se filtran inactivas: deben seguir visibles en el tablero con su
+    // historial, solo cambia el estado mostrado a "INACTIVA".
+    const todas=data.trampas.map(t=>({id:t.id,finca:t.finca,lote:t.lote,activa:t.activa!==false}));
+    trampasList=todas;
+    configTrampasCargada=true;
+    if(laborActual==='trampas') render();
   }
 }
 

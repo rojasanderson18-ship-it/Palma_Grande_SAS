@@ -798,10 +798,11 @@ var TRAMPAS_RESPALDO = [
 ];
 
 function filasTrampas() {
+  // No se ocultan las trampas inactivas: deben seguir mostrando su historial
+  // en el tablero, solo se marcan como "INACTIVA" en vez de calcular su ciclo.
   var cfg = obtenerConfigTrampas();
-  var activas = (cfg.trampas || []).filter(function(t){ return t.activa; });
-  var fuente = activas.length > 0 ? activas : TRAMPAS_RESPALDO;
-  return fuente.map(function(t){ return {finca:t.finca, lote:t.lote, ha:null, tipo:'guineensis', label:t.id, key:t.id}; })
+  var fuente = (cfg.trampas && cfg.trampas.length > 0) ? cfg.trampas : TRAMPAS_RESPALDO;
+  return fuente.map(function(t){ return {finca:t.finca, lote:t.lote, ha:null, tipo:'guineensis', label:t.id, key:t.id, activa:t.activa!==false}; })
     .sort(function(a,b){ return a.finca===b.finca ? a.label.localeCompare(b.label) : a.finca.localeCompare(b.finca); });
 }
 
@@ -875,6 +876,7 @@ function generarTableroSanidad() {
       var estadoH = calcularEstadoSanidad(marcasLote, labor, row.tipo, hoy);
       var estadoTxt = estadoH==='sin'?'SIN REGISTRO':estadoH==='trabajo'?'TRABAJO':estadoH==='verde'?'EN CICLO':estadoH==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
       var colorEstado = (estadoH==='verde'||estadoH==='trabajo')?'#d1fae5':estadoH==='azul'?'#dbeafe':estadoH==='rojo'?'#fee2e2':'#f9fafb';
+      if(row.activa === false){ estadoTxt = 'INACTIVA'; colorEstado = '#e5e7eb'; }
 
       sheet.getRange(fila, 1).setValue(row.finca.replace('FINCA ', 'F'));
       sheet.getRange(fila, 2).setValue(row.label);
