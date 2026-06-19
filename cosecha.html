@@ -10,6 +10,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="lotes_geo.js"></script>
 <style>
 :root{
   --bg:#f4f6f9;--surface:#ffffff;--surface2:#f0f2f5;--border:#dde1e9;
@@ -256,6 +259,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .calc-finca-stat{display:flex;justify-content:space-between;font-size:11px;margin-top:3px;}
 .calc-finca-lbl{color:#6b7280;}
 .calc-finca-val{font-weight:700;}
+
+/* ===== MAPA ===== */
+.map-wrap{padding:16px 20px;}
+#mapa-cosecha{height:calc(100vh - 320px);min-height:420px;border-radius:10px;border:1px solid #e5e7eb;}
+.map-leg{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#6b7280;align-items:center;}
+.map-leg .leg-box{width:14px;height:14px;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:4px;}
+.lote-tooltip{font-family:'DM Sans',sans-serif;font-size:12px;}
+.lote-tooltip b{color:#b8860b;}
 </style>
 </head>
 <body>
@@ -288,6 +299,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 <div class="tabs-bar">
   <button class="tab-btn active" id="tab-btn-tablero" onclick="setTab('tablero')">📋 Tablero</button>
   <button class="tab-btn" id="tab-btn-dashboard" onclick="setTab('dashboard')">📊 Dashboard</button>
+  <button class="tab-btn" id="tab-btn-mapa" onclick="setTab('mapa')">🗺️ Mapa</button>
 </div>
 
 <!-- PANEL TABLERO -->
@@ -518,6 +530,21 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 
   </div>
 </div><!-- /tab-dashboard -->
+
+<!-- PANEL MAPA -->
+<div class="tab-panel" id="tab-mapa">
+  <div class="map-wrap">
+    <div id="mapa-cosecha"></div>
+    <div class="map-leg">
+      <span style="text-transform:uppercase;letter-spacing:.7px;color:#9ca3af;">Referencias:</span>
+      <span><span class="leg-box" style="background:#1e3a5f;"></span>Cosechando</span>
+      <span><span class="leg-box" style="background:rgba(22,163,74,.55);"></span>En ciclo</span>
+      <span><span class="leg-box" style="background:rgba(37,99,235,.55);"></span>Tolerancia</span>
+      <span><span class="leg-box" style="background:rgba(220,38,38,.55);"></span>Incumplimiento</span>
+      <span><span class="leg-box" style="background:rgba(156,163,175,.4);"></span>Sin registro</span>
+    </div>
+  </div>
+</div><!-- /tab-mapa -->
 
 <!-- MODAL WHATSAPP -->
 <div class="modal-wa-ov" id="modal-wa">
@@ -1152,15 +1179,70 @@ function calcularIndicadores(){
 
 // ===== TABS =====
 function setTab(t){
-  ['tablero','dashboard'].forEach(id=>{
+  ['tablero','dashboard','mapa'].forEach(id=>{
     const btn = document.getElementById('tab-btn-'+id);
     const panel = document.getElementById('tab-'+id);
     if(btn) btn.classList.toggle('active', id===t);
     if(panel) panel.classList.toggle('active', id===t);
   });
-  if(t==='dashboard'){ 
+  if(t==='dashboard'){
     setTimeout(()=>{ calcularDashboard(); cargarCalc(); calcularPersonal(); }, 50);
   }
+  if(t==='mapa'){
+    setTimeout(renderMapa, 50);
+  }
+}
+
+// ===== MAPA =====
+let mapaCosecha = null;
+let mapaLayer = null;
+const ESTADO_COLOR = {
+  cosechando:{fill:'#1e3a5f',border:'#2d5a8e'},
+  verde:{fill:'#16a34a',border:'#15803d'},
+  azul:{fill:'#2563eb',border:'#1d4ed8'},
+  rojo:{fill:'#dc2626',border:'#b91c1c'},
+  sin:{fill:'#9ca3af',border:'#6b7280'}
+};
+function estiloLote(feature){
+  const finca = feature.properties.finca;
+  const lote = feature.properties.lote;
+  const l = LOTES.find(x=>x.finca===finca && x.lote===lote);
+  let estado = 'sin';
+  if(l){
+    const key = l.finca+'_'+l.lote;
+    estado = estadoHoy(key, l.tipo, hoyLocal());
+  }
+  const c = ESTADO_COLOR[estado] || ESTADO_COLOR.sin;
+  return {fillColor:c.fill, fillOpacity:.55, color:c.border, weight:1.5};
+}
+function renderMapa(){
+  if(typeof L === 'undefined' || typeof LOTES_GEOJSON === 'undefined') return;
+  if(!mapaCosecha){
+    mapaCosecha = L.map('mapa-cosecha');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19, attribution:'© OpenStreetMap'
+    }).addTo(mapaCosecha);
+  }
+  if(mapaLayer) mapaCosecha.removeLayer(mapaLayer);
+  mapaLayer = L.geoJSON(LOTES_GEOJSON, {
+    style: estiloLote,
+    onEachFeature: (feature, layer) => {
+      const finca = feature.properties.finca;
+      const lote = feature.properties.lote;
+      const l = LOTES.find(x=>x.finca===finca && x.lote===lote);
+      let estado='sin', txt='Sin registro', dias='';
+      if(l){
+        const key = l.finca+'_'+l.lote;
+        estado = estadoHoy(key, l.tipo, hoyLocal());
+        const cs = getCellState(key, l.tipo, hoyLocal());
+        dias = cs.num ? ` · día ${cs.num} del ciclo` : '';
+      }
+      const txtMap = {cosechando:'Cosechando', verde:'En ciclo', azul:'Tolerancia', rojo:'Incumplimiento', sin:'Sin registro'};
+      layer.bindTooltip(`<div class="lote-tooltip"><b>${finca} · Lote ${lote}</b><br/>${l?l.ha+' ha · ':''}${txtMap[estado]}${dias}</div>`, {sticky:true});
+    }
+  }).addTo(mapaCosecha);
+  mapaCosecha.fitBounds(mapaLayer.getBounds(), {padding:[20,20]});
+  setTimeout(()=>mapaCosecha.invalidateSize(), 100);
 }
 
 // ===== ALERTAS BANNER =====
