@@ -784,11 +784,23 @@ async function exportarPDF() {
   el.style.display = 'block';
   await new Promise(r => setTimeout(r, 300));
 
-  // Cada tarjeta/bloque se captura por separado para poder acomodarlas en
-  // las páginas sin partir ningún gráfico o tabla a la mitad.
-  const bloques = Array.from(el.children).filter(c =>
-    c.id !== 'card-historial-tabla' && c.offsetHeight > 0
-  );
+  // Cada tarjeta/bloque se captura por separado (como imagen, igual al
+  // dashboard) para poder acomodarlas en las páginas sin partir ningún
+  // gráfico o tabla a la mitad. Los wrappers grid2/grid3 se "aplanan" en sus
+  // tarjetas hijas: si no se hiciera, una tarjeta muy alta (p. ej. Alertas
+  // activas con muchas filas) forzaría a capturar toda la fila del grid como
+  // un solo bloque gigante, que luego se corta entre páginas.
+  const bloques = [];
+  Array.from(el.children).forEach(c => {
+    if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) return;
+    if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
+      Array.from(c.children).forEach(nieto => {
+        if (nieto.offsetHeight > 0) bloques.push(nieto);
+      });
+    } else {
+      bloques.push(c);
+    }
+  });
 
   dibujarEncabezadoPDF(doc, nombreVista, pageW);
   let y = topMargin;
