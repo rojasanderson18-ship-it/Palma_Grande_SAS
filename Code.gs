@@ -652,7 +652,10 @@ function marcarSanidad(data) {
   var sheet = getOrCreateSheet(SHEETS.sanidad, ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo']);
   var parts = parsearKey(data.key);
   sheet.appendRow([new Date(), parts.finca, parts.lote, data.labor||'', data.fecha, 'MARCAR', data.tipo||'continuidad']);
-  generarTableroSanidad();
+  // No se regenera el tablero aquí: repintar 3 labores x 62 lotes x 28 días en
+  // cada clic es lento en Apps Script y hacía expirar el timeout del navegador
+  // (mostraba "sin conexión" aunque el dato sí se había guardado). El tablero
+  // del Sheet se actualiza solo con el trigger horario (actualizarTodo).
   return {ok:true};
 }
 
@@ -660,7 +663,6 @@ function quitarSanidad(data) {
   var sheet = getOrCreateSheet(SHEETS.sanidad, ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo']);
   var parts = parsearKey(data.key);
   sheet.appendRow([new Date(), parts.finca, parts.lote, data.labor||'', data.fecha, 'QUITAR', '']);
-  generarTableroSanidad();
   return {ok:true};
 }
 

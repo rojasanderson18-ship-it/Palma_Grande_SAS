@@ -613,7 +613,7 @@ async function enviarGAS(payload){
       if(document.body.contains(script)) document.body.removeChild(script);
       setSyncStatus('sin conexión','#dc2626');
       resolve();
-    },8000);
+    },20000);
     window[cbName]=(data)=>{
       if(resuelto) return;
       resuelto=true;
