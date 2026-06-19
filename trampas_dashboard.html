@@ -758,7 +758,10 @@ function paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nomb
     .map(f => (f.getBoundingClientRect().bottom - bloqueRect.top) * escala)
     .filter(v => v > 0 && v <= canvas.height);
   const pxPerMm = canvas.width / anchoMm;
-  const totalHpx = canvas.height;
+  // Si hay filas reconocibles, se ignora cualquier relleno/padding que quede
+  // después de la última fila (footer del card, etc.) para que esa sobra no
+  // dispare una página adicional casi en blanco.
+  const totalHpx = limitesPx.length ? Math.min(canvas.height, limitesPx[limitesPx.length - 1]) : canvas.height;
 
   let offsetPx = 0;
   let primera = true;
@@ -853,25 +856,128 @@ async function exportarPDF() {
     estado.esPrimerBloqueDePagina = false;
   }
 
+  // Asegura que el documento tenga al menos n páginas, creando las que falten
+  // (con su encabezado) sin afectar las ya existentes.
+  function asegurarPagina(n) {
+    while (doc.internal.getNumberOfPages() < n) {
+      doc.addPage();
+      dibujarEncabezadoPDF(doc, nombreVista, pageW);
+    }
+  }
+
+  // Igual que paginarConFilas, pero para una columna individual de una fila
+  // aplanada: en vez de llamar a doc.addPage() directamente, avanza un
+  // cursor de página propio (puede coincidir con el de la columna vecina o
+  // crear páginas nuevas si esta columna necesita más).
+  function paginarConFilasColumna(bloqueEl, canvas, anchoMm, xMm, paginaInicio, startYmm) {
+    let filas = Array.from(bloqueEl.querySelectorAll('table.tbl tbody tr'));
+    if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar'));
+    const bloqueRect = bloqueEl.getBoundingClientRect();
+    const escala = canvas.width / bloqueRect.width;
+    const limitesPx = filas
+      .map(f => (f.getBoundingClientRect().bottom - bloqueRect.top) * escala)
+      .filter(v => v > 0 && v <= canvas.height);
+    const pxPerMm = canvas.width / anchoMm;
+    const totalHpx = limitesPx.length ? Math.min(canvas.height, limitesPx[limitesPx.length - 1]) : canvas.height;
+
+    let offsetPx = 0, pagina = paginaInicio, primera = true;
+    while (offsetPx < totalHpx - 0.5) {
+      const startY = primera ? startYmm : topMargin;
+      if (!primera) { pagina += 1; asegurarPagina(pagina); doc.setPage(pagina); }
+      const disponibleMm = pageH - startY - bottomMargin;
+      const limitePx = offsetPx + disponibleMm * pxPerMm;
+      let sliceEnd = Math.min(limitePx, totalHpx);
+      if (limitesPx.length) {
+        const candidatos = limitesPx.filter(b => b > offsetPx + 0.5 && b <= limitePx + 0.5);
+        if (candidatos.length) sliceEnd = candidatos[candidatos.length - 1];
+      }
+      const sliceHpx = sliceEnd - offsetPx;
+      const slice = document.createElement('canvas');
+      slice.width = canvas.width;
+      slice.height = sliceHpx;
+      slice.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceHpx, 0, 0, canvas.width, sliceHpx);
+      const sliceHmm = sliceHpx / pxPerMm;
+      doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, startY, anchoMm, sliceHmm);
+      offsetPx = sliceEnd;
+      primera = false;
+    }
+    return { page: pagina, y: pageH, primera: false };
+  }
+
+  // Coloca una columna de una fila aplanada (grid2/grid3) con su ancho
+  // natural (no el ancho completo de página), paginando de forma
+  // independiente: si esta columna necesita más páginas que su vecina, las
+  // crea; si la vecina ya las creó, simplemente reutiliza esa página.
+  function colocarColumna(hijoEl, canvas, colWidth, xCol, cursor) {
+    const h = canvas.height * colWidth / canvas.width;
+    doc.setPage(cursor.page);
+    const espacioRestante = pageH - bottomMargin - cursor.y;
+
+    if (h <= espacioRestante) {
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCol, cursor.y, colWidth, h);
+      return { page: cursor.page, y: cursor.y + h + gap, primera: false };
+    }
+    if (!cursor.primera && h <= espacioRestante * (1 + TOLERANCIA_ENCOGER)) {
+      const factor = espacioRestante / h;
+      const wEnc = colWidth * factor;
+      const xEnc = xCol + (colWidth - wEnc) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, cursor.y, wEnc, espacioRestante);
+      return { page: cursor.page, y: cursor.y + espacioRestante + gap, primera: false };
+    }
+
+    let pagina = cursor.page, y = cursor.y, primera = cursor.primera;
+    if (!primera) {
+      pagina += 1;
+      asegurarPagina(pagina);
+      doc.setPage(pagina);
+      y = topMargin;
+      primera = true;
+    }
+    const espacioFresco = pageH - bottomMargin - y;
+    if (h <= espacioFresco) {
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCol, y, colWidth, h);
+      return { page: pagina, y: y + h + gap, primera: false };
+    } else if (h <= espacioFresco * (1 + TOLERANCIA_ENCOGER)) {
+      const factor = espacioFresco / h;
+      const wEnc = colWidth * factor;
+      const xEnc = xCol + (colWidth - wEnc) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, y, wEnc, espacioFresco);
+      return { page: pagina, y: pageH, primera: false };
+    }
+    return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, pagina, y);
+  }
+
   for (const c of Array.from(el.children)) {
     if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) continue;
 
     if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
       // Se intenta capturar la fila completa (columnas lado a lado, igual
       // que en pantalla) para no desperdiciar espacio horizontal. Solo si de
-      // verdad no entra ni encogiéndola se "aplana" en tarjetas individuales,
-      // para que una columna muy alta (p. ej. Alertas activas con muchas
-      // filas) no obligue a cortar a su vecina por la mitad.
+      // verdad no entra ni encogiéndola se "aplana" en columnas individuales
+      // que mantienen su ancho natural y paginan cada una por su cuenta, para
+      // que una columna muy alta (p. ej. Alertas activas con muchas filas)
+      // no obligue a cortar ni a inflar a su vecina.
       const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
       const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
       if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
         await colocarBloque(c, canvasCombinado, imgW);
       } else {
         const hijos = Array.from(c.children).filter(h => h.offsetHeight > 0);
-        for (const hijo of hijos) {
-          const canvasHijo = await html2canvas(hijo, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
-          await colocarBloque(hijo, canvasHijo, imgW);
+        const numCols = hijos.length;
+        const colWidth = (imgW - gap * (numCols - 1)) / numCols;
+        const cursorInicio = { page: doc.internal.getNumberOfPages(), y: estado.y, primera: estado.esPrimerBloqueDePagina };
+        let cursorFinal = cursorInicio;
+        for (let i = 0; i < hijos.length; i++) {
+          const xCol = sideMargin + i * (colWidth + gap);
+          const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+          const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio);
+          if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) {
+            cursorFinal = r;
+          }
         }
+        doc.setPage(cursorFinal.page);
+        estado.y = cursorFinal.y;
+        estado.esPrimerBloqueDePagina = cursorFinal.primera;
       }
     } else {
       const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
