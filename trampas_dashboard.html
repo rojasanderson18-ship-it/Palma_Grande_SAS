@@ -745,10 +745,9 @@ function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   doc.text('Rhynchophorus palmarum  ·  Vista: ' + nombreVista + '  ·  Generado: ' + fechaStr, 8, 13.5);
 }
 
-function agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, startYmm) {
-  const imgWmm = pageW - 16;
+function agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, startYmm, sideMarginMm, bottomMarginMm) {
+  const imgWmm = pageW - sideMarginMm*2;
   const pxPerMm = canvas.width / imgWmm;
-  const bottomMarginMm = 8;
   const availableHmm = pageH - startYmm - bottomMarginMm;
   const pxPerPage = Math.floor(availableHmm * pxPerMm);
   const totalHpx = canvas.height;
@@ -763,7 +762,7 @@ function agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, st
     slice.height = sliceHpx;
     slice.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceHpx, 0, 0, canvas.width, sliceHpx);
     const sliceHmm = sliceHpx / pxPerMm;
-    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 8, primeraRebanada ? startYmm : 20, imgWmm, sliceHmm);
+    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', sideMarginMm, startYmm, imgWmm, sliceHmm);
     offsetPx += sliceHpx;
     primeraRebanada = false;
   }
@@ -776,7 +775,7 @@ async function exportarPDF() {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const nombreVista = vistaActual==='actual' ? 'Ciclo actual' : vistaActual==='mes' ? 'Este mes' : 'Histórico';
-  const topMargin = 20, bottomMargin = 8, sideMargin = 8, gap = 4;
+  const topMargin = 19, bottomMargin = 6, sideMargin = 7, gap = 3;
   const imgW = pageW - sideMargin*2;
   const availableH = pageH - topMargin - bottomMargin;
 
@@ -786,17 +785,24 @@ async function exportarPDF() {
 
   // Cada tarjeta/bloque se captura por separado (como imagen, igual al
   // dashboard) para poder acomodarlas en las páginas sin partir ningún
-  // gráfico o tabla a la mitad. Los wrappers grid2/grid3 se "aplanan" en sus
-  // tarjetas hijas: si no se hiciera, una tarjeta muy alta (p. ej. Alertas
-  // activas con muchas filas) forzaría a capturar toda la fila del grid como
-  // un solo bloque gigante, que luego se corta entre páginas.
+  // gráfico o tabla a la mitad. Los wrappers grid2/grid3 se mantienen como un
+  // solo bloque (lado a lado, igual que en pantalla) cuando esa fila completa
+  // cabe en una página, para no desperdiciar espacio horizontal; solo se
+  // "aplanan" en tarjetas individuales cuando la fila es más alta que una
+  // página (p. ej. si Alertas activas tiene muchas filas), para que esa
+  // tarjeta alta no obligue a cortar a su vecina por la mitad.
   const bloques = [];
   Array.from(el.children).forEach(c => {
     if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) return;
     if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
-      Array.from(c.children).forEach(nieto => {
-        if (nieto.offsetHeight > 0) bloques.push(nieto);
-      });
+      const hEstimadaMm = c.offsetHeight * imgW / c.offsetWidth;
+      if (hEstimadaMm <= availableH) {
+        bloques.push(c);
+      } else {
+        Array.from(c.children).forEach(nieto => {
+          if (nieto.offsetHeight > 0) bloques.push(nieto);
+        });
+      }
     } else {
       bloques.push(c);
     }
@@ -813,7 +819,7 @@ async function exportarPDF() {
     if (h > availableH) {
       // Bloque más alto que una página completa: se reparte en varias páginas.
       if (!esPrimerBloqueDePagina) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
-      agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, topMargin);
+      agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, topMargin, sideMargin, bottomMargin);
       // La página actual queda con la última rebanada del bloque: se marca como "llena"
       // para que el siguiente bloque empiece en una página nueva, sin dejar páginas en blanco.
       y = pageH;
@@ -845,8 +851,8 @@ async function exportarPDF() {
     doc.autoTable({
       head: [['Fecha','Finca','Lote','Trampa','Hembras','Machos','Total','Cebo','Trampa','Operario']],
       body: filas,
-      startY: 20,
-      margin: { left:8, right:8 },
+      startY: topMargin,
+      margin: { left:sideMargin, right:sideMargin },
       styles: { fontSize:7.5, cellPadding:1.8, valign:'middle' },
       headStyles: { fillColor:[30,58,95], textColor:255, fontStyle:'bold', fontSize:8 },
       alternateRowStyles: { fillColor:[248,250,252] },
