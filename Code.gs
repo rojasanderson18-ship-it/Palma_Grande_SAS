@@ -112,7 +112,7 @@ function doGet(e) {
     var accion = params.accion || '';
     var callback = params.callback || '';
 
-    var writeAcciones = ['marcarCosechando','quitarMarca','sincronizarCosecha','reemplazarLote','marcarTrabajo','quitarTrabajo','marcarSanidad','quitarSanidad'];
+    var writeAcciones = ['marcarCosechando','quitarMarca','sincronizarCosecha','marcarTrabajo','quitarTrabajo','marcarSanidad','quitarSanidad'];
     if(writeAcciones.indexOf(accion) >= 0){
       try{
         var marcasParam = params.marcas ? JSON.parse(decodeURIComponent(params.marcas)) : null;
@@ -131,7 +131,6 @@ function doGet(e) {
         if(accion === 'marcarCosechando')  result = marcarCosecha(data);
         if(accion === 'quitarMarca')        result = quitarCosecha(data);
         if(accion === 'sincronizarCosecha') result = sincronizarCosecha(data);
-        if(accion === 'reemplazarLote')     result = reemplazarLote(data);
         if(accion === 'marcarTrabajo')      result = marcarMantenimiento(data);
         if(accion === 'quitarTrabajo')      result = quitarMantenimiento(data);
         if(accion === 'marcarSanidad')      result = marcarSanidad(data);
@@ -288,7 +287,6 @@ function doPost(e) {
     if(accion === 'marcarCosechando')   return jsonResponse(marcarCosecha(data));
     if(accion === 'quitarMarca')        return jsonResponse(quitarCosecha(data));
     if(accion === 'sincronizarCosecha') return jsonResponse(sincronizarCosecha(data));
-    if(accion === 'reemplazarCosecha')  return jsonResponse(reemplazarCosecha(data));
     if(accion === 'marcarTrabajo')      return jsonResponse(marcarMantenimiento(data));
     if(accion === 'quitarTrabajo')      return jsonResponse(quitarMantenimiento(data));
     return jsonResponse({error: 'Accion no reconocida: ' + accion});
@@ -325,38 +323,6 @@ function sincronizarCosecha(data) {
     sheet.appendRow([new Date(), parts.finca, parts.lote, m.fecha, m.tipo||'continuidad', 'MARCAR']);
   });
   return {ok:true, total:data.marcas.length};
-}
-
-function reemplazarLote(data) {
-  if(!data.marcas || !Array.isArray(data.marcas)) return {ok:false, msg:'Sin marcas'};
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var sheet = ss.getSheetByName(SHEETS.cosecha);
-  if(!sheet) sheet = ss.insertSheet(SHEETS.cosecha);
-  if(data.inicio === 0){
-    sheet.clearContents();
-    sheet.appendRow(['Timestamp','Finca','Lote','Fecha','Tipo','Accion']);
-  }
-  var rows = data.marcas.map(function(m){
-    var parts = parsearKey(m.key);
-    return [new Date(), parts.finca, parts.lote, m.fecha, m.tipo||'continuidad', 'MARCAR'];
-  });
-  if(rows.length > 0) sheet.getRange(sheet.getLastRow()+1, 1, rows.length, 6).setValues(rows);
-  return {ok:true, total:rows.length};
-}
-
-function reemplazarCosecha(data) {
-  if(!data.marcas || !Array.isArray(data.marcas)) return {ok:false, msg:'Sin marcas'};
-  var ss = SpreadsheetApp.openById(SHEET_ID);
-  var sheet = ss.getSheetByName(SHEETS.cosecha);
-  if(!sheet) sheet = ss.insertSheet(SHEETS.cosecha);
-  sheet.clearContents();
-  sheet.appendRow(['Timestamp','Finca','Lote','Fecha','Tipo','Accion']);
-  var rows = data.marcas.map(function(m){
-    var parts = parsearKey(m.key);
-    return [new Date(), parts.finca, parts.lote, m.fecha, m.tipo||'continuidad', 'MARCAR'];
-  });
-  if(rows.length > 0) sheet.getRange(2, 1, rows.length, 6).setValues(rows);
-  return {ok:true, total:rows.length};
 }
 
 function limpiarHojaCosecha() {
