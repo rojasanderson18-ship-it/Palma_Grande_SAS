@@ -745,28 +745,43 @@ function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   doc.text('Rhynchophorus palmarum  ·  Vista: ' + nombreVista + '  ·  Generado: ' + fechaStr, 8, 13.5);
 }
 
-function agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, startYmm, sideMarginMm, bottomMarginMm) {
-  const imgWmm = pageW - sideMarginMm*2;
-  const pxPerMm = canvas.width / imgWmm;
-  const availableHmm = pageH - startYmm - bottomMarginMm;
-  const pxPerPage = Math.floor(availableHmm * pxPerMm);
+// Si el bloque tiene una lista de filas reconocible (filas de tabla o de
+// "lote-bar"), la paginación corta exactamente entre filas para no partir
+// ningún registro a la mitad; si no hay filas reconocibles (p. ej. un
+// gráfico), corta por píxeles como última opción.
+function paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, startYmm) {
+  let filas = Array.from(bloqueEl.querySelectorAll('table.tbl tbody tr'));
+  if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar'));
+  const bloqueRect = bloqueEl.getBoundingClientRect();
+  const escala = canvas.width / bloqueRect.width;
+  const limitesPx = filas
+    .map(f => (f.getBoundingClientRect().bottom - bloqueRect.top) * escala)
+    .filter(v => v > 0 && v <= canvas.height);
+  const pxPerMm = canvas.width / anchoMm;
   const totalHpx = canvas.height;
 
   let offsetPx = 0;
-  let primeraRebanada = true;
-  while (offsetPx < totalHpx) {
-    if (!primeraRebanada) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
-    const sliceHpx = Math.min(pxPerPage, totalHpx - offsetPx);
+  let primera = true;
+  while (offsetPx < totalHpx - 0.5) {
+    const startY = primera ? startYmm : topMargin;
+    const disponibleMm = pageH - startY - bottomMargin;
+    const limitePx = offsetPx + disponibleMm * pxPerMm;
+    let sliceEnd = Math.min(limitePx, totalHpx);
+    if (limitesPx.length) {
+      const candidatos = limitesPx.filter(b => b > offsetPx + 0.5 && b <= limitePx + 0.5);
+      if (candidatos.length) sliceEnd = candidatos[candidatos.length - 1];
+    }
+    if (!primera) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
+    const sliceHpx = sliceEnd - offsetPx;
     const slice = document.createElement('canvas');
     slice.width = canvas.width;
     slice.height = sliceHpx;
     slice.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceHpx, 0, 0, canvas.width, sliceHpx);
     const sliceHmm = sliceHpx / pxPerMm;
-    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', sideMarginMm, startYmm, imgWmm, sliceHmm);
-    offsetPx += sliceHpx;
-    primeraRebanada = false;
+    doc.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, startY, anchoMm, sliceHmm);
+    offsetPx = sliceEnd;
+    primera = false;
   }
-  return primeraRebanada; // false si ya se usó al menos una rebanada
 }
 
 async function exportarPDF() {
@@ -778,93 +793,90 @@ async function exportarPDF() {
   const topMargin = 19, bottomMargin = 6, sideMargin = 7, gap = 3;
   const imgW = pageW - sideMargin*2;
   const availableH = pageH - topMargin - bottomMargin;
+  const TOLERANCIA_ENCOGER = 0.15; // % máximo que se reduce un bloque para que quepa sin saltar de página
 
   const el = document.getElementById('vista-' + vistaActual);
   el.style.display = 'block';
   await new Promise(r => setTimeout(r, 300));
 
-  // Cada tarjeta/bloque se captura por separado (como imagen, igual al
-  // dashboard) para poder acomodarlas en las páginas sin partir ningún
-  // gráfico o tabla a la mitad. Los wrappers grid2/grid3 se mantienen como un
-  // solo bloque (lado a lado, igual que en pantalla) cuando esa fila completa
-  // cabe en una página, para no desperdiciar espacio horizontal; solo se
-  // "aplanan" en tarjetas individuales cuando la fila es más alta que una
-  // página (p. ej. si Alertas activas tiene muchas filas), para que esa
-  // tarjeta alta no obligue a cortar a su vecina por la mitad.
-  const bloques = [];
-  Array.from(el.children).forEach(c => {
-    if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) return;
-    if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
-      const hEstimadaMm = c.offsetHeight * imgW / c.offsetWidth;
-      if (hEstimadaMm <= availableH) {
-        bloques.push(c);
-      } else {
-        Array.from(c.children).forEach(nieto => {
-          if (nieto.offsetHeight > 0) bloques.push(nieto);
-        });
-      }
-    } else {
-      bloques.push(c);
-    }
-  });
-
   dibujarEncabezadoPDF(doc, nombreVista, pageW);
-  let y = topMargin;
-  let esPrimerBloqueDePagina = true;
+  const estado = { y: topMargin, esPrimerBloqueDePagina: true };
 
-  for (const bloque of bloques) {
-    const canvas = await html2canvas(bloque, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
-    const h = canvas.height * imgW / canvas.width;
-    // Margen que se tolera reducir un bloque (hasta 15%) para que quepa
-    // completo en el espacio restante de la página, en vez de saltar de
-    // página y dejar un hueco en blanco al final de la anterior.
-    const TOLERANCIA_ENCOGER = 0.15;
-    const espacioRestante = pageH - bottomMargin - y;
+  // Coloca un bloque ya capturado (canvas) con el ancho indicado, intentando
+  // siempre llenar el espacio disponible: si cabe completo se dibuja tal
+  // cual; si casi cabe (hasta 15% de diferencia) se encoge para no saltar de
+  // página ni dejar huecos; si es realmente más alto que una página se
+  // pagina cortando entre filas (nunca a la mitad de una fila).
+  async function colocarBloque(bloqueEl, canvas, anchoMm) {
+    const h = canvas.height * anchoMm / canvas.width;
+    const xMm = sideMargin + (imgW - anchoMm) / 2;
+    const espacioRestante = pageH - bottomMargin - estado.y;
 
     if (h <= espacioRestante) {
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', sideMargin, y, imgW, h);
-      y += h + gap;
-      esPrimerBloqueDePagina = false;
-      continue;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, estado.y, anchoMm, h);
+      estado.y += h + gap;
+      estado.esPrimerBloqueDePagina = false;
+      return;
     }
 
-    if (!esPrimerBloqueDePagina && h <= espacioRestante * (1 + TOLERANCIA_ENCOGER)) {
-      // Cabe si se encoge un poco: se dibuja más pequeño y centrado, sin
-      // saltar de página ni dejar espacio vacío.
-      const wEncogido = imgW * (espacioRestante / h);
-      const xCentrado = sideMargin + (imgW - wEncogido) / 2;
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCentrado, y, wEncogido, espacioRestante);
-      y += espacioRestante + gap;
-      esPrimerBloqueDePagina = false;
-      continue;
+    if (!estado.esPrimerBloqueDePagina && h <= espacioRestante * (1 + TOLERANCIA_ENCOGER)) {
+      const factor = espacioRestante / h;
+      const wEnc = anchoMm * factor;
+      const xEnc = sideMargin + (imgW - wEnc) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, estado.y, wEnc, espacioRestante);
+      estado.y += espacioRestante + gap;
+      estado.esPrimerBloqueDePagina = false;
+      return;
     }
 
-    if (!esPrimerBloqueDePagina) {
+    if (!estado.esPrimerBloqueDePagina) {
       doc.addPage();
       dibujarEncabezadoPDF(doc, nombreVista, pageW);
-      y = topMargin;
-      esPrimerBloqueDePagina = true;
+      estado.y = topMargin;
+      estado.esPrimerBloqueDePagina = true;
     }
 
-    if (h <= availableH) {
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', sideMargin, y, imgW, h);
-      y += h + gap;
-    } else if (h <= availableH * (1 + TOLERANCIA_ENCOGER)) {
-      // Bloque ligeramente más alto que una página: se encoge para que entre
-      // completo en una sola página en vez de partirlo en dos con una
-      // segunda página casi vacía.
-      const wEncogido = imgW * (availableH / h);
-      const xCentrado = sideMargin + (imgW - wEncogido) / 2;
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCentrado, y, wEncogido, availableH);
-      y = pageH;
+    const espacioFresco = pageH - bottomMargin - estado.y;
+    if (h <= espacioFresco) {
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, estado.y, anchoMm, h);
+      estado.y += h + gap;
+    } else if (h <= espacioFresco * (1 + TOLERANCIA_ENCOGER)) {
+      const factor = espacioFresco / h;
+      const wEnc = anchoMm * factor;
+      const xEnc = sideMargin + (imgW - wEnc) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, estado.y, wEnc, espacioFresco);
+      estado.y = pageH;
     } else {
-      // Bloque mucho más alto que una página completa: se reparte en varias páginas.
-      agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, topMargin, sideMargin, bottomMargin);
-      // La página actual queda con la última rebanada del bloque: se marca como "llena"
-      // para que el siguiente bloque empiece en una página nueva, sin dejar páginas en blanco.
-      y = pageH;
+      paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, estado.y);
+      estado.y = pageH;
     }
-    esPrimerBloqueDePagina = false;
+    estado.esPrimerBloqueDePagina = false;
+  }
+
+  for (const c of Array.from(el.children)) {
+    if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) continue;
+
+    if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
+      // Se intenta capturar la fila completa (columnas lado a lado, igual
+      // que en pantalla) para no desperdiciar espacio horizontal. Solo si de
+      // verdad no entra ni encogiéndola se "aplana" en tarjetas individuales,
+      // para que una columna muy alta (p. ej. Alertas activas con muchas
+      // filas) no obligue a cortar a su vecina por la mitad.
+      const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+      const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
+      if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
+        await colocarBloque(c, canvasCombinado, imgW);
+      } else {
+        const hijos = Array.from(c.children).filter(h => h.offsetHeight > 0);
+        for (const hijo of hijos) {
+          const canvasHijo = await html2canvas(hijo, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+          await colocarBloque(hijo, canvasHijo, imgW);
+        }
+      }
+    } else {
+      const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+      await colocarBloque(c, canvas, imgW);
+    }
   }
 
   if (vistaActual === 'historico' && historico.length > 0) {
