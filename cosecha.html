@@ -1801,13 +1801,13 @@ function exportarPDF(){
       doc.text('MAPA DE LOTES · ESTADO DE CICLO', 148.5, 10, {align:'center'});
 
       const fincasMapa = ['FINCA 1','FINCA 2','FINCA 3'];
-      const colW = 96, gap = 4, colX0 = (297-(colW*3+gap*2))/2, mapY = 22, mapBoxH = 180;
+      const colW = 96, gap = 3, colX0 = (297-(colW*3+gap*2))/2, mapY = 19, mapBoxH = 186;
       for(let i=0;i<fincasMapa.length;i++){
         const feats = LOTES_GEOJSON.features.filter(f=>f.properties.finca===fincasMapa[i]);
         const bounds = L.geoJSON({type:'FeatureCollection',features:feats}).getBounds();
         const aspect = bboxAspect(bounds); // ancho/alto real de la finca
-        let capW=900, capH=900;
-        if(aspect>=1){ capH = Math.round(900/aspect); } else { capW = Math.round(900*aspect); }
+        let capW=1100, capH=1100;
+        if(aspect>=1){ capH = Math.round(1100/aspect); } else { capW = Math.round(1100*aspect); }
         const img = await capturarMapaPDF(fincasMapa[i], capW, capH);
         const x = colX0 + i*(colW+gap);
         doc.setFontSize(10);
@@ -1820,7 +1820,7 @@ function exportarPDF(){
       }
       doc.setFontSize(8);
       doc.setTextColor(120,120,120);
-      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, 205, {align:'center'});
+      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, 207, {align:'center'});
     }
 
     for(let fi=0;fi<fincas.length;fi++){
