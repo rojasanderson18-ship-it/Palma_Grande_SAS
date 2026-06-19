@@ -1232,7 +1232,7 @@ function estiloLote(feature){
 function renderMapa(){
   if(typeof L === 'undefined' || typeof LOTES_GEOJSON === 'undefined') return;
   if(!mapaCosecha){
-    mapaCosecha = L.map('mapa-cosecha');
+    mapaCosecha = L.map('mapa-cosecha', {renderer:L.canvas()});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       maxZoom:19, attribution:'© OpenStreetMap'
     }).addTo(mapaCosecha);
@@ -1260,23 +1260,39 @@ function renderMapa(){
   setTimeout(()=>mapaCosecha.invalidateSize(), 100);
 }
 
-// Mapa estático (sin tiles, solo polígonos) para captura en el PDF
+// Relación ancho/alto real del bbox (en metros proyectados, no grados) — para que el lienzo
+// de captura coincida con la forma real de la finca y no sobre estimar zona vacía.
+function bboxAspect(bounds){
+  const sw = L.CRS.EPSG3857.project(bounds.getSouthWest());
+  const ne = L.CRS.EPSG3857.project(bounds.getNorthEast());
+  return Math.abs(ne.x-sw.x) / Math.abs(ne.y-sw.y);
+}
+
+// Mapa estático (sin tiles, solo polígonos) para captura en el PDF.
+// Usa renderer de canvas (no SVG) porque html2canvas no captura SVG de forma confiable
+// — con SVG, ~mitad de los polígonos no salían en la imagen exportada.
 async function capturarMapaPDF(filtroF, anchoPx, altoPx){
   const div = document.createElement('div');
   div.style.cssText = `position:fixed;left:-9999px;top:0;width:${anchoPx}px;height:${altoPx}px;background:#eef2f6;`;
   document.body.appendChild(div);
-  const tmpMap = L.map(div, {zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, fadeAnimation:false});
   const geoData = filtroF==='todas' ? LOTES_GEOJSON : {type:'FeatureCollection',features:LOTES_GEOJSON.features.filter(f=>f.properties.finca===filtroF)};
+  const boundsLayer = L.geoJSON(geoData);
+  const bounds = boundsLayer.getBounds();
+  const tmpMap = L.map(div, {
+    zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false,
+    fadeAnimation:false, renderer:L.canvas()
+  });
+  tmpMap.setView(bounds.getCenter(), 13);
   const layer = L.geoJSON(geoData, {
     style: estiloLote,
     onEachFeature: (feature, lyr) => {
       const c = lyr.getBounds().getCenter();
-      L.marker(c, {icon: L.divIcon({className:'lote-label-pdf', html:`<div style="font-size:11px;font-weight:700;color:#1a1f2e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;">${feature.properties.lote}</div>`, iconSize:[40,16]})}).addTo(tmpMap);
+      L.marker(c, {icon: L.divIcon({className:'lote-label-pdf', html:`<div style="font-size:11px;font-weight:700;color:#1a1f2e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;">${feature.properties.lote}</div>`, iconSize:[40,16], iconAnchor:[20,8]})}).addTo(tmpMap);
     }
   }).addTo(tmpMap);
-  tmpMap.fitBounds(layer.getBounds(), {padding:[14,14]});
+  tmpMap.fitBounds(bounds, {padding:[10,10], animate:false});
   tmpMap.invalidateSize();
-  await new Promise(r=>setTimeout(r,350));
+  await new Promise(r=>setTimeout(r,400));
   const canvas = await window.html2canvas(div, {scale:1.6, useCORS:true, backgroundColor:'#eef2f6', logging:false});
   tmpMap.remove();
   document.body.removeChild(div);
@@ -1762,16 +1778,22 @@ function exportarPDF(){
       doc.text('MAPA DE LOTES · ESTADO DE CICLO', 148.5, 10, {align:'center'});
 
       const fincasMapa = ['FINCA 1','FINCA 2','FINCA 3'];
-      const colW = 88, gap = 6, colX0 = (297-(colW*3+gap*2))/2, mapY = 26, mapBox = 160;
+      const colW = 92, gap = 6, colX0 = (297-(colW*3+gap*2))/2, mapY = 24, mapBoxH = 172;
       for(let i=0;i<fincasMapa.length;i++){
-        const img = await capturarMapaPDF(fincasMapa[i], 900, 900);
+        const feats = LOTES_GEOJSON.features.filter(f=>f.properties.finca===fincasMapa[i]);
+        const bounds = L.geoJSON({type:'FeatureCollection',features:feats}).getBounds();
+        const aspect = bboxAspect(bounds); // ancho/alto real de la finca
+        let capW=900, capH=900;
+        if(aspect>=1){ capH = Math.round(900/aspect); } else { capW = Math.round(900*aspect); }
+        const img = await capturarMapaPDF(fincasMapa[i], capW, capH);
         const x = colX0 + i*(colW+gap);
         doc.setFontSize(10);
         doc.setTextColor(60,60,60);
         doc.text(fincasMapa[i], x+colW/2, mapY-3, {align:'center'});
-        let w=colW, h=colW;
-        if(h>mapBox){ h=mapBox; w=mapBox; }
-        doc.addImage(img,'JPEG', x+(colW-w)/2, mapY, w, h);
+        // Encajar la imagen respetando su proporción real, maximizando el uso del espacio
+        let w=colW, h=colW/aspect;
+        if(h>mapBoxH){ h=mapBoxH; w=mapBoxH*aspect; }
+        doc.addImage(img,'JPEG', x+(colW-w)/2, mapY+(mapBoxH-h)/2, w, h);
       }
       doc.setFontSize(8);
       doc.setTextColor(120,120,120);
