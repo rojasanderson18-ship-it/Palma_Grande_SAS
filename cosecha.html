@@ -1211,11 +1211,11 @@ function setFincaMapa(f){
   renderMapa();
 }
 const ESTADO_COLOR = {
-  cosechando:{fill:'#1e3a5f',border:'#2d5a8e'},
-  verde:{fill:'#16a34a',border:'#15803d'},
-  azul:{fill:'#2563eb',border:'#1d4ed8'},
-  rojo:{fill:'#dc2626',border:'#b91c1c'},
-  sin:{fill:'#9ca3af',border:'#6b7280'}
+  cosechando:{fill:'#1e3a5f',border:'#16273d',fillOp:.75},
+  verde:{fill:'#16a34a',border:'#0f6e34',fillOp:.65},
+  azul:{fill:'#2563eb',border:'#1741a6',fillOp:.65},
+  rojo:{fill:'#dc2626',border:'#9c1c1c',fillOp:.65},
+  sin:{fill:'#cbd1da',border:'#5b6472',fillOp:.85}
 };
 function estiloLote(feature){
   const finca = feature.properties.finca;
@@ -1227,7 +1227,7 @@ function estiloLote(feature){
     estado = estadoHoy(key, l.tipo, hoyLocal());
   }
   const c = ESTADO_COLOR[estado] || ESTADO_COLOR.sin;
-  return {fillColor:c.fill, fillOpacity:.55, color:c.border, weight:1.5};
+  return {fillColor:c.fill, fillOpacity:c.fillOp, color:c.border, weight:1.8, opacity:1};
 }
 function renderMapa(){
   if(typeof L === 'undefined' || typeof LOTES_GEOJSON === 'undefined') return;
