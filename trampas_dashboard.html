@@ -230,8 +230,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
-const UMBRAL_ALERTA = 5;
-const UMBRAL_CRITICO = 10;
+const UMBRAL_ALERTA = 2;   // boletín ICA/Cenipalma: 2-5 individuos/trampa/mes = señal de alerta
+const UMBRAL_CRITICO = 5;  // límite superior del rango de alerta del boletín
 
 let historico = [];
 let charts = {};
