@@ -122,6 +122,8 @@ function doGet(e) {
           fecha:  params.fecha || '',
           tipo:   params.tipo  || 'continuidad',
           labor:  params.labor || '',
+          finca:  params.finca || '',
+          lote:   params.lote  || '',
           marcas: marcasParam,
           inicio: parseInt(params.inicio||'0'),
         };
@@ -649,9 +651,11 @@ function obtenerMarcasMantenimiento() {
 // =============================================
 
 function marcarSanidad(data) {
-  var sheet = getOrCreateSheet(SHEETS.sanidad, ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo']);
+  var sheet = getOrCreateSheet(SHEETS.sanidad, ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo','Key']);
   var parts = parsearKey(data.key);
-  sheet.appendRow([new Date(), parts.finca, parts.lote, data.labor||'', data.fecha, 'MARCAR', data.tipo||'continuidad']);
+  var finca = data.finca || parts.finca;
+  var lote  = data.lote  || parts.lote;
+  sheet.appendRow([new Date(), finca, lote, data.labor||'', data.fecha, 'MARCAR', data.tipo||'continuidad', data.key||'']);
   // No se regenera el tablero aquí: repintar 3 labores x 62 lotes x 28 días en
   // cada clic es lento en Apps Script y hacía expirar el timeout del navegador
   // (mostraba "sin conexión" aunque el dato sí se había guardado). El tablero
@@ -660,9 +664,11 @@ function marcarSanidad(data) {
 }
 
 function quitarSanidad(data) {
-  var sheet = getOrCreateSheet(SHEETS.sanidad, ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo']);
+  var sheet = getOrCreateSheet(SHEETS.sanidad, ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo','Key']);
   var parts = parsearKey(data.key);
-  sheet.appendRow([new Date(), parts.finca, parts.lote, data.labor||'', data.fecha, 'QUITAR', '']);
+  var finca = data.finca || parts.finca;
+  var lote  = data.lote  || parts.lote;
+  sheet.appendRow([new Date(), finca, lote, data.labor||'', data.fecha, 'QUITAR', '', data.key||'']);
   return {ok:true};
 }
 
@@ -679,9 +685,13 @@ function obtenerMarcasSanidad() {
     var fecha  = data[i][4] ? formatFecha(data[i][4]) : '';
     var accion = data[i][5] ? String(data[i][5]).trim() : 'MARCAR';
     var tipo   = data[i][6] ? String(data[i][6]).trim() : 'continuidad';
-    if(!finca||!lote||!labor||!fecha) continue;
+    // La clave real de la fila es la columna "Key" (p. ej. el id de una trampa
+    // individual). Filas viejas sin esa columna usan finca_lote como antes.
+    var rawKey = data[i][7] ? String(data[i][7]).trim() : '';
+    if(!labor||!fecha) continue;
     if(!marcas[labor]) continue;
-    var key = finca+'_'+lote;
+    var key = rawKey || (finca+'_'+lote);
+    if(!key) continue;
     if(!marcas[labor][key]) marcas[labor][key] = {};
     if(accion === 'MARCAR') marcas[labor][key][fecha] = tipo;
     else if(accion === 'QUITAR') delete marcas[labor][key][fecha];
@@ -700,8 +710,9 @@ function consolidarHistorialSanidad() {
 
   var data = sheet.getDataRange().getValues();
 
-  // estado[labor + '|' + finca_lote][fecha] = tipo
+  // estado[labor + '|' + key][fecha] = tipo  (key = id de trampa o finca_lote)
   var estado = {};
+  var finfo = {}; // labor|key -> {finca,lote}
   for(var i = 1; i < data.length; i++) {
     var finca  = data[i][1] ? String(data[i][1]).trim() : '';
     var lote   = data[i][2] ? String(data[i][2]).trim() : '';
@@ -709,26 +720,26 @@ function consolidarHistorialSanidad() {
     var fecha  = data[i][4] ? formatFecha(data[i][4]) : '';
     var accion = data[i][5] ? String(data[i][5]).trim() : 'MARCAR';
     var tipo   = data[i][6] ? String(data[i][6]).trim() : 'continuidad';
-    if(!finca || !lote || !labor || !fecha) continue;
-    var ekey = labor + '|' + finca + '_' + lote;
+    var rawKey = data[i][7] ? String(data[i][7]).trim() : '';
+    if(!labor || !fecha) continue;
+    var key = rawKey || (finca+'_'+lote);
+    if(!key) continue;
+    var ekey = labor + '|' + key;
+    finfo[ekey] = {finca:finca, lote:lote, key:key};
     if(!estado[ekey]) estado[ekey] = {};
     if(accion === 'MARCAR') estado[ekey][fecha] = tipo || 'continuidad';
     if(accion === 'QUITAR') delete estado[ekey][fecha];
   }
 
-  var HEADERS = ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo'];
+  var HEADERS = ['Timestamp','Finca','Lote','Labor','Fecha','Accion','Tipo','Key'];
   var nuevasFilas = [HEADERS];
   var ts = new Date();
   Object.keys(estado).sort().forEach(function(ekey) {
-    var partes = ekey.split('|');
-    var labor = partes[0];
-    var key = partes[1];
-    var partesKey = key.split('_');
-    var lote  = partesKey[partesKey.length - 1];
-    var finca = partesKey.slice(0, -1).join('_');
+    var labor = ekey.split('|')[0];
+    var info = finfo[ekey];
     Object.keys(estado[ekey]).sort().forEach(function(fecha) {
       var tipo = estado[ekey][fecha];
-      nuevasFilas.push([ts, finca, lote, labor, fecha, 'MARCAR', tipo]);
+      nuevasFilas.push([ts, info.finca, info.lote, labor, fecha, 'MARCAR', tipo, info.key]);
     });
   });
 
@@ -738,8 +749,8 @@ function consolidarHistorialSanidad() {
   }
 
   sheet.clearContents();
-  sheet.getRange(1, 1, nuevasFilas.length, 7).setValues(nuevasFilas);
-  sheet.getRange(1, 1, 1, 7).setBackground('#1e3a5f').setFontColor('#ffffff').setFontWeight('bold');
+  sheet.getRange(1, 1, nuevasFilas.length, 8).setValues(nuevasFilas);
+  sheet.getRange(1, 1, 1, 8).setBackground('#1e3a5f').setFontColor('#ffffff').setFontWeight('bold');
   sheet.setFrozenRows(1);
   SpreadsheetApp.flush();
   Logger.log('Historial sanidad consolidado: ' + (nuevasFilas.length - 1) + ' registros.');
@@ -748,6 +759,51 @@ function consolidarHistorialSanidad() {
 // =============================================
 // TABLERO SANIDAD (un bloque por labor: trampas / censo / control pc)
 // =============================================
+
+// Respaldo si "Trampas Config" aún no tiene datos (antes de la primera
+// sincronización desde trampas.html). Mismos IDs/lotes que TRAMPAS_INICIALES
+// en trampas.html.
+var TRAMPAS_RESPALDO = [
+  {id:"TR-001",finca:"FINCA 1",lote:"6"},{id:"TR-002",finca:"FINCA 1",lote:"6"},{id:"TR-003",finca:"FINCA 1",lote:"6"},
+  {id:"TR-004",finca:"FINCA 1",lote:"7"},{id:"TR-005",finca:"FINCA 1",lote:"7"},{id:"TR-006",finca:"FINCA 1",lote:"7"},
+  {id:"TR-007",finca:"FINCA 1",lote:"16"},{id:"TR-008",finca:"FINCA 1",lote:"16"},{id:"TR-009",finca:"FINCA 1",lote:"16"},
+  {id:"TR-010",finca:"FINCA 1",lote:"16"},{id:"TR-011",finca:"FINCA 1",lote:"16"},{id:"TR-012",finca:"FINCA 1",lote:"17"},
+  {id:"TR-013",finca:"FINCA 1",lote:"17"},{id:"TR-014",finca:"FINCA 1",lote:"17"},{id:"TR-015",finca:"FINCA 1",lote:"17"},
+  {id:"TR-016",finca:"FINCA 1",lote:"17"},{id:"TR-017",finca:"FINCA 1",lote:"17"},{id:"TR-018",finca:"FINCA 1",lote:"13"},
+  {id:"TR-019",finca:"FINCA 1",lote:"12"},{id:"TR-020",finca:"FINCA 1",lote:"12"},{id:"TR-021",finca:"FINCA 1",lote:"11"},
+  {id:"TR-022",finca:"FINCA 1",lote:"11"},{id:"TR-023",finca:"FINCA 1",lote:"11"},{id:"TR-024",finca:"FINCA 1",lote:"11"},
+  {id:"TR-025",finca:"FINCA 1",lote:"4A"},{id:"TR-026",finca:"FINCA 1",lote:"4A"},{id:"TR-027",finca:"FINCA 1",lote:"4A"},
+  {id:"TR-028",finca:"FINCA 1",lote:"4A"},{id:"TR-029",finca:"FINCA 1",lote:"4A"},{id:"TR-030",finca:"FINCA 1",lote:"2A"},
+  {id:"TR-031",finca:"FINCA 1",lote:"1A"},{id:"TR-032",finca:"FINCA 1",lote:"1A"},{id:"TR-033",finca:"FINCA 1",lote:"1A"},
+  {id:"TR-034",finca:"FINCA 1",lote:"18"},{id:"TR-035",finca:"FINCA 1",lote:"18"},{id:"TR-036",finca:"FINCA 1",lote:"18"},
+  {id:"TR-037",finca:"FINCA 2",lote:"32A"},{id:"TR-038",finca:"FINCA 2",lote:"33A"},{id:"TR-039",finca:"FINCA 2",lote:"33A"},
+  {id:"TR-040",finca:"FINCA 2",lote:"33A"},{id:"TR-041",finca:"FINCA 2",lote:"34A"},{id:"TR-042",finca:"FINCA 2",lote:"34A"},
+  {id:"TR-043",finca:"FINCA 2",lote:"35A"},{id:"TR-044",finca:"FINCA 2",lote:"35A"},{id:"TR-045",finca:"FINCA 2",lote:"36"},
+  {id:"TR-046",finca:"FINCA 2",lote:"39"},{id:"TR-047",finca:"FINCA 2",lote:"39"},{id:"TR-048",finca:"FINCA 2",lote:"40"},
+  {id:"TR-049",finca:"FINCA 2",lote:"41"},{id:"TR-050",finca:"FINCA 2",lote:"41"},{id:"TR-051",finca:"FINCA 2",lote:"41"},
+  {id:"TR-052",finca:"FINCA 2",lote:"41"},{id:"TR-053",finca:"FINCA 2",lote:"19"},{id:"TR-054",finca:"FINCA 3",lote:"42"},
+  {id:"TR-055",finca:"FINCA 3",lote:"42"},{id:"TR-056",finca:"FINCA 3",lote:"42"},{id:"TR-057",finca:"FINCA 3",lote:"42"},
+  {id:"TR-058",finca:"FINCA 3",lote:"44A"},{id:"TR-059",finca:"FINCA 3",lote:"44A"},{id:"TR-060",finca:"FINCA 3",lote:"45A"},
+  {id:"TR-061",finca:"FINCA 3",lote:"45A"},{id:"TR-062",finca:"FINCA 3",lote:"45A"},{id:"TR-063",finca:"FINCA 3",lote:"58"},
+  {id:"TR-064",finca:"FINCA 3",lote:"46"},{id:"TR-065",finca:"FINCA 3",lote:"46"},{id:"TR-066",finca:"FINCA 3",lote:"46"},
+  {id:"TR-067",finca:"FINCA 3",lote:"48"},{id:"TR-068",finca:"FINCA 3",lote:"48"},{id:"TR-069",finca:"FINCA 3",lote:"48"},
+  {id:"TR-070",finca:"FINCA 3",lote:"48"},{id:"TR-071",finca:"FINCA 3",lote:"50"},{id:"TR-072",finca:"FINCA 3",lote:"50"},
+  {id:"TR-073",finca:"FINCA 3",lote:"50"},{id:"TR-074",finca:"FINCA 3",lote:"50"},{id:"TR-075",finca:"FINCA 3",lote:"50"},
+  {id:"TR-076",finca:"FINCA 3",lote:"51"},{id:"TR-077",finca:"FINCA 3",lote:"51"},{id:"TR-078",finca:"FINCA 3",lote:"51"},
+  {id:"TR-079",finca:"FINCA 3",lote:"52"},{id:"TR-080",finca:"FINCA 3",lote:"52"},{id:"TR-081",finca:"FINCA 3",lote:"54"},
+  {id:"TR-082",finca:"FINCA 3",lote:"54"},{id:"TR-083",finca:"FINCA 3",lote:"54"},{id:"TR-084",finca:"FINCA 3",lote:"54"},
+  {id:"TR-085",finca:"FINCA 3",lote:"56"},{id:"TR-086",finca:"FINCA 3",lote:"56"},{id:"TR-087",finca:"FINCA 3",lote:"56"},
+  {id:"TR-088",finca:"FINCA 3",lote:"56"},{id:"TR-089",finca:"FINCA 3",lote:"56"},{id:"TR-090",finca:"FINCA 3",lote:"56"},
+  {id:"TR-091",finca:"FINCA 3",lote:"57"},{id:"TR-092",finca:"FINCA 3",lote:"57"},
+];
+
+function filasTrampas() {
+  var cfg = obtenerConfigTrampas();
+  var activas = (cfg.trampas || []).filter(function(t){ return t.activa; });
+  var fuente = activas.length > 0 ? activas : TRAMPAS_RESPALDO;
+  return fuente.map(function(t){ return {finca:t.finca, lote:t.lote, ha:null, tipo:'guineensis', label:t.id, key:t.id}; })
+    .sort(function(a,b){ return a.finca===b.finca ? a.label.localeCompare(b.label) : a.finca.localeCompare(b.finca); });
+}
 
 function generarTableroSanidad() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
@@ -781,9 +837,10 @@ function generarTableroSanidad() {
     fila++;
 
     var filaHdr1 = fila, filaHdr2 = fila + 1, filaHdr3 = fila + 2;
+    var esTrampas = labor === 'trampas';
     sheet.getRange(filaHdr1, 1).setValue('FINCA');
-    sheet.getRange(filaHdr1, 2).setValue('LOTE');
-    sheet.getRange(filaHdr1, 3).setValue('HA');
+    sheet.getRange(filaHdr1, 2).setValue(esTrampas ? 'TRAMPA' : 'LOTE');
+    sheet.getRange(filaHdr1, 3).setValue(esTrampas ? 'LOTE' : 'HA');
     sheet.getRange(filaHdr1, 4).setValue('CICLO');
     sheet.getRange(filaHdr1, 5).setValue('ESTADO HOY');
 
@@ -800,32 +857,35 @@ function generarTableroSanidad() {
     sheet.getRange(filaHdr1, 1, 3, FIXED).setBackground(COLOR.tableHeader.bg).setFontColor(COLOR.tableHeader.text).setFontWeight('bold').setFontSize(8);
     fila = filaHdr3 + 1;
 
+    var filas = esTrampas ? filasTrampas() : LOTES.map(function(l){
+      return {finca:l.finca, lote:l.lote, ha:l.ha, tipo:l.tipo, label:l.lote, key:l.finca+'_'+l.lote};
+    });
+
     var fincaActual = '';
-    LOTES.forEach(function(l) {
-      if(l.finca !== fincaActual) {
-        fincaActual = l.finca;
-        sheet.getRange(fila, 1).setValue('🌴 ' + l.finca);
+    filas.forEach(function(row) {
+      if(row.finca !== fincaActual) {
+        fincaActual = row.finca;
+        sheet.getRange(fila, 1).setValue('🌴 ' + row.finca);
         sheet.getRange(fila, 1, 1, totalCols).setBackground(COLOR.fincaHeader.bg).setFontColor(COLOR.fincaHeader.text).setFontWeight('bold').setFontSize(9);
         fila++;
       }
-      var key = l.finca + '_' + l.lote;
-      var marcasLote = (marcas[labor] && marcas[labor][key]) || {};
-      var ciclo = CICLOS_SANIDAD[labor][l.tipo];
+      var marcasLote = (marcas[labor] && marcas[labor][row.key]) || {};
+      var ciclo = CICLOS_SANIDAD[labor][row.tipo];
       var cicloLabel = ciclo + ' días';
-      var estadoH = calcularEstadoSanidad(marcasLote, labor, l.tipo, hoy);
+      var estadoH = calcularEstadoSanidad(marcasLote, labor, row.tipo, hoy);
       var estadoTxt = estadoH==='sin'?'SIN REGISTRO':estadoH==='trabajo'?'TRABAJO':estadoH==='verde'?'EN CICLO':estadoH==='azul'?'TOLERANCIA':'INCUMPLIMIENTO';
       var colorEstado = (estadoH==='verde'||estadoH==='trabajo')?'#d1fae5':estadoH==='azul'?'#dbeafe':estadoH==='rojo'?'#fee2e2':'#f9fafb';
 
-      sheet.getRange(fila, 1).setValue(l.finca.replace('FINCA ', 'F'));
-      sheet.getRange(fila, 2).setValue(l.lote);
-      sheet.getRange(fila, 3).setValue(l.ha);
+      sheet.getRange(fila, 1).setValue(row.finca.replace('FINCA ', 'F'));
+      sheet.getRange(fila, 2).setValue(row.label);
+      sheet.getRange(fila, 3).setValue(esTrampas ? row.lote : row.ha);
       sheet.getRange(fila, 4).setValue(cicloLabel);
       sheet.getRange(fila, 5).setValue(estadoTxt);
       sheet.getRange(fila, 5).setBackground(colorEstado);
 
       fechas.forEach(function(d, i) {
         var col = FIXED + i + 1;
-        var cs = calcularCeldaSanidad(marcasLote, labor, l.tipo, d);
+        var cs = calcularCeldaSanidad(marcasLote, labor, row.tipo, d);
         if(cs.tipo === 'vacio') {
           sheet.getRange(fila, col).setValue('·').setFontColor('#e5e7eb').setBackground('#ffffff');
         } else {

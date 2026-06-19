@@ -285,6 +285,105 @@ const LOTES = [
   {finca:'FINCA 3',lote:'58',ha:9,tipo:'guineensis'},
 ];
 
+// Lista de trampas (id, finca, lote): mismas que trampas.html. La pestaña
+// "Trampas" de este tablero usa cada trampa individual como fila (revisión es
+// por trampa, no por lote); se actualiza con la config del servidor si existe.
+const TRAMPAS_INICIALES = [
+  {id:"TR-001",finca:"FINCA 1",lote:"6",activa:true},
+  {id:"TR-002",finca:"FINCA 1",lote:"6",activa:true},
+  {id:"TR-003",finca:"FINCA 1",lote:"6",activa:true},
+  {id:"TR-004",finca:"FINCA 1",lote:"7",activa:true},
+  {id:"TR-005",finca:"FINCA 1",lote:"7",activa:true},
+  {id:"TR-006",finca:"FINCA 1",lote:"7",activa:true},
+  {id:"TR-007",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-008",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-009",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-010",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-011",finca:"FINCA 1",lote:"16",activa:true},
+  {id:"TR-012",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-013",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-014",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-015",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-016",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-017",finca:"FINCA 1",lote:"17",activa:true},
+  {id:"TR-018",finca:"FINCA 1",lote:"13",activa:true},
+  {id:"TR-019",finca:"FINCA 1",lote:"12",activa:true},
+  {id:"TR-020",finca:"FINCA 1",lote:"12",activa:true},
+  {id:"TR-021",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-022",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-023",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-024",finca:"FINCA 1",lote:"11",activa:true},
+  {id:"TR-025",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-026",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-027",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-028",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-029",finca:"FINCA 1",lote:"4A",activa:true},
+  {id:"TR-030",finca:"FINCA 1",lote:"2A",activa:true},
+  {id:"TR-031",finca:"FINCA 1",lote:"1A",activa:true},
+  {id:"TR-032",finca:"FINCA 1",lote:"1A",activa:true},
+  {id:"TR-033",finca:"FINCA 1",lote:"1A",activa:true},
+  {id:"TR-034",finca:"FINCA 1",lote:"18",activa:true},
+  {id:"TR-035",finca:"FINCA 1",lote:"18",activa:true},
+  {id:"TR-036",finca:"FINCA 1",lote:"18",activa:true},
+  {id:"TR-037",finca:"FINCA 2",lote:"32A",activa:true},
+  {id:"TR-038",finca:"FINCA 2",lote:"33A",activa:true},
+  {id:"TR-039",finca:"FINCA 2",lote:"33A",activa:true},
+  {id:"TR-040",finca:"FINCA 2",lote:"33A",activa:true},
+  {id:"TR-041",finca:"FINCA 2",lote:"34A",activa:true},
+  {id:"TR-042",finca:"FINCA 2",lote:"34A",activa:true},
+  {id:"TR-043",finca:"FINCA 2",lote:"35A",activa:true},
+  {id:"TR-044",finca:"FINCA 2",lote:"35A",activa:true},
+  {id:"TR-045",finca:"FINCA 2",lote:"36",activa:true},
+  {id:"TR-046",finca:"FINCA 2",lote:"39",activa:true},
+  {id:"TR-047",finca:"FINCA 2",lote:"39",activa:true},
+  {id:"TR-048",finca:"FINCA 2",lote:"40",activa:true},
+  {id:"TR-049",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-050",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-051",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-052",finca:"FINCA 2",lote:"41",activa:true},
+  {id:"TR-053",finca:"FINCA 2",lote:"19",activa:true},
+  {id:"TR-054",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-055",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-056",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-057",finca:"FINCA 3",lote:"42",activa:true},
+  {id:"TR-058",finca:"FINCA 3",lote:"44A",activa:true},
+  {id:"TR-059",finca:"FINCA 3",lote:"44A",activa:true},
+  {id:"TR-060",finca:"FINCA 3",lote:"45A",activa:true},
+  {id:"TR-061",finca:"FINCA 3",lote:"45A",activa:true},
+  {id:"TR-062",finca:"FINCA 3",lote:"45A",activa:true},
+  {id:"TR-063",finca:"FINCA 3",lote:"58",activa:true},
+  {id:"TR-064",finca:"FINCA 3",lote:"46",activa:true},
+  {id:"TR-065",finca:"FINCA 3",lote:"46",activa:true},
+  {id:"TR-066",finca:"FINCA 3",lote:"46",activa:true},
+  {id:"TR-067",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-068",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-069",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-070",finca:"FINCA 3",lote:"48",activa:true},
+  {id:"TR-071",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-072",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-073",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-074",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-075",finca:"FINCA 3",lote:"50",activa:true},
+  {id:"TR-076",finca:"FINCA 3",lote:"51",activa:true},
+  {id:"TR-077",finca:"FINCA 3",lote:"51",activa:true},
+  {id:"TR-078",finca:"FINCA 3",lote:"51",activa:true},
+  {id:"TR-079",finca:"FINCA 3",lote:"52",activa:true},
+  {id:"TR-080",finca:"FINCA 3",lote:"52",activa:true},
+  {id:"TR-081",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-082",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-083",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-084",finca:"FINCA 3",lote:"54",activa:true},
+  {id:"TR-085",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-086",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-087",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-088",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-089",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-090",finca:"FINCA 3",lote:"56",activa:true},
+  {id:"TR-091",finca:"FINCA 3",lote:"57",activa:true},
+  {id:"TR-092",finca:"FINCA 3",lote:"57",activa:true},
+];
+let trampasList = TRAMPAS_INICIALES.filter(t=>t.activa!==false).map(t=>({id:t.id,finca:t.finca,lote:t.lote}));
+
 // Ciclos en días por labor y tipo
 const CICLOS = {
   trampas:  {guineensis: 15,  hibrido: 15},  // 15 dias
@@ -372,6 +471,20 @@ function estadoHoy(labor, key, tipo, hoy){
   return cs.tipo==='vacio'?'sin':cs.tipo;
 }
 
+// Filas del tablero según la pestaña activa: en "trampas" cada fila es una
+// trampa individual (la revisión se hace por trampa, no por lote); en censo
+// y control PC cada fila sigue siendo un lote.
+function filasActuales(){
+  if(laborActual==='trampas'){
+    return trampasList
+      .filter(t=>filtroFinca==='todas'||t.finca===filtroFinca)
+      .map(t=>({finca:t.finca,lote:t.lote,ha:null,tipo:'guineensis',label:t.id,key:t.id}))
+      .sort((a,b)=> a.finca.localeCompare(b.finca) || a.label.localeCompare(b.label,'es',{numeric:true}));
+  }
+  return LOTES.filter(l=>filtroFinca==='todas'||l.finca===filtroFinca)
+    .map(l=>({finca:l.finca,lote:l.lote,ha:l.ha,tipo:l.tipo,label:l.lote,key:l.finca+'_'+l.lote}));
+}
+
 // =============================================
 // RENDER
 // =============================================
@@ -392,13 +505,14 @@ function render(){
     semAct.count++;
   });
 
-  const lotesFiltrados = LOTES.filter(l=>filtroFinca==='todas'||l.finca===filtroFinca);
+  const lotesFiltrados = filasActuales();
+  const esTrampas = laborActual==='trampas';
+  const etiquetaFila = esTrampas?'Trampa':'Lote';
 
   // Stats
   let stV=0,stA=0,stR=0,stT=0;
-  lotesFiltrados.forEach(l=>{
-    const k=l.finca+'_'+l.lote;
-    const e=estadoHoy(laborActual,k,l.tipo,hoy);
+  lotesFiltrados.forEach(row=>{
+    const e=estadoHoy(laborActual,row.key,row.tipo,hoy);
     stT++;
     if(e==='verde'||e==='trabajo') stV++;
     else if(e==='azul') stA++;
@@ -411,10 +525,9 @@ function render(){
 
   // Alertas
   const pills=[];
-  lotesFiltrados.forEach(l=>{
-    const k=l.finca+'_'+l.lote;
-    const cs=getCellState(laborActual,k,l.tipo,hoy);
-    if(cs.tipo==='rojo') pills.push(`<span class="alerta-pill ap-rojo">🔴 Lote ${l.lote} · ${cs.num} días</span>`);
+  lotesFiltrados.forEach(row=>{
+    const cs=getCellState(laborActual,row.key,row.tipo,hoy);
+    if(cs.tipo==='rojo') pills.push(`<span class="alerta-pill ap-rojo">🔴 ${etiquetaFila} ${row.label} · ${cs.num} días</span>`);
   });
   document.getElementById('alertas-pills').innerHTML = pills.length
     ? pills.slice(0,8).join('')
@@ -423,8 +536,8 @@ function render(){
   // Table
   let html='<table class="ciclos-table"><thead><tr>';
   html+='<th class="th-left col-finca" rowspan="3">F</th>';
-  html+='<th class="th-left col-lote" rowspan="3">LOTE</th>';
-  html+='<th class="th-left col-ha" rowspan="3">HA</th>';
+  html+=`<th class="th-left col-lote" rowspan="3">${esTrampas?'TRAMPA':'LOTE'}</th>`;
+  html+=`<th class="th-left col-ha" rowspan="3">${esTrampas?'LOTE':'HA'}</th>`;
   html+='<th class="th-left col-freq" rowspan="3">CICLO</th>';
   html+='<th class="th-left col-estado" rowspan="3">ESTADO HOY</th>';
   semanasG.forEach(sg=>{
@@ -445,15 +558,15 @@ function render(){
   html+='</tr></thead><tbody>';
 
   let fincaActual='';
-  lotesFiltrados.forEach(l=>{
-    if(l.finca!==fincaActual){
-      fincaActual=l.finca;
-      html+=`<tr class="finca-row"><td colspan="${5+totalDias}">🌴 ${l.finca}</td></tr>`;
+  lotesFiltrados.forEach(row=>{
+    if(row.finca!==fincaActual){
+      fincaActual=row.finca;
+      html+=`<tr class="finca-row"><td colspan="${5+totalDias}">🌴 ${row.finca}</td></tr>`;
     }
-    const key=l.finca+'_'+l.lote;
-    const ciclo=CICLOS[laborActual][l.tipo];
+    const key=row.key;
+    const ciclo=CICLOS[laborActual][row.tipo];
     const cicloLabel = ciclo>=300?(Math.round(ciclo/30)+' meses'):ciclo>=60?(Math.round(ciclo/30)+' meses'):(ciclo+' días');
-    const eH=estadoHoy(laborActual,key,l.tipo,hoy);
+    const eH=estadoHoy(laborActual,key,row.tipo,hoy);
     let bCls,bTxt;
     if(eH==='trabajo'){bCls='b-cos';bTxt='TRABAJO';}
     else if(eH==='verde'){bCls='b-en';bTxt='EN CICLO';}
@@ -462,9 +575,9 @@ function render(){
     else{bCls='b-sin';bTxt='SIN REGISTRO';}
 
     html+='<tr>';
-    html+=`<td class="td-finca col-finca">${l.finca.replace('FINCA ','F')}</td>`;
-    html+=`<td class="td-lote col-lote">${l.lote}</td>`;
-    html+=`<td class="td-ha col-ha">${l.ha}</td>`;
+    html+=`<td class="td-finca col-finca">${row.finca.replace('FINCA ','F')}</td>`;
+    html+=`<td class="td-lote col-lote">${row.label}</td>`;
+    html+=`<td class="td-ha col-ha">${esTrampas?row.lote:row.ha}</td>`;
     html+=`<td class="td-freq col-freq">${cicloLabel}</td>`;
     html+=`<td class="td-estado col-estado"><span class="badge ${bCls}">${bTxt}</span></td>`;
 
@@ -472,7 +585,7 @@ function render(){
       const dISO=isoDate(d);
       const isH=dISO===hoyISO;
       const esFuturo=diasEntre(hoy,d)>0;
-      const cs=getCellState(laborActual,key,l.tipo,d);
+      const cs=getCellState(laborActual,key,row.tipo,d);
       let cellHtml,clsExtra='';
       if(esFuturo){
         cellHtml=`<div class="dia-inner di-vacio">·</div>`;
@@ -488,7 +601,7 @@ function render(){
         cellHtml=`<div class="dia-inner ${clsD}">${cs.num}</div>`;
         clsExtra=' editable';
       }
-      html+=`<td class="td-dia${isH?' hoy-borde':''}${clsExtra}" data-key="${key}" data-fecha="${dISO}" data-lote="${l.lote}" onclick="onCellClick(event,this)">${cellHtml}</td>`;
+      html+=`<td class="td-dia${isH?' hoy-borde':''}${clsExtra}" data-key="${key}" data-fecha="${dISO}" data-lote="${row.label}" data-finca="${row.finca}" data-loteorig="${row.lote||row.label}" onclick="onCellClick(event,this)">${cellHtml}</td>`;
     });
     html+='</tr>';
   });
@@ -514,18 +627,20 @@ function onCellClick(e,td){
   if(!modoEdicion) return;
   if(!td.classList.contains('editable')) return;
   const key=td.dataset.key;const fecha=td.dataset.fecha;const lote=td.dataset.lote;
+  const finca=td.dataset.finca;const loteOrig=td.dataset.loteorig;
   const esTrabajo=(marcas[laborActual][key]||{})[fecha];
-  showPopup(e,key,fecha,lote,esTrabajo);
+  showPopup(e,key,fecha,lote,esTrabajo,finca,loteOrig);
 }
-function showPopup(e,key,fecha,lote,esTrabajo){
+function showPopup(e,key,fecha,lote,esTrabajo,finca,loteOrig){
   cerrarPopup();
   const popup=document.getElementById('cell-popup');
+  const etiqueta = laborActual==='trampas'?'Trampa':'Lote';
   popup.innerHTML=`
-    <div class="popup-header">Lote <strong>${lote} · ${fecha.split('-').reverse().join('/')}</strong></div>
-    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}','continuidad')"><div class="pop-dot pd-cont"></div>Continuidad de ciclo</div>`:''}
-    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}','nuevo')"><div class="pop-dot pd-nuevo"></div>Nuevo ciclo (reinicia)</div>`:''}
-    ${esTrabajo?`<div class="popup-opt" onclick="quitarTrabajo('${key}','${fecha}')"><div class="pop-dot pd-libre"></div>Quitar trabajo</div>`:''}
-    <div class="popup-opt pop-limpiar" onclick="limpiarCelda('${key}','${fecha}')"><div class="pop-dot pd-limpiar"></div>Limpiar celda</div>
+    <div class="popup-header">${etiqueta} <strong>${lote} · ${fecha.split('-').reverse().join('/')}</strong></div>
+    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}','continuidad','${finca}','${loteOrig}')"><div class="pop-dot pd-cont"></div>Continuidad de ciclo</div>`:''}
+    ${!esTrabajo?`<div class="popup-opt" onclick="marcarTrabajo('${key}','${fecha}','nuevo','${finca}','${loteOrig}')"><div class="pop-dot pd-nuevo"></div>Nuevo ciclo (reinicia)</div>`:''}
+    ${esTrabajo?`<div class="popup-opt" onclick="quitarTrabajo('${key}','${fecha}','${finca}','${loteOrig}')"><div class="pop-dot pd-libre"></div>Quitar trabajo</div>`:''}
+    <div class="popup-opt pop-limpiar" onclick="limpiarCelda('${key}','${fecha}','${finca}','${loteOrig}')"><div class="pop-dot pd-limpiar"></div>Limpiar celda</div>
   `;
   popup.style.display='block';
   const rect=e.target.getBoundingClientRect();
@@ -538,27 +653,27 @@ function showPopup(e,key,fecha,lote,esTrabajo){
 function cerrarPopup(){document.getElementById('cell-popup').style.display='none';popupOpen=false;}
 document.addEventListener('click',()=>{if(popupOpen)cerrarPopup();});
 
-function marcarTrabajo(key,fecha,tipo){
+function marcarTrabajo(key,fecha,tipo,finca,lote){
   if(!marcas[laborActual][key]) marcas[laborActual][key]={};
   marcas[laborActual][key][fecha]=tipo||'continuidad';
   notarPendiente(laborActual,key,fecha);
-  guardarLocal();enviarGAS({accion:'marcarSanidad',labor:laborActual,key,fecha,tipo:tipo||'continuidad'});
+  guardarLocal();enviarGAS({accion:'marcarSanidad',labor:laborActual,key,fecha,tipo:tipo||'continuidad',finca:finca||'',lote:lote||''});
   cerrarPopup();render();
   showToast(tipo==='nuevo'?'✓ Nuevo ciclo iniciado':'✓ Continuidad registrada');
 }
-function quitarTrabajo(key,fecha){
+function quitarTrabajo(key,fecha,finca,lote){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
   notarPendiente(laborActual,key,fecha);
   guardarLocal();cerrarPopup();render();showToast('Trabajo removido');
   setSyncStatus('guardando…','#f0c96a');
-  enviarGAS({accion:'quitarSanidad',labor:laborActual,key,fecha});
+  enviarGAS({accion:'quitarSanidad',labor:laborActual,key,fecha,finca:finca||'',lote:lote||''});
 }
-function limpiarCelda(key,fecha){
+function limpiarCelda(key,fecha,finca,lote){
   if(marcas[laborActual][key]) delete marcas[laborActual][key][fecha];
   notarPendiente(laborActual,key,fecha);
   guardarLocal();cerrarPopup();render();
   setSyncStatus('guardando…','#f0c96a');
-  enviarGAS({accion:'quitarSanidad',labor:laborActual,key,fecha});
+  enviarGAS({accion:'quitarSanidad',labor:laborActual,key,fecha,finca:finca||'',lote:lote||''});
 }
 
 // =============================================
@@ -714,6 +829,7 @@ async function cargarGAS(){
         marcas=merged;
         guardarLocal();
       }
+      cargarConfigTrampas();
       resolve();
     };
     script.onerror=()=>{
@@ -865,6 +981,21 @@ function gasJSONP(url){
     s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
     document.body.appendChild(s);
   });
+}
+
+let configTrampasCargada=false;
+async function cargarConfigTrampas(){
+  if(configTrampasCargada) return;
+  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  const data=await gasJSONP(GAS_URL+'?accion=obtenerConfigTrampas');
+  if(data&&data.trampas&&data.trampas.length>0){
+    const activas=data.trampas.filter(t=>t.activa!==false).map(t=>({id:t.id,finca:t.finca,lote:t.lote}));
+    if(activas.length>0){
+      trampasList=activas;
+      configTrampasCargada=true;
+      if(laborActual==='trampas') render();
+    }
+  }
 }
 
 
