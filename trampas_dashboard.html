@@ -832,6 +832,29 @@ async function exportarPDF() {
       return;
     }
 
+    // Si el bloque tiene filas reconocibles (tabla o lote-bar), siempre se
+    // pagina por filas en vez de forzar una página nueva: así se aprovecha
+    // primero lo que quede de la página actual (si alcanza para al menos
+    // una fila) y solo se salta de página cuando de verdad no cabe nada.
+    // Esto NO aplica a una fila grid2/grid3 combinada (varias tarjetas
+    // distintas en una sola imagen): cortar por los límites de fila de una
+    // de sus tarjetas podría partir a la mitad otra tarjeta (p. ej. un
+    // gráfico) que no comparte esos límites.
+    const esGridCombinado = bloqueEl.classList.contains('grid2') || bloqueEl.classList.contains('grid3');
+    const tieneFilas = !esGridCombinado && bloqueEl.querySelector('table.tbl tbody tr, .lote-bar') !== null;
+    if (tieneFilas) {
+      const espacioMinUtil = 14; // mm
+      if (espacioRestante >= espacioMinUtil) {
+        paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, estado.y);
+      } else {
+        if (!estado.esPrimerBloqueDePagina) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
+        paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, topMargin);
+      }
+      estado.y = pageH;
+      estado.esPrimerBloqueDePagina = false;
+      return;
+    }
+
     if (!estado.esPrimerBloqueDePagina) {
       doc.addPage();
       dibujarEncabezadoPDF(doc, nombreVista, pageW);
@@ -839,18 +862,17 @@ async function exportarPDF() {
       estado.esPrimerBloqueDePagina = true;
     }
 
+    // Bloque sin filas reconocibles (p. ej. un gráfico): nunca se recorta,
+    // se encoge lo que sea necesario para que quepa entero en la página.
     const espacioFresco = pageH - bottomMargin - estado.y;
     if (h <= espacioFresco) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, estado.y, anchoMm, h);
       estado.y += h + gap;
-    } else if (h <= espacioFresco * (1 + TOLERANCIA_ENCOGER)) {
+    } else {
       const factor = espacioFresco / h;
       const wEnc = anchoMm * factor;
       const xEnc = sideMargin + (imgW - wEnc) / 2;
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, estado.y, wEnc, espacioFresco);
-      estado.y = pageH;
-    } else {
-      paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, estado.y);
       estado.y = pageH;
     }
     estado.esPrimerBloqueDePagina = false;
@@ -925,6 +947,20 @@ async function exportarPDF() {
       return { page: cursor.page, y: cursor.y + espacioRestante + gap, primera: false };
     }
 
+    // Si la columna tiene filas reconocibles, siempre se pagina por filas
+    // aprovechando primero lo que quede de la página actual (si alcanza para
+    // al menos una fila) en vez de saltar de página y dejar ese hueco vacío.
+    const tieneFilas = hijoEl.querySelector('table.tbl tbody tr, .lote-bar') !== null;
+    if (tieneFilas) {
+      const espacioMinUtil = 14; // mm
+      if (espacioRestante >= espacioMinUtil) {
+        return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, cursor.page, cursor.y);
+      }
+      let pagina = cursor.page;
+      if (!cursor.primera) { pagina += 1; asegurarPagina(pagina); doc.setPage(pagina); }
+      return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, pagina, topMargin);
+    }
+
     let pagina = cursor.page, y = cursor.y, primera = cursor.primera;
     if (!primera) {
       pagina += 1;
@@ -933,18 +969,18 @@ async function exportarPDF() {
       y = topMargin;
       primera = true;
     }
+    // Columna sin filas reconocibles (gráfico): nunca se recorta, se encoge
+    // lo necesario para que quepa entera en la página.
     const espacioFresco = pageH - bottomMargin - y;
     if (h <= espacioFresco) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCol, y, colWidth, h);
       return { page: pagina, y: y + h + gap, primera: false };
-    } else if (h <= espacioFresco * (1 + TOLERANCIA_ENCOGER)) {
-      const factor = espacioFresco / h;
-      const wEnc = colWidth * factor;
-      const xEnc = xCol + (colWidth - wEnc) / 2;
-      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, y, wEnc, espacioFresco);
-      return { page: pagina, y: pageH, primera: false };
     }
-    return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, pagina, y);
+    const factor = espacioFresco / h;
+    const wEnc = colWidth * factor;
+    const xEnc = xCol + (colWidth - wEnc) / 2;
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, y, wEnc, espacioFresco);
+    return { page: pagina, y: pageH, primera: false };
   }
 
   for (const c of Array.from(el.children)) {
