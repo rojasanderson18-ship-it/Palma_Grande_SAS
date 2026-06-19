@@ -663,7 +663,19 @@ async function cargarGAS(){
       if(data&&data.marcas&&Object.keys(data.marcas).length>0){
         const totalGAS=Object.values(data.marcas).reduce((s,lab)=>s+Object.values(lab).reduce((ss,k)=>ss+Object.keys(k).length,0),0);
         if(totalGAS>0){
-          marcas=Object.assign({trampas:{},censo:{},controlpc:{}},data.marcas);
+          // Mezclar en vez de reemplazar: si hay marcas locales recién hechas que
+          // aún no llegaron al servidor (cada celda envía su propia petición async,
+          // sin esperar confirmación), un reemplazo total las borraba al refrescar.
+          const labores=new Set([...Object.keys(marcas||{}),...Object.keys(data.marcas||{})]);
+          const merged={trampas:{},censo:{},controlpc:{}};
+          labores.forEach(lab=>{
+            merged[lab]=merged[lab]||{};
+            const localLab=(marcas&&marcas[lab])||{};
+            const srvLab=data.marcas[lab]||{};
+            const keys=new Set([...Object.keys(localLab),...Object.keys(srvLab)]);
+            keys.forEach(k=>{ merged[lab][k]=Object.assign({},srvLab[k]||{},localLab[k]||{}); });
+          });
+          marcas=merged;
           guardarLocal();
         }
       }
