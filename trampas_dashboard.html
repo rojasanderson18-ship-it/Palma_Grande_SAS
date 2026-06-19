@@ -815,27 +815,55 @@ async function exportarPDF() {
   for (const bloque of bloques) {
     const canvas = await html2canvas(bloque, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
     const h = canvas.height * imgW / canvas.width;
+    // Margen que se tolera reducir un bloque (hasta 15%) para que quepa
+    // completo en el espacio restante de la página, en vez de saltar de
+    // página y dejar un hueco en blanco al final de la anterior.
+    const TOLERANCIA_ENCOGER = 0.15;
+    const espacioRestante = pageH - bottomMargin - y;
 
-    if (h > availableH) {
-      // Bloque más alto que una página completa: se reparte en varias páginas.
-      if (!esPrimerBloqueDePagina) { doc.addPage(); dibujarEncabezadoPDF(doc, nombreVista, pageW); }
-      agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, topMargin, sideMargin, bottomMargin);
-      // La página actual queda con la última rebanada del bloque: se marca como "llena"
-      // para que el siguiente bloque empiece en una página nueva, sin dejar páginas en blanco.
-      y = pageH;
+    if (h <= espacioRestante) {
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', sideMargin, y, imgW, h);
+      y += h + gap;
       esPrimerBloqueDePagina = false;
       continue;
     }
 
-    if (!esPrimerBloqueDePagina && y + h > pageH - bottomMargin) {
+    if (!esPrimerBloqueDePagina && h <= espacioRestante * (1 + TOLERANCIA_ENCOGER)) {
+      // Cabe si se encoge un poco: se dibuja más pequeño y centrado, sin
+      // saltar de página ni dejar espacio vacío.
+      const wEncogido = imgW * (espacioRestante / h);
+      const xCentrado = sideMargin + (imgW - wEncogido) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCentrado, y, wEncogido, espacioRestante);
+      y += espacioRestante + gap;
+      esPrimerBloqueDePagina = false;
+      continue;
+    }
+
+    if (!esPrimerBloqueDePagina) {
       doc.addPage();
       dibujarEncabezadoPDF(doc, nombreVista, pageW);
       y = topMargin;
       esPrimerBloqueDePagina = true;
     }
 
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', sideMargin, y, imgW, h);
-    y += h + gap;
+    if (h <= availableH) {
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', sideMargin, y, imgW, h);
+      y += h + gap;
+    } else if (h <= availableH * (1 + TOLERANCIA_ENCOGER)) {
+      // Bloque ligeramente más alto que una página: se encoge para que entre
+      // completo en una sola página en vez de partirlo en dos con una
+      // segunda página casi vacía.
+      const wEncogido = imgW * (availableH / h);
+      const xCentrado = sideMargin + (imgW - wEncogido) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCentrado, y, wEncogido, availableH);
+      y = pageH;
+    } else {
+      // Bloque mucho más alto que una página completa: se reparte en varias páginas.
+      agregarImagenPaginadaForzada(doc, canvas, pageW, pageH, nombreVista, topMargin, sideMargin, bottomMargin);
+      // La página actual queda con la última rebanada del bloque: se marca como "llena"
+      // para que el siguiente bloque empiece en una página nueva, sin dejar páginas en blanco.
+      y = pageH;
+    }
     esPrimerBloqueDePagina = false;
   }
 
