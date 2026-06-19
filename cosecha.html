@@ -1313,7 +1313,7 @@ async function capturarMapaPDF(filtroF, anchoPx, altoPx){
       L.marker(c, {icon: L.divIcon({className:'lote-label-pdf', html:`<div style="font-size:11px;font-weight:700;color:#1a1f2e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;">${feature.properties.lote}</div>`, iconSize:[40,16], iconAnchor:[20,8]})}).addTo(tmpMap);
     }
   }).addTo(tmpMap);
-  tmpMap.fitBounds(bounds, {padding:[10,10], animate:false});
+  tmpMap.fitBounds(bounds, {padding:[3,3], animate:false});
   tmpMap.invalidateSize();
   await new Promise(r=>setTimeout(r,400));
   const canvas = await window.html2canvas(div, {scale:1.6, useCORS:true, backgroundColor:'#eef2f6', logging:false});
@@ -1801,7 +1801,7 @@ function exportarPDF(){
       doc.text('MAPA DE LOTES · ESTADO DE CICLO', 148.5, 10, {align:'center'});
 
       const fincasMapa = ['FINCA 1','FINCA 2','FINCA 3'];
-      const margin = 6, gap = 5, mapY = 27, mapBoxH = 170;
+      const margin = 4, gap = 4, mapY = 24, mapBoxH = 178;
       const avail = 297 - margin*2;
 
       // Cada finca tiene una forma (ancho/alto) distinta — calculamos su ancho
@@ -1822,8 +1822,8 @@ function exportarPDF(){
 
       for(let i=0;i<fincasMapa.length;i++){
         const aspect = aspects[i];
-        let capW=1100, capH=1100;
-        if(aspect>=1){ capH = Math.round(1100/aspect); } else { capW = Math.round(1100*aspect); }
+        let capW=1300, capH=1300;
+        if(aspect>=1){ capH = Math.round(1300/aspect); } else { capW = Math.round(1300*aspect); }
         const img = await capturarMapaPDF(fincasMapa[i], capW, capH);
         doc.setFontSize(11);
         doc.setTextColor(60,60,60);
@@ -1833,7 +1833,7 @@ function exportarPDF(){
       }
       doc.setFontSize(8);
       doc.setTextColor(120,120,120);
-      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, mapY+boxH+8, {align:'center'});
+      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, mapY+boxH+6, {align:'center'});
     }
 
     for(let fi=0;fi<fincas.length;fi++){
