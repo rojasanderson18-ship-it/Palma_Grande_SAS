@@ -1260,6 +1260,29 @@ function renderMapa(){
   setTimeout(()=>mapaCosecha.invalidateSize(), 100);
 }
 
+// Centroide geométrico real del polígono (no el centro de su bbox, que en formas
+// irregulares/en L queda descentrado fuera de la figura).
+function polygonCentroid(ring){
+  let twiceArea=0, cx=0, cy=0;
+  for(let i=0;i<ring.length-1;i++){
+    const [x0,y0]=ring[i], [x1,y1]=ring[i+1];
+    const f = x0*y1 - x1*y0;
+    twiceArea += f;
+    cx += (x0+x1)*f;
+    cy += (y0+y1)*f;
+  }
+  if(Math.abs(twiceArea)<1e-12) return null;
+  return [cx/(3*twiceArea), cy/(3*twiceArea)];
+}
+function centroidFeature(feature){
+  const geom = feature.geometry;
+  let ring = null;
+  if(geom.type==='Polygon') ring = geom.coordinates[0];
+  else if(geom.type==='MultiPolygon') ring = geom.coordinates[0][0];
+  const c = ring ? polygonCentroid(ring) : null;
+  return c ? L.latLng(c[1], c[0]) : null;
+}
+
 // Relación ancho/alto real del bbox (en metros proyectados, no grados) — para que el lienzo
 // de captura coincida con la forma real de la finca y no sobre estimar zona vacía.
 function bboxAspect(bounds){
@@ -1286,7 +1309,7 @@ async function capturarMapaPDF(filtroF, anchoPx, altoPx){
   const layer = L.geoJSON(geoData, {
     style: estiloLote,
     onEachFeature: (feature, lyr) => {
-      const c = lyr.getBounds().getCenter();
+      const c = centroidFeature(feature) || lyr.getBounds().getCenter();
       L.marker(c, {icon: L.divIcon({className:'lote-label-pdf', html:`<div style="font-size:11px;font-weight:700;color:#1a1f2e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;">${feature.properties.lote}</div>`, iconSize:[40,16], iconAnchor:[20,8]})}).addTo(tmpMap);
     }
   }).addTo(tmpMap);
@@ -1778,7 +1801,7 @@ function exportarPDF(){
       doc.text('MAPA DE LOTES · ESTADO DE CICLO', 148.5, 10, {align:'center'});
 
       const fincasMapa = ['FINCA 1','FINCA 2','FINCA 3'];
-      const colW = 92, gap = 6, colX0 = (297-(colW*3+gap*2))/2, mapY = 24, mapBoxH = 172;
+      const colW = 96, gap = 4, colX0 = (297-(colW*3+gap*2))/2, mapY = 22, mapBoxH = 180;
       for(let i=0;i<fincasMapa.length;i++){
         const feats = LOTES_GEOJSON.features.filter(f=>f.properties.finca===fincasMapa[i]);
         const bounds = L.geoJSON({type:'FeatureCollection',features:feats}).getBounds();
