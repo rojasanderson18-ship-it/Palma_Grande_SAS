@@ -1801,26 +1801,39 @@ function exportarPDF(){
       doc.text('MAPA DE LOTES · ESTADO DE CICLO', 148.5, 10, {align:'center'});
 
       const fincasMapa = ['FINCA 1','FINCA 2','FINCA 3'];
-      const colW = 96, gap = 3, colX0 = (297-(colW*3+gap*2))/2, mapY = 19, mapBoxH = 186;
-      for(let i=0;i<fincasMapa.length;i++){
-        const feats = LOTES_GEOJSON.features.filter(f=>f.properties.finca===fincasMapa[i]);
+      const margin = 6, gap = 5, mapY = 27, mapBoxH = 170;
+      const avail = 297 - margin*2;
+
+      // Cada finca tiene una forma (ancho/alto) distinta — calculamos su ancho
+      // natural si ocupara toda la altura disponible, en vez de forzar columnas
+      // iguales (eso es lo que dejaba a la finca más "cuadrada" chica).
+      const aspects = fincasMapa.map(f=>{
+        const feats = LOTES_GEOJSON.features.filter(ft=>ft.properties.finca===f);
         const bounds = L.geoJSON({type:'FeatureCollection',features:feats}).getBounds();
-        const aspect = bboxAspect(bounds); // ancho/alto real de la finca
+        return bboxAspect(bounds);
+      });
+      let widths = aspects.map(a=>mapBoxH*a);
+      let totalW = widths.reduce((s,w)=>s+w,0) + gap*(widths.length-1);
+      const scale = totalW>avail ? avail/totalW : 1;
+      widths = widths.map(w=>w*scale);
+      const boxH = mapBoxH*scale;
+      totalW = widths.reduce((s,w)=>s+w,0) + gap*(widths.length-1);
+      let x = margin + (avail-totalW)/2;
+
+      for(let i=0;i<fincasMapa.length;i++){
+        const aspect = aspects[i];
         let capW=1100, capH=1100;
         if(aspect>=1){ capH = Math.round(1100/aspect); } else { capW = Math.round(1100*aspect); }
         const img = await capturarMapaPDF(fincasMapa[i], capW, capH);
-        const x = colX0 + i*(colW+gap);
-        doc.setFontSize(10);
+        doc.setFontSize(11);
         doc.setTextColor(60,60,60);
-        doc.text(fincasMapa[i], x+colW/2, mapY-3, {align:'center'});
-        // Encajar la imagen respetando su proporción real, maximizando el uso del espacio
-        let w=colW, h=colW/aspect;
-        if(h>mapBoxH){ h=mapBoxH; w=mapBoxH*aspect; }
-        doc.addImage(img,'JPEG', x+(colW-w)/2, mapY+(mapBoxH-h)/2, w, h);
+        doc.text(fincasMapa[i], x+widths[i]/2, mapY-5, {align:'center'});
+        doc.addImage(img,'JPEG', x, mapY, widths[i], boxH);
+        x += widths[i]+gap;
       }
       doc.setFontSize(8);
       doc.setTextColor(120,120,120);
-      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, 207, {align:'center'});
+      doc.text('Palma Grande S.A.S. · Pag. 2 de 5', 148.5, mapY+boxH+8, {align:'center'});
     }
 
     for(let fi=0;fi<fincas.length;fi++){
