@@ -831,6 +831,11 @@ function gasJSONP(url){
 
 async function publicarAlSheet(){
   if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
+  // Antes de reescribir el sheet completo, traemos lo que haya en el servidor
+  // y lo fusionamos con lo local — así "publicar" nunca borra datos que el
+  // servidor ya tenía (de otro dispositivo, por ejemplo) y que esta sesión
+  // no llegó a cargar en memoria.
+  await cargarGAS();
   const todasMarcas=[];
   Object.entries(marcas).forEach(([labor,lotes])=>{
     Object.entries(lotes).forEach(([key,fechas])=>{
