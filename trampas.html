@@ -582,7 +582,7 @@ function entrar(){
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('bottom-nav').classList.add('show');
   setScreen('registro');
-  cargarGAS();
+  if(navigator.onLine) enviarPendientes().then(cargarGAS); else cargarGAS();
 }
 
 function salir(){
@@ -1018,17 +1018,29 @@ function gasJSONP(url){
   return new Promise(resolve=>{
     const cb='_cb'+Date.now()+'_'+Math.random().toString(36).slice(2);
     const s=document.createElement('script');
-    window[cb]=d=>{delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(d);};
-    s.onerror=()=>{delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(null);};
+    let resuelto=false;
+    const timer=setTimeout(()=>{
+      if(resuelto) return; resuelto=true;
+      delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(null);
+    },8000);
+    window[cb]=d=>{
+      if(resuelto) return; resuelto=true; clearTimeout(timer);
+      delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(d);
+    };
+    s.onerror=()=>{
+      if(resuelto) return; resuelto=true; clearTimeout(timer);
+      delete window[cb];document.body.contains(s)&&document.body.removeChild(s);resolve(null);
+    };
     s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
     document.body.appendChild(s);
   });
 }
 
-function enviarGAS(payload){
+async function enviarGAS(payload){
   if(!navigator.onLine){pendientes.push({...payload,ts:Date.now()});guardarLocal();return;}
   const url=GAS_URL+'?accion='+encodeURIComponent(payload.accion)+'&data='+encodeURIComponent(JSON.stringify(payload));
-  gasJSONP(url).catch(()=>{pendientes.push({...payload,ts:Date.now()});guardarLocal();});
+  const resp=await gasJSONP(url);
+  if(resp==null){pendientes.push({...payload,ts:Date.now()});guardarLocal();}
 }
 
 async function cargarGAS(){
