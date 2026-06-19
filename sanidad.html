@@ -733,7 +733,10 @@ function toggleEdicion(){
     document.getElementById('btn-editar').style.color='';
     document.getElementById('btn-editar').style.borderColor='';
     render();
-    publicarAlSheet();
+    // No se republica el sheet completo al cerrar edición: cada celda ya se
+    // guarda individualmente al marcarla (marcarSanidad/quitarSanidad). Reescribir
+    // todo el sheet aquí es lo que borraba datos de "trampas"/"censo" cuando varias
+    // personas editaban a la vez (cada cierre de edición pisaba lo del otro).
     return;
   }
   const pin=prompt('Ingresa el PIN para editar:');
@@ -829,32 +832,6 @@ function gasJSONP(url){
   });
 }
 
-async function publicarAlSheet(){
-  if(GAS_URL==='TU_APPS_SCRIPT_URL_AQUI') return;
-  // Antes de reescribir el sheet completo, traemos lo que haya en el servidor
-  // y lo fusionamos con lo local — así "publicar" nunca borra datos que el
-  // servidor ya tenía (de otro dispositivo, por ejemplo) y que esta sesión
-  // no llegó a cargar en memoria.
-  await cargarGAS();
-  const todasMarcas=[];
-  Object.entries(marcas).forEach(([labor,lotes])=>{
-    Object.entries(lotes).forEach(([key,fechas])=>{
-      Object.entries(fechas).forEach(([fecha,tipo])=>{
-        todasMarcas.push({labor,key,fecha,tipo});
-      });
-    });
-  });
-  if(todasMarcas.length===0) return;
-  showToast('Publicando '+todasMarcas.length+' registros...');
-  await gasJSONP(GAS_URL+'?accion=limpiarSanidad');
-  let enviados=0;
-  for(let i=0;i<todasMarcas.length;i+=10){
-    const lote=todasMarcas.slice(i,i+10);
-    await gasJSONP(GAS_URL+'?accion=agregarSanidad&marcas='+encodeURIComponent(JSON.stringify(lote)));
-    enviados+=lote.length;
-  }
-  showToast('✓ '+enviados+' registros publicados');
-}
 
 function init(){
   const hoy=hoyLocal();
