@@ -243,6 +243,12 @@ function doGet(e) {
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
       return jsonResponse(result);
     }
+    if(accion === 'eliminarTrampaRegistro'){
+      var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+      var result = eliminarTrampaRegistro(d);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
     if(accion === 'obtenerTrampasRegistros'){
       var result = obtenerTrampasRegistros();
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -1095,6 +1101,29 @@ function registrarTrampa(data) {
 
   sheet.appendRow(fila);
   return {ok:true, trampaId:data.trampaId, total:total, actualizado:false};
+}
+
+function eliminarTrampaRegistro(data) {
+  var sheet = getOrCreateSheet(SHEETS.trampas, [
+    'Timestamp','Fecha','TrampaId','Finca','Lote',
+    'Hembras','Machos','TotalCapturas','EstadoCebo','EstadoTrampa',
+    'Observaciones','Operario','Hora','CambioCebo','CambioFeromona'
+  ]);
+  var fecha = data.fecha||'';
+  var trampaId = String(data.trampaId||'').trim();
+  var lastRow = sheet.getLastRow();
+  if(lastRow > 1){
+    var rango = sheet.getRange(2, 2, lastRow - 1, 2).getValues();
+    for(var i = 0; i < rango.length; i++){
+      var fFila = formatFecha(rango[i][0]);
+      var idFila = String(rango[i][1] || '').trim();
+      if(fFila === fecha && idFila === trampaId){
+        sheet.deleteRow(i + 2);
+        return {ok:true, eliminado:true};
+      }
+    }
+  }
+  return {ok:true, eliminado:false};
 }
 
 function obtenerTrampasRegistros() {

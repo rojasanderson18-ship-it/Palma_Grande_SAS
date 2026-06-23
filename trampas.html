@@ -151,7 +151,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .opt-btn.sel-reubicar{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
 .obs-input{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:"DM Sans",sans-serif;background:#fff;color:var(--text);outline:none;margin-bottom:12px;}
 .obs-input:focus{border-color:var(--primary);}
-.form-actions{display:flex;gap:8px;}
+.form-actions{display:flex;gap:8px;scroll-margin-bottom:90px;}
 
 /* ─── SEARCH & FILTERS ─── */
 .search-bar{padding:12px 16px 0;}
@@ -390,6 +390,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGq
 const LS_T = 'palma_trampas_v1';
 const LS_R = 'palma_trap_reg_v1';
 const LS_P = 'palma_trap_pend_v1';
+const LS_SESION = 'palma_trap_sesion_v1';
 
 const OPERARIOS = [
   'Anderson Rojas',
@@ -545,6 +546,27 @@ function init(){
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw-trampas.js').catch(()=>{});
   }
+
+  restaurarSesion();
+}
+
+function guardarSesion(){
+  try{ localStorage.setItem(LS_SESION, JSON.stringify({operario, fincaFiltro})); }catch(e){}
+}
+
+function restaurarSesion(){
+  let sesion=null;
+  try{ const s=localStorage.getItem(LS_SESION); if(s) sesion=JSON.parse(s); }catch(e){}
+  if(!sesion || !sesion.operario) return;
+  operario=sesion.operario;
+  fincaFiltro=sesion.fincaFiltro||'todas';
+  document.getElementById('sel-operario').value=operario;
+  document.getElementById('sel-finca').value=fincaFiltro;
+  document.getElementById('hdr-operario').textContent=operario;
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('bottom-nav').classList.add('show');
+  setScreen('registro');
+  if(navigator.onLine) enviarPendientes().then(cargarGAS); else cargarGAS();
 }
 
 function cargarLocal(){
@@ -578,6 +600,7 @@ function entrar(){
   const fi=document.getElementById('sel-finca').value;
   if(!op){ showToast('Selecciona tu nombre'); return; }
   operario=op; fincaFiltro=fi;
+  guardarSesion();
   document.getElementById('hdr-operario').textContent=op;
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('bottom-nav').classList.add('show');
@@ -588,6 +611,7 @@ function entrar(){
 function salir(){
   operario='';
   adminDesbloqueado=false;
+  try{ localStorage.removeItem(LS_SESION); }catch(e){}
   document.getElementById('hdr-operario').textContent='Palma Grande S.A.S.';
   document.getElementById('bottom-nav').classList.remove('show');
   ['registro','dashboard','admin'].forEach(s=>document.getElementById('screen-'+s).classList.remove('active'));
@@ -783,7 +807,19 @@ function toggleForm(id){
   const form=document.getElementById('tf-'+id);
   const open=form.style.display!=='none';
   document.querySelectorAll('[id^="tf-"]').forEach(f=>f.style.display='none');
-  if(!open){ form.style.display='block'; form.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  if(!open){
+    form.style.display='block';
+    form.scrollIntoView({behavior:'smooth',block:'nearest'});
+    setTimeout(()=>{
+      const acciones=form.querySelector('.form-actions');
+      const nav=document.getElementById('bottom-nav');
+      if(!acciones||!nav) return;
+      // El nav inferior es position:fixed y no lo considera scrollIntoView,
+      // así que medimos el solape real con el botón Guardar y corregimos.
+      const overlap=acciones.getBoundingClientRect().bottom - nav.getBoundingClientRect().top;
+      if(overlap>0) window.scrollBy({top:overlap+14,behavior:'smooth'});
+    },300);
+  }
 }
 
 function cambiar(id,tipo,delta){
@@ -869,6 +905,7 @@ function borrar(id){
   guardarLocal();
   renderTrampas();
   showToast('Registro borrado');
+  enviarGAS({accion:'eliminarTrampaRegistro',trampaId:id,fecha});
 }
 
 // ─── DASHBOARD ───────────────────────────
