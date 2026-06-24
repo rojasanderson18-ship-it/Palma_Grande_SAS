@@ -369,12 +369,18 @@ function parseFechaLocal(f) {
   return new Date(+m[1], +m[2]-1, +m[3]);
 }
 
+// Ciclo actual = última revisión real registrada por trampa (cada trampa se revisa una vez
+// cada ~15 días, pero no todas el mismo día); no es una ventana de calendario fija, porque eso
+// puede terminar abarcando dos rondas completas de revisión si estas se extienden más de 15 días.
 function cicloActual() {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const desde = new Date(hoy); desde.setDate(desde.getDate() - 15);
+  const ultimaFecha = {};
+  historico.forEach(r => {
+    const f = parseFechaLocal(r.fecha);
+    if (r.trampaId && f && (!ultimaFecha[r.trampaId] || f > ultimaFecha[r.trampaId])) ultimaFecha[r.trampaId] = f;
+  });
   return historico.filter(r => {
     const f = parseFechaLocal(r.fecha);
-    return f && f >= desde && f <= hoy;
+    return r.trampaId && f && ultimaFecha[r.trampaId] && f.getTime() === ultimaFecha[r.trampaId].getTime();
   });
 }
 
