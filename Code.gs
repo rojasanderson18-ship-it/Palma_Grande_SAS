@@ -1070,60 +1070,72 @@ function cargarDatosHistoricos() {
 // =============================================
 
 function registrarTrampa(data) {
-  var sheet = getOrCreateSheet(SHEETS.trampas, [
-    'Timestamp','Fecha','TrampaId','Finca','Lote',
-    'Hembras','Machos','TotalCapturas','EstadoCebo','EstadoTrampa',
-    'Observaciones','Operario','Hora','CambioCebo','CambioFeromona'
-  ]);
-  var total = (parseInt(data.hembras)||0) + (parseInt(data.machos)||0);
-  var fecha = data.fecha||formatFecha(new Date());
-  var fila = [
-    new Date(), fecha, data.trampaId||'',
-    data.finca||'', data.lote||'',
-    parseInt(data.hembras)||0, parseInt(data.machos)||0, total,
-    data.estadoCebo||'', data.estadoTrampa||'',
-    data.obs||'', data.operario||'', data.hora||'',
-    data.cambioCebo ? 'SI' : 'NO', data.cambioFeromona ? 'SI' : 'NO',
-  ];
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.trampas, [
+      'Timestamp','Fecha','TrampaId','Finca','Lote',
+      'Hembras','Machos','TotalCapturas','EstadoCebo','EstadoTrampa',
+      'Observaciones','Operario','Hora','CambioCebo','CambioFeromona'
+    ]);
+    var total = (parseInt(data.hembras)||0) + (parseInt(data.machos)||0);
+    var fecha = data.fecha||formatFecha(new Date());
+    var fila = [
+      new Date(), fecha, data.trampaId||'',
+      data.finca||'', data.lote||'',
+      parseInt(data.hembras)||0, parseInt(data.machos)||0, total,
+      data.estadoCebo||'', data.estadoTrampa||'',
+      data.obs||'', data.operario||'', data.hora||'',
+      data.cambioCebo ? 'SI' : 'NO', data.cambioFeromona ? 'SI' : 'NO',
+    ];
 
-  var lastRow = sheet.getLastRow();
-  if(lastRow > 1){
-    var rango = sheet.getRange(2, 2, lastRow - 1, 2).getValues();
-    for(var i = 0; i < rango.length; i++){
-      var fFila = formatFecha(rango[i][0]);
-      var idFila = String(rango[i][1] || '').trim();
-      if(fFila === fecha && idFila === String(data.trampaId||'').trim()){
-        sheet.getRange(i + 2, 1, 1, fila.length).setValues([fila]);
-        return {ok:true, trampaId:data.trampaId, total:total, actualizado:true};
+    var lastRow = sheet.getLastRow();
+    if(lastRow > 1){
+      var rango = sheet.getRange(2, 2, lastRow - 1, 2).getValues();
+      for(var i = 0; i < rango.length; i++){
+        var fFila = formatFecha(rango[i][0]);
+        var idFila = String(rango[i][1] || '').trim();
+        if(fFila === fecha && idFila === String(data.trampaId||'').trim()){
+          sheet.getRange(i + 2, 1, 1, fila.length).setValues([fila]);
+          return {ok:true, trampaId:data.trampaId, total:total, actualizado:true};
+        }
       }
     }
-  }
 
-  sheet.appendRow(fila);
-  return {ok:true, trampaId:data.trampaId, total:total, actualizado:false};
+    sheet.appendRow(fila);
+    return {ok:true, trampaId:data.trampaId, total:total, actualizado:false};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function eliminarTrampaRegistro(data) {
-  var sheet = getOrCreateSheet(SHEETS.trampas, [
-    'Timestamp','Fecha','TrampaId','Finca','Lote',
-    'Hembras','Machos','TotalCapturas','EstadoCebo','EstadoTrampa',
-    'Observaciones','Operario','Hora','CambioCebo','CambioFeromona'
-  ]);
-  var fecha = data.fecha||'';
-  var trampaId = String(data.trampaId||'').trim();
-  var lastRow = sheet.getLastRow();
-  if(lastRow > 1){
-    var rango = sheet.getRange(2, 2, lastRow - 1, 2).getValues();
-    for(var i = 0; i < rango.length; i++){
-      var fFila = formatFecha(rango[i][0]);
-      var idFila = String(rango[i][1] || '').trim();
-      if(fFila === fecha && idFila === trampaId){
-        sheet.deleteRow(i + 2);
-        return {ok:true, eliminado:true};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.trampas, [
+      'Timestamp','Fecha','TrampaId','Finca','Lote',
+      'Hembras','Machos','TotalCapturas','EstadoCebo','EstadoTrampa',
+      'Observaciones','Operario','Hora','CambioCebo','CambioFeromona'
+    ]);
+    var fecha = data.fecha||'';
+    var trampaId = String(data.trampaId||'').trim();
+    var lastRow = sheet.getLastRow();
+    if(lastRow > 1){
+      var rango = sheet.getRange(2, 2, lastRow - 1, 2).getValues();
+      for(var i = 0; i < rango.length; i++){
+        var fFila = formatFecha(rango[i][0]);
+        var idFila = String(rango[i][1] || '').trim();
+        if(fFila === fecha && idFila === trampaId){
+          sheet.deleteRow(i + 2);
+          return {ok:true, eliminado:true};
+        }
       }
     }
+    return {ok:true, eliminado:false};
+  } finally {
+    lock.releaseLock();
   }
-  return {ok:true, eliminado:false};
 }
 
 function obtenerTrampasRegistros() {
