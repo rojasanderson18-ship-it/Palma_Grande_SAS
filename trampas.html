@@ -1127,7 +1127,7 @@ async function cargarGAS(){
 async function enviarPendientes(){
   if(!pendientes.length) return;
   const cola=[...pendientes];pendientes=[];guardarLocal();
-  for(const p of cola) enviarGAS(p);
+  for(const p of cola) await enviarGAS(p);
   if(pendientes.length===0) showToast('✅ '+cola.length+' registros sincronizados');
 }
 
