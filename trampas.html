@@ -47,6 +47,10 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .hdr-date{font-family:"DM Mono",monospace;font-size:11px;color:#94a3b8;text-align:right;letter-spacing:.3px;}
 .offline-pill{background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;display:none;}
 .offline-pill.show{display:flex;align-items:center;gap:3px;}
+.sync-pill{margin-top:4px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;display:none;align-items:center;gap:3px;}
+.sync-pill.show{display:flex;}
+.sync-pill.pendiente{background:#fef3c7;color:#92400e;}
+.sync-pill.ok{background:#dcfce7;color:#15803d;}
 
 /* ─── SCREENS ─── */
 .screen{display:none;}
@@ -237,6 +241,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
     <div>
       <div class="hdr-date" id="hdr-fecha"></div>
       <div class="offline-pill" id="offline-pill">📵 Sin señal</div>
+      <div class="sync-pill" id="sync-pill"></div>
     </div>
   </div>
 </div>
@@ -535,6 +540,7 @@ function init(){
 
   cargarLocal();
   cargarCambios();
+  actualizarSyncPill();
 
   // Offline
   window.addEventListener('online',()=>{ document.getElementById('offline-pill').classList.remove('show'); enviarPendientes(); });
@@ -592,6 +598,26 @@ function guardarLocal(){
     localStorage.setItem(LS_R,JSON.stringify(registros));
     localStorage.setItem(LS_P,JSON.stringify(pendientes));
   }catch(e){}
+  actualizarSyncPill();
+}
+
+let _huboPendientes=false;
+function actualizarSyncPill(){
+  const pill=document.getElementById('sync-pill');
+  if(!pill) return;
+  if(pendientes.length>0){
+    _huboPendientes=true;
+    pill.textContent='🔄 '+pendientes.length+' por subir';
+    pill.className='sync-pill show pendiente';
+  }else if(_huboPendientes){
+    _huboPendientes=false;
+    pill.textContent='✅ Todo sincronizado';
+    pill.className='sync-pill show ok';
+    clearTimeout(window._syncPillTimeout);
+    window._syncPillTimeout=setTimeout(()=>{ pill.classList.remove('show'); },3000);
+  }else{
+    pill.classList.remove('show');
+  }
 }
 
 function hoyISO(){
@@ -805,7 +831,7 @@ function buildForm(t,r){
   </div>
 
   <div class="form-actions">
-    <button class="btn btn-success" onclick="guardar('${t.id}')">💾 Guardar</button>
+    <button class="btn btn-success" onclick="guardar('${t.id}',this)">💾 Guardar</button>
     ${r?`<button class="btn btn-danger btn-sm" onclick="borrar('${t.id}')">Borrar</button>`:''}
   </div>`;
 }
@@ -898,7 +924,8 @@ function esHoraFeromona(trampaId){
   return d <= hoy;
 }
 
-function guardar(id){
+function guardar(id,btn){
+  if(btn) btn.disabled=true;
   const r=getRegHoy(id);
   const tmp=conteoTemp[id]||{};
   const h=tmp.h!==undefined?tmp.h:(r?.hembras||0);
@@ -906,8 +933,8 @@ function guardar(id){
   const cb=tmp.cebo||r?.estadoCebo||'';
   const ct=tmp.trampa||r?.estadoTrampa||'';
   const obs=document.getElementById('obs-'+id)?.value||'';
-  if(!cb){showToast('⚠️ Selecciona estado del cebo');return;}
-  if(!ct){showToast('⚠️ Selecciona estado de la trampa');return;}
+  if(!cb){showToast('⚠️ Selecciona estado del cebo');if(btn) btn.disabled=false;return;}
+  if(!ct){showToast('⚠️ Selecciona estado de la trampa');if(btn) btn.disabled=false;return;}
   const cambioCebo = document.getElementById('chk-cebo-'+id)?.checked || false;
   const cambioFeromona = document.getElementById('chk-feromona-'+id)?.checked || false;
   const fecha=hoyISO();
