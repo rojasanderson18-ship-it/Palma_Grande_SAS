@@ -360,27 +360,28 @@ function poblarSelectFincas() {
 }
 
 // ── HELPERS ───────────────────────────────
-function hoyISO() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-function mesActualISO() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+// Convierte r.fecha a un Date real (sin depender de que venga con cero a la izquierda
+// o con hora incluida) para que las comparaciones de rango no fallen por formato de texto.
+function parseFechaLocal(f) {
+  if (!f) return null;
+  const m = String(f).match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3]);
 }
 
 function cicloActual() {
-  const hoy = new Date();
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
   const desde = new Date(hoy); desde.setDate(desde.getDate() - 15);
-  const desdeISO = desde.getFullYear() + '-' + String(desde.getMonth()+1).padStart(2,'0') + '-' + String(desde.getDate()).padStart(2,'0');
-  return historico.filter(r => r.fecha >= desdeISO && r.fecha <= hoyISO());
+  return historico.filter(r => {
+    const f = parseFechaLocal(r.fecha);
+    return f && f >= desde && f <= hoy;
+  });
 }
 
 // Aplica el filtro de ciclo (actual/mes/histórico) Y el de finca seleccionados en la barra superior.
 function datosFiltrados() {
   const ciclo = document.getElementById('sel-ciclo').value;
-  let base = ciclo === 'mes' ? historico.filter(r => r.fecha && r.fecha.startsWith(mesActualISO()))
+  let base = ciclo === 'mes' ? historico.filter(r => { const f = parseFechaLocal(r.fecha); const hoy = new Date(); return f && f.getFullYear()===hoy.getFullYear() && f.getMonth()===hoy.getMonth(); })
            : ciclo === 'historico' ? historico
            : cicloActual();
   const finca = document.getElementById('sel-finca').value;
@@ -485,11 +486,17 @@ function renderResumen() {
   datos.forEach(r => { if (r.trampaId) capPorTrampa[r.trampaId] = (capPorTrampa[r.trampaId]||0) + (r.hembras||0)+(r.machos||0); });
   const alertasCap = Object.entries(capPorTrampa).filter(([id,tot]) => tot >= UMBRAL_ALERTA).sort((a,b)=>b[1]-a[1]).slice(0,5)
     .map(([id,tot]) => ({txt:`Trampa ${id} con ${tot} capturas`, nivel:tot>=UMBRAL_CRITICO?'b-crit':'b-warn', etq:tot>=UMBRAL_CRITICO?'Crítico':'Alto'}));
+  // Última revisión por trampa: se calcula sobre historicoFinca (respeta el filtro de finca,
+  // igual que "Trampas instaladas") pero deliberadamente NO se acota por ciclo — su objetivo
+  // es detectar trampas abandonadas aunque su última revisión quede fuera del periodo elegido.
   const ultimaFechaPorTrampa = {};
-  historico.forEach(r => { if (r.trampaId && (!ultimaFechaPorTrampa[r.trampaId] || r.fecha > ultimaFechaPorTrampa[r.trampaId])) ultimaFechaPorTrampa[r.trampaId] = r.fecha; });
-  const hoy = new Date();
+  historicoFinca.forEach(r => {
+    const f = parseFechaLocal(r.fecha);
+    if (r.trampaId && f && (!ultimaFechaPorTrampa[r.trampaId] || f > ultimaFechaPorTrampa[r.trampaId])) ultimaFechaPorTrampa[r.trampaId] = f;
+  });
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
   const alertasRevision = Object.entries(ultimaFechaPorTrampa).map(([id,f]) => {
-    const dias = Math.round((hoy - new Date(f)) / 86400000);
+    const dias = Math.round((hoy - f) / 86400000);
     return {id, dias};
   }).filter(a => a.dias >= 15).sort((a,b)=>b.dias-a.dias).slice(0,5)
     .map(a => ({txt:`Trampa ${a.id} sin revisión (${a.dias} días)`, nivel:a.dias>=20?'b-crit':'b-warn', etq:a.dias>=20?'Crítico':'Atención'}));
