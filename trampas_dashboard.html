@@ -13,12 +13,12 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{overflow-x:hidden;max-width:100%;}
 :root{
-  --bg:#0c0e14;--surface:#161922;--surface2:#1c2030;--border:#2a2f40;
-  --text:#e8eaf0;--text2:#9aa1b5;--muted:#5f6678;
-  --primary:#3b82f6;--green:#22c55e;--green-bg:rgba(34,197,94,.12);
-  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
-  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.12);
-  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.12);--gold:#d4af37;
+  --bg:#f3f5f9;--surface:#ffffff;--surface2:#f1f3f8;--border:#e3e6ed;
+  --text:#1c2030;--text2:#5f6678;--muted:#9aa1b5;
+  --primary:#2563eb;--green:#16a34a;--green-bg:rgba(22,163,74,.10);
+  --red:#dc2626;--red-bg:rgba(220,38,38,.10);
+  --amber:#d97706;--amber-bg:rgba(217,119,6,.10);
+  --blue:#2563eb;--blue-bg:rgba(37,99,235,.10);--gold:#b8860b;
 }
 body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 
@@ -39,7 +39,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 .fsel{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:8px 12px;border-radius:8px;font-family:"DM Sans",sans-serif;}
 .actions{display:flex;gap:8px;align-items:center;}
-.btn-pdf{background:linear-gradient(135deg,var(--green),#16a34a);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;display:flex;align-items:center;gap:6px;}
+.btn-pdf{background:linear-gradient(135deg,var(--green),#15803d);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;display:flex;align-items:center;gap:6px;}
 .btn-refresh{background:var(--surface2);color:var(--text2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;}
 .ultimo-update{font-size:11px;color:var(--muted);}
 
@@ -47,11 +47,18 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 .view{display:none;}.view.active{display:block;}
 
 /* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
-.kpi{background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);}
-.kpi-val{font-size:30px;font-weight:900;font-family:"DM Mono",monospace;line-height:1;}
-.kpi-lbl{font-size:12px;color:var(--text2);margin-top:6px;font-weight:600;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
+.kpi{background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;}
+.kpi-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.kpi-val{font-size:26px;font-weight:900;font-family:"DM Mono",monospace;line-height:1;}
+.kpi-lbl{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* DECISIÓN RECOMENDADA */
+.decision-box{display:flex;gap:12px;align-items:flex-start;background:var(--green-bg);border:1px solid var(--green);border-radius:14px;padding:16px 18px;margin-top:14px;}
+.decision-icon{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.decision-title{font-weight:800;color:var(--green);font-size:13px;margin-bottom:3px;}
+.decision-txt{font-size:13px;color:var(--text);line-height:1.5;}
 
 /* GRID */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
@@ -200,6 +207,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
             <div id="alertas-resumen"></div>
           </div>
         </div>
+        <div class="decision-box" id="decision-resumen"></div>
       </div>
 
       <!-- VISTA: ANÁLISIS (biológico + informe fitosanitario) -->
@@ -250,7 +258,7 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast-dash';
-    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2030;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;border:1px solid var(--border);';
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2030;color:#f1f3f8;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;border:1px solid var(--border);';
     document.body.appendChild(t);
   }
   t.textContent = msg;
@@ -358,8 +366,8 @@ function destroyChart(id) {
   if (charts[id]) { charts[id].destroy(); delete charts[id]; }
 }
 
-const CHART_TEXT = '#9aa1b5';
-const CHART_GRID = '#2a2f40';
+const CHART_TEXT = '#5f6678';
+const CHART_GRID = '#e3e6ed';
 Chart.defaults.color = CHART_TEXT;
 Chart.defaults.borderColor = CHART_GRID;
 
@@ -380,11 +388,11 @@ function renderResumen() {
   const cumplimiento = instaladas>0 ? Math.round(activas/instaladas*100) : 0;
 
   document.getElementById('kpi-resumen').innerHTML = `
-    <div class="kpi"><div class="kpi-val" style="color:var(--text);">${instaladas}</div><div class="kpi-lbl">Trampas instaladas</div><div class="kpi-sub">Histórico total</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${activas}</div><div class="kpi-lbl">Trampas con registro</div><div class="kpi-sub">En el periodo</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(1)}</div><div class="kpi-lbl">Índice captura/trampa</div><div class="kpi-sub">Objetivo: &lt; ${UMBRAL_ALERTA}</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:${cumplimiento>=95?'var(--green)':'var(--amber)'};">${cumplimiento}%</div><div class="kpi-lbl">Cumplimiento revisiones</div><div class="kpi-sub">Objetivo: &gt; 95%</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">🪣</div><div><div class="kpi-val" style="color:var(--text);">${instaladas}</div><div class="kpi-lbl">Trampas instaladas</div><div class="kpi-sub">Histórico total</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">✅</div><div><div class="kpi-val" style="color:var(--primary);">${activas}</div><div class="kpi-lbl">Trampas con registro</div><div class="kpi-sub">En el periodo (${cumplimiento}% del total)</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:${ic>=UMBRAL_ALERTA?'var(--red-bg)':'var(--green-bg)'};">🐛</div><div><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(1)}</div><div class="kpi-lbl">Índice captura/trampa</div><div class="kpi-sub">Objetivo: &lt; ${UMBRAL_ALERTA}</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:${cumplimiento>=95?'var(--green-bg)':'var(--amber-bg)'};">📋</div><div><div class="kpi-val" style="color:${cumplimiento>=95?'var(--green)':'var(--amber)'};">${cumplimiento}%</div><div class="kpi-lbl">Cumplimiento revisiones</div><div class="kpi-sub">Objetivo: &gt; 95%</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div></div>
   `;
 
   // Tendencia IC por día
@@ -420,7 +428,7 @@ function renderResumen() {
   destroyChart('chart-estado-sistema');
   charts['chart-estado-sistema'] = new Chart(document.getElementById('chart-estado-sistema'), {
     type: 'doughnut',
-    data: { labels: Object.keys(grupos).map(k=>`${k} (${grupos[k]})`), datasets: [{ data: Object.values(grupos), backgroundColor:['#22c55e','#f59e0b','#ef4444','#5f6678'], borderWidth:2, borderColor:'#161922' }] },
+    data: { labels: Object.keys(grupos).map(k=>`${k} (${grupos[k]})`), datasets: [{ data: Object.values(grupos), backgroundColor:['#22c55e','#f59e0b','#ef4444','#5f6678'], borderWidth:2, borderColor:'#ffffff' }] },
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:11}}}} }
   });
 
@@ -452,6 +460,22 @@ function renderResumen() {
   document.getElementById('alertas-resumen').innerHTML = alertas.length === 0
     ? '<div style="color:var(--green);font-size:13px;text-align:center;padding:30px;">✅ Sin alertas activas</div>'
     : alertas.map(a => `<div class="alert-row"><span class="alert-txt">${a.txt}</span><span class="badge ${a.nivel}">${a.etq}</span></div>`).join('');
+
+  // Decisión recomendada (resumen accionable de las señales anteriores)
+  const acciones = [];
+  const lotesCriticos = topLotes.filter(l => l.ic >= UMBRAL_CRITICO);
+  const lotesAltos = topLotes.filter(l => l.ic >= UMBRAL_ALERTA && l.ic < UMBRAL_CRITICO);
+  if (lotesCriticos.length) acciones.push(`priorizar revisión sanitaria en ${lotesCriticos.map(l=>l.k).join(', ')}`);
+  else if (lotesAltos.length) acciones.push(`vigilar de cerca ${lotesAltos.map(l=>l.k).join(', ')}`);
+  if (alertasRevision.length) acciones.push(`corregir las ${alertasRevision.length} trampa(s) sin revisión reciente`);
+  if (cumplimiento < 95) acciones.push('mejorar el cumplimiento de revisiones, por debajo del objetivo del 95%');
+  const decisionTxt = acciones.length
+    ? acciones.join('; ').replace(/^./, c => c.toUpperCase()) + '.'
+    : 'El sistema de trampeo opera dentro de parámetros normales; mantener el monitoreo rutinario.';
+  document.getElementById('decision-resumen').innerHTML = `
+    <div class="decision-icon">✓</div>
+    <div><div class="decision-title">Decisión recomendada</div><div class="decision-txt">${decisionTxt}</div></div>
+  `;
 }
 
 // ── VISTA: ANÁLISIS (biológico + informe fitosanitario) ──
@@ -468,7 +492,7 @@ function renderAnalisis() {
   destroyChart('chart-sexo');
   charts['chart-sexo'] = new Chart(document.getElementById('chart-sexo'), {
     type: 'doughnut',
-    data: { labels:[`Hembras ${totalH}`,`Machos ${totalM}`], datasets:[{ data:[totalH,totalM], backgroundColor:['#ef4444','#3b82f6'], borderWidth:2, borderColor:'#161922' }] },
+    data: { labels:[`Hembras ${totalH}`,`Machos ${totalM}`], datasets:[{ data:[totalH,totalM], backgroundColor:['#ef4444','#3b82f6'], borderWidth:2, borderColor:'#ffffff' }] },
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}} }
   });
 
@@ -851,7 +875,7 @@ async function exportarPDF() {
     if (c.offsetHeight === 0) continue;
 
     if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
-      const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#0c0e14', logging:false });
+      const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
       const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
       const availableH = pageH - topMargin - bottomMargin;
       if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
@@ -864,7 +888,7 @@ async function exportarPDF() {
         let cursorFinal = cursorInicio;
         for (let i = 0; i < hijos.length; i++) {
           const xCol = sideMargin + i * (colWidth + gap);
-          const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#0c0e14', logging:false });
+          const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
           const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio);
           if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) cursorFinal = r;
         }
@@ -873,7 +897,7 @@ async function exportarPDF() {
         estado.esPrimerBloqueDePagina = cursorFinal.primera;
       }
     } else {
-      const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#0c0e14', logging:false });
+      const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
       await colocarBloque(c, canvas, imgW);
     }
   }
