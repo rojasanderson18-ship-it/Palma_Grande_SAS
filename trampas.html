@@ -524,6 +524,7 @@ let pendientes = [];
 let filtro = 'todas';
 let busqueda = '';
 const conteoTemp = {};
+let formAbierto = null;
 
 // ─── INIT ────────────────────────────────
 function init(){
@@ -718,8 +719,16 @@ function renderTrampas(){
     return true;
   });
 
-  // Progress (respeta el filtro por operario asignado)
-  const propias=t=>(operario==='Supervisor'||t.operario===operario)&&(fincaFiltro==='todas'||t.finca===fincaFiltro);
+  // Progress (respeta el filtro por operario asignado y la búsqueda activa)
+  const propias=t=>{
+    if(!(operario==='Supervisor'||t.operario===operario)) return false;
+    if(!(fincaFiltro==='todas'||t.finca===fincaFiltro)) return false;
+    if(busqueda){
+      const s=busqueda.toLowerCase();
+      if(!t.id.toLowerCase().includes(s)&&!t.lote.toLowerCase().includes(s)&&!t.finca.toLowerCase().includes(s)) return false;
+    }
+    return true;
+  };
   const total=trampas.filter(propias).length;
   const done=Object.keys(regs).filter(id=>trampas.find(t=>t.id===id&&propias(t))).length;
   const pct=total>0?Math.round(done/total*100):0;
@@ -776,11 +785,26 @@ function renderTrampas(){
     });
   });
   document.getElementById('lista-trampas').innerHTML=html;
+
+  // Si había un formulario abierto (con taps de +/- sin guardar), lo
+  // mantenemos abierto en vez de colapsarlo y perder esos taps en el rebuild.
+  if(formAbierto){
+    const f=document.getElementById('tf-'+formAbierto);
+    if(f){
+      f.style.display='block';
+      const nav=document.getElementById('bottom-nav');
+      if(nav) nav.style.display='none';
+    }else{
+      formAbierto=null;
+    }
+  }
 }
 
 function buildForm(t,r){
-  const h=r?.hembras||0, m=r?.machos||0;
-  const cb=r?.estadoCebo||'', ct=r?.estadoTrampa||'';
+  const tmp=conteoTemp[t.id]||{};
+  const h=tmp.h!==undefined?tmp.h:(r?.hembras||0);
+  const m=tmp.m!==undefined?tmp.m:(r?.machos||0);
+  const cb=tmp.cebo||r?.estadoCebo||'', ct=tmp.trampa||r?.estadoTrampa||'';
   const cebos=['Bueno','Regular','Malo','Sin cebo'];
   const estados=['Buena','Dañada','Perdida','Reubicar'];
   return `
@@ -848,7 +872,9 @@ function toggleForm(id){
   const lista=document.getElementById('lista-trampas');
   if(lista) lista.style.paddingBottom='';
   mostrarNav();
+  formAbierto=null;
   if(!open){
+    formAbierto=id;
     form.style.display='block';
     // Mientras se llena el formulario ocultamos el nav inferior (fixed):
     // libera espacio abajo en vez de pelear por el mismo espacio con scroll.
@@ -944,19 +970,20 @@ function guardar(id,btn){
   if(cambioCebo){ if(!cambios[id]) cambios[id]={}; cambios[id].cebo=fecha; guardarCambios(); }
   if(cambioFeromona){ if(!cambios[id]) cambios[id]={}; cambios[id].feromona=fecha; guardarCambios(); }
   delete conteoTemp[id];
+  if(formAbierto===id) formAbierto=null;
   guardarLocal();
   const trampa=trampas.find(t=>t.id===id);
   const reg_hora = registros[fecha][id];
   enviarGAS({accion:'registrarTrampa',trampaId:id,fecha,finca:trampa?.finca||'',lote:trampa?.lote||'',hembras:h,machos:m,estadoCebo:cb,estadoTrampa:ct,obs,operario,hora:reg_hora.hora,cambioCebo:reg_hora.cambioCebo,cambioFeromona:reg_hora.cambioFeromona});
   const tot=h+m;
   showToast(tot>=UMBRAL_ALERTA?'🔴 Alerta: '+tot+' capturas en '+id:'✅ '+id+' guardada');
-  renderTrampas();
-  mostrarNav();
+  try{ renderTrampas(); mostrarNav(); }finally{ if(btn) btn.disabled=false; }
 }
 
 function borrar(id){
   const fecha=hoyISO();
   if(registros[fecha]) delete registros[fecha][id];
+  if(formAbierto===id) formAbierto=null;
   guardarLocal();
   renderTrampas();
   mostrarNav();
@@ -1039,9 +1066,12 @@ function agregarTrampas(){
   const op=document.getElementById('admin-operario').value;
   if(!f||!ls){showToast('Selecciona finca y lote');return;}
   const lote=ls.replace('Lote ','');
+  const usados=new Set(trampas.map(t=>parseInt(t.id.replace('TR-',''),10)).filter(n=>!isNaN(n)));
   const nuevas=[];
+  let n=0;
   for(let i=0;i<cant;i++){
-    const n=trampas.length+1;
+    do{ n++; }while(usados.has(n));
+    usados.add(n);
     const t={id:'TR-'+String(n).padStart(3,'0'),finca:f,lote,activa:true,operario:op,fechaAlta:hoyISO()};
     trampas.push(t);
     nuevas.push(t);
@@ -1135,9 +1165,15 @@ function gasJSONP(url){
 
 async function enviarGAS(payload){
   if(!navigator.onLine){pendientes.push({...payload,ts:Date.now()});guardarLocal();return;}
-  const url=GAS_URL+'?accion='+encodeURIComponent(payload.accion)+'&data='+encodeURIComponent(JSON.stringify(payload));
-  const resp=await gasJSONP(url);
-  if(resp==null){pendientes.push({...payload,ts:Date.now()});guardarLocal();}
+  try{
+    const url=GAS_URL+'?accion='+encodeURIComponent(payload.accion)+'&data='+encodeURIComponent(JSON.stringify(payload));
+    const resp=await gasJSONP(url);
+    if(resp==null){pendientes.push({...payload,ts:Date.now()});guardarLocal();}
+  }catch(e){
+    // Cualquier error inesperado (no solo timeout/null de gasJSONP) también
+    // debe quedar en cola, para que no se pierda el cambio silenciosamente.
+    pendientes.push({...payload,ts:Date.now()});guardarLocal();
+  }
 }
 
 async function cargarGAS(){

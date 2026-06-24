@@ -1179,14 +1179,20 @@ function obtenerTrampasHistorico() {
 }
 
 function sincronizarConfigTrampas(trampas) {
-  var sheet = getOrCreateSheet(SHEETS.trampasCfg, ['TrampaId','Finca','Lote','Activa','Operario','FechaAlta']);
-  sheet.clearContents();
-  sheet.appendRow(['TrampaId','Finca','Lote','Activa','Operario','FechaAlta']);
-  if(trampas.length > 0) {
-    var rows = trampas.map(function(t){ return [t.id, t.finca, t.lote, t.activa?'SI':'NO', t.operario||'', t.fechaAlta||'']; });
-    sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.trampasCfg, ['TrampaId','Finca','Lote','Activa','Operario','FechaAlta']);
+    sheet.clearContents();
+    sheet.appendRow(['TrampaId','Finca','Lote','Activa','Operario','FechaAlta']);
+    if(trampas.length > 0) {
+      var rows = trampas.map(function(t){ return [t.id, t.finca, t.lote, t.activa?'SI':'NO', t.operario||'', t.fechaAlta||'']; });
+      sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+    }
+    return {ok:true, total:trampas.length};
+  } finally {
+    lock.releaseLock();
   }
-  return {ok:true, total:trampas.length};
 }
 
 function obtenerConfigTrampas() {
@@ -1206,16 +1212,22 @@ function obtenerConfigTrampas() {
 }
 
 function actualizarTrampaCfg(d) {
-  var sheet = getOrCreateSheet(SHEETS.trampasCfg, ['TrampaId','Finca','Lote','Activa','Operario','FechaAlta']);
-  var data = sheet.getDataRange().getValues();
-  for(var i = 1; i < data.length; i++){
-    if(String(data[i][0]) === String(d.id)){
-      sheet.getRange(i+1, 1, 1, 6).setValues([[d.id, d.finca||'', d.lote||'', d.activa?'SI':'NO', d.operario||'', d.fechaAlta||data[i][5]||'']]);
-      return {ok:true, actualizado:true};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.trampasCfg, ['TrampaId','Finca','Lote','Activa','Operario','FechaAlta']);
+    var data = sheet.getDataRange().getValues();
+    for(var i = 1; i < data.length; i++){
+      if(String(data[i][0]) === String(d.id)){
+        sheet.getRange(i+1, 1, 1, 6).setValues([[d.id, d.finca||'', d.lote||'', d.activa?'SI':'NO', d.operario||'', d.fechaAlta||data[i][5]||'']]);
+        return {ok:true, actualizado:true};
+      }
     }
+    sheet.appendRow([d.id, d.finca||'', d.lote||'', d.activa?'SI':'NO', d.operario||'', d.fechaAlta||'']);
+    return {ok:true, actualizado:false};
+  } finally {
+    lock.releaseLock();
   }
-  sheet.appendRow([d.id, d.finca||'', d.lote||'', d.activa?'SI':'NO', d.operario||'', d.fechaAlta||'']);
-  return {ok:true, actualizado:false};
 }
 
 // =============================================
