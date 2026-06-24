@@ -13,238 +13,223 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{overflow-x:hidden;max-width:100%;}
 :root{
-  --bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--text:#0f172a;--text2:#475569;--muted:#94a3b8;
-  --primary:#1e3a5f;--green:#16a34a;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fef2f2;
-  --amber:#d97706;--amber-bg:#fffbeb;--blue:#2563eb;--blue-bg:#eff6ff;--gold:#b8860b;
+  --bg:#0c0e14;--surface:#161922;--surface2:#1c2030;--border:#2a2f40;
+  --text:#e8eaf0;--text2:#9aa1b5;--muted:#5f6678;
+  --primary:#3b82f6;--green:#22c55e;--green-bg:rgba(34,197,94,.12);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.12);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.12);--gold:#d4af37;
 }
 body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 
-/* HEADER */
-.hdr{background:linear-gradient(135deg,#0f1117,#1e3a5f);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-.hdr-left{display:flex;align-items:center;gap:12px;}
-.hdr-icon{width:40px;height:40px;background:linear-gradient(135deg,#b8860b,#f0c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
-.hdr-title{font-size:18px;font-weight:800;color:#f0c96a;}
-.hdr-sub{font-size:11px;color:#64748b;}
-.hdr-actions{display:flex;gap:8px;align-items:center;}
-.btn-pdf{background:linear-gradient(135deg,#b8860b,#f0c96a);color:#0f1117;border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;}
-.btn-refresh{background:rgba(255,255,255,.1);color:#f0c96a;border:1px solid rgba(240,201,106,.3);padding:9px 14px;border-radius:10px;font-size:13px;cursor:pointer;font-family:"DM Sans",sans-serif;}
+/* APP LAYOUT */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;padding:18px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand{display:flex;align-items:center;gap:10px;padding:0 18px 18px;border-bottom:1px solid var(--border);margin-bottom:10px;}
+.brand-icon{width:38px;height:38px;background:linear-gradient(135deg,#b8860b,#d4af37);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.brand-title{font-size:13px;font-weight:800;color:var(--text);line-height:1.3;}
+.brand-sub{font-size:10px;color:var(--muted);}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 18px;background:none;border:none;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;border-left:3px solid transparent;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--surface2);color:var(--primary);border-left-color:var(--primary);}
+.nav-soon{margin-left:auto;font-size:9px;background:var(--surface2);color:var(--muted);padding:2px 6px;border-radius:8px;font-weight:700;}
 
-/* TABS */
-.tabs{background:#fff;border-bottom:2px solid var(--border);display:flex;padding:0 12px;position:sticky;top:0;z-index:100;overflow-x:auto;scrollbar-width:none;}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{padding:14px 20px;font-size:14px;font-weight:600;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;font-family:"DM Sans",sans-serif;}
-.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:50;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.fsel{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:8px 12px;border-radius:8px;font-family:"DM Sans",sans-serif;}
+.actions{display:flex;gap:8px;align-items:center;}
+.btn-pdf{background:linear-gradient(135deg,var(--green),#16a34a);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;display:flex;align-items:center;gap:6px;}
+.btn-refresh{background:var(--surface2);color:var(--text2);border:1px solid var(--border);padding:9px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;}
+.ultimo-update{font-size:11px;color:var(--muted);}
 
-/* BODY */
-.content{padding:14px 12px;max-width:1400px;margin:0 auto;width:100%;}
-.vista{display:none;}.vista.active{display:block;}
+.content{padding:20px;max-width:1500px;margin:0 auto;width:100%;}
+.view{display:none;}.view.active{display:block;}
 
-/* KPI GRID */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
-.kpi{background:#fff;border-radius:14px;padding:16px;border:1px solid var(--border);}
-.kpi-val{font-size:34px;font-weight:900;font-family:"DM Mono",monospace;line-height:1;}
-.kpi-lbl{font-size:12px;color:var(--text2);margin-top:4px;font-weight:500;}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+.kpi{background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);}
+.kpi-val{font-size:30px;font-weight:900;font-family:"DM Mono",monospace;line-height:1;}
+.kpi-lbl{font-size:12px;color:var(--text2);margin-top:6px;font-weight:600;}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-.kpi-trend{font-size:12px;font-weight:700;margin-top:6px;}
-.up{color:var(--red);}.down{color:var(--green);}.neutral{color:var(--muted);}
 
-/* GRID 2 COL */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:start;}
-@media(max-width:768px){.grid2,.grid3{grid-template-columns:1fr;}.hdr-title{font-size:15px;}.kpi-val{font-size:26px;}.hdr-actions{width:100%;justify-content:flex-end;}}
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr;}.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:static;flex-direction:row;overflow-x:auto;padding:8px;}.brand{display:none;}.nav-item{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;}.nav-item.active{border-bottom-color:var(--primary);}}
 
 /* CARD */
-.card{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:16px;}
-.card-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.card{background:var(--surface);border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:0;}
+.card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
 .card-title span{font-size:11px;color:var(--muted);font-weight:400;}
 
 /* TABLE */
-.tbl{width:100%;border-collapse:collapse;font-size:13px;}
-.tbl th{background:var(--primary);color:#fff;padding:9px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.3px;}
-.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);}
-.tbl tr:hover td{background:#f8fafc;}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tbl th{background:var(--surface2);color:var(--text2);padding:9px 10px;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}
 .tbl tr:last-child td{border-bottom:none;}
 
 /* BADGE */
-.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;}
+.badge{padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block;}
 .b-ok{background:var(--green-bg);color:var(--green);}
 .b-warn{background:var(--amber-bg);color:var(--amber);}
-.b-alert{background:#fff7ed;color:#c2410c;}
 .b-crit{background:var(--red-bg);color:var(--red);}
-.b-gray{background:#f1f5f9;color:var(--text2);}
-
-/* CHART */
-.chart-wrap{position:relative;height:260px;}
-.chart-wrap-tall{position:relative;height:320px;}
+.b-gray{background:var(--surface2);color:var(--text2);}
 
 /* LOTE BAR */
 .lote-bar{margin-bottom:8px;}
 .lb-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;}
-.lb-name{font-weight:600;}
+.lb-name{font-weight:600;color:var(--text);}
 .lb-val{color:var(--text2);}
-.lb-track{background:var(--border);border-radius:3px;height:6px;}
+.lb-track{background:var(--surface2);border-radius:3px;height:6px;}
 .lb-fill{height:100%;border-radius:3px;}
 .lf-ok{background:linear-gradient(90deg,#16a34a,#22c55e);}
 .lf-warn{background:linear-gradient(90deg,#d97706,#f59e0b);}
 .lf-crit{background:linear-gradient(90deg,#dc2626,#ef4444);}
 
-/* OPERARIO ROW */
-.op-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
-.op-row:last-child{border-bottom:none;}
-.op-name{font-weight:700;font-size:14px;}
-.op-sub{font-size:12px;color:var(--text2);}
-.op-stats{display:flex;gap:12px;text-align:center;}
-.op-stat-val{font-size:16px;font-weight:800;font-family:"DM Mono",monospace;}
-.op-stat-lbl{font-size:10px;color:var(--muted);}
+/* ALERT ROW */
+.alert-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.alert-row:last-child{border-bottom:none;}
+.alert-txt{color:var(--text);}
 
-/* LOADING */
+/* CHART */
+.chart-wrap{position:relative;height:240px;}
+.chart-wrap-tall{position:relative;height:300px;}
+
+/* LOADING / SOON */
 .loading{text-align:center;padding:60px 24px;color:var(--muted);}
 .loading-spinner{font-size:32px;animation:spin 1s linear infinite;display:inline-block;margin-bottom:12px;}
 @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-
-/* SEMAFORO */
-.semaforo{display:flex;gap:6px;align-items:center;font-size:12px;}
-.sem-dot{width:10px;height:10px;border-radius:50%;}
+.soon-box{text-align:center;padding:80px 24px;color:var(--muted);background:var(--surface);border-radius:14px;border:1px solid var(--border);}
+.soon-box .icon{font-size:40px;margin-bottom:14px;}
+.soon-box h3{color:var(--text);font-size:16px;margin-bottom:6px;}
 
 /* INFORME TÉCNICO FITOSANITARIO */
 .informe-card{padding:0;overflow:hidden;}
-.informe-head{background:linear-gradient(135deg,#0f1117,#1e3a5f);padding:16px 20px;}
-.informe-tag{color:#f0c96a;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.informe-head{background:linear-gradient(135deg,#0a0c10,#1c2030);padding:16px 20px;border-bottom:1px solid var(--border);}
+.informe-tag{color:var(--gold);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
 .informe-titulo{color:#fff;font-size:16px;font-weight:800;}
 .informe-body{padding:18px 20px;}
 .informe-body h3{font-size:13px;font-weight:800;color:var(--primary);margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
 .informe-body h3:first-child{margin-top:0;}
-.informe-body p{margin:0 0 10px;line-height:1.65;font-size:13px;}
+.informe-body p{margin:0 0 10px;line-height:1.65;font-size:13px;color:var(--text);}
 .informe-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
-.ir-item{background:var(--bg);border-radius:10px;padding:10px 12px;border:1px solid var(--border);}
+.ir-item{background:var(--surface2);border-radius:10px;padding:10px 12px;border:1px solid var(--border);}
 .ir-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
 .ir-val{font-size:18px;font-weight:800;font-family:"DM Mono",monospace;margin-top:2px;}
 .mip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:4px;}
-.mip-item{background:var(--bg);border-radius:10px;padding:12px 14px;border-left:3px solid var(--primary);}
-.mip-item-h{font-size:12px;font-weight:800;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.mip-item{background:var(--surface2);border-radius:10px;padding:12px 14px;border-left:3px solid var(--primary);}
+.mip-item-h{font-size:12px;font-weight:800;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
 .mip-item p{margin:0;font-size:12px;line-height:1.5;color:var(--text2);}
-.informe-foot{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);background:var(--bg);}
+.informe-foot{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);background:var(--surface2);flex-wrap:wrap;gap:6px;}
 
 /* PDF EXPORT */
-@media print{.hdr,.tabs,.btn-pdf,.btn-refresh{display:none!important;}.vista{display:block!important;}}
+@media print{.sidebar,.topbar,.btn-pdf,.btn-refresh{display:none!important;}.view{display:block!important;}}
 </style>
 </head>
 <body>
 
-<div class="hdr" id="main-hdr">
-  <div class="hdr-left">
-    <div class="hdr-icon">🪤</div>
-    <div>
-      <div class="hdr-title">Análisis de Trampas</div>
-      <div class="hdr-sub">Rhynchophorus palmarum · Palma Grande S.A.S.</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🌴</div>
+      <div>
+        <div class="brand-title">Palma Grande S.A.S.</div>
+        <div class="brand-sub">Sistema de Trampeo · Rhynchophorus</div>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-item active" data-view="resumen" onclick="setVista('resumen',this)">📊 Resumen</button>
+      <button class="nav-item" data-view="trampas" onclick="setVista('trampas',this)">🪤 Trampas <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="mapa" onclick="setVista('mapa',this)">🗺️ Mapa <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="analisis" onclick="setVista('analisis',this)">🧬 Análisis</button>
+      <button class="nav-item" data-view="operarios" onclick="setVista('operarios',this)">👷 Operarios <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="reportes" onclick="setVista('reportes',this)">📋 Reportes <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="economico" onclick="setVista('economico',this)">💰 Económico <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="config" onclick="setVista('config',this)">⚙️ Configuración <span class="nav-soon">Próx.</span></button>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="filters">
+        <select class="fsel" id="sel-finca" onchange="onFiltroChange()"><option value="todas">Todas las fincas</option></select>
+        <select class="fsel" id="sel-ciclo" onchange="onFiltroChange()">
+          <option value="actual">Ciclo actual (15 días)</option>
+          <option value="mes">Este mes</option>
+          <option value="historico">Histórico completo</option>
+        </select>
+      </div>
+      <div class="actions">
+        <div class="ultimo-update" id="ultimo-update"></div>
+        <button class="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
+        <button class="btn-pdf" onclick="exportarPDF()">⬇ Exportar PDF</button>
+      </div>
+    </div>
+
+    <div class="content" id="main-content">
+      <div id="loading" class="loading">
+        <div class="loading-spinner">⏳</div>
+        <div style="font-size:15px;font-weight:600;">Cargando datos del campo...</div>
+        <div style="font-size:13px;margin-top:6px;">Consultando registros de operarios</div>
+      </div>
+
+      <!-- VISTA: RESUMEN EJECUTIVO -->
+      <div id="view-resumen" class="view" style="display:none;">
+        <div class="kpi-grid" id="kpi-resumen"></div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">📈 Tendencia índice de captura <span>Por día</span></div>
+            <div class="chart-wrap"><canvas id="chart-tendencia-ic"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">⚙️ Estado del sistema de trampeo</div>
+            <div class="chart-wrap"><canvas id="chart-estado-sistema"></canvas></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">🏆 Top 5 lotes por índice de captura</div>
+            <div style="overflow-x:auto;"><table class="tbl">
+              <thead><tr><th>Lote</th><th>Trampas</th><th>Capturas</th><th>Índice</th><th>Estado</th></tr></thead>
+              <tbody id="top-lotes-resumen"></tbody>
+            </table></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🔴 Alertas activas</div>
+            <div id="alertas-resumen"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA: ANÁLISIS (biológico + informe fitosanitario) -->
+      <div id="view-analisis" class="view" style="display:none;">
+        <div id="informe-fitosanitario"></div>
+        <div class="grid3" style="margin-top:14px;">
+          <div class="card">
+            <div class="card-title">⚖️ Capturas por sexo</div>
+            <div class="chart-wrap"><canvas id="chart-sexo"></canvas></div>
+          </div>
+          <div class="card" style="grid-column:span 2;">
+            <div class="card-title">📈 Tendencia de capturas <span>Total / Hembras / Machos</span></div>
+            <div class="chart-wrap"><canvas id="chart-tendencia-sexo"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 Proporción H/M por lote <span>Top 5</span></div>
+          <div class="chart-wrap"><canvas id="chart-prop-lote"></canvas></div>
+        </div>
+      </div>
+
+      <!-- VISTAS PRÓXIMAMENTE -->
+      <div id="view-trampas" class="view" style="display:none;"><div class="soon-box"><div class="icon">🪤</div><h3>Listado y gestión de trampas</h3><div>Próximamente</div></div></div>
+      <div id="view-mapa" class="view" style="display:none;"><div class="soon-box"><div class="icon">🗺️</div><h3>Mapa de calor por lote</h3><div>Próximamente</div></div></div>
+      <div id="view-operarios" class="view" style="display:none;"><div class="soon-box"><div class="icon">👷</div><h3>Desempeño por operario</h3><div>Próximamente</div></div></div>
+      <div id="view-reportes" class="view" style="display:none;"><div class="soon-box"><div class="icon">📋</div><h3>Reportes detallados</h3><div>Próximamente</div></div></div>
+      <div id="view-economico" class="view" style="display:none;"><div class="soon-box"><div class="icon">💰</div><h3>Análisis económico</h3><div>Próximamente — requiere registrar costos de trampas, atrayente y mano de obra</div></div></div>
+      <div id="view-config" class="view" style="display:none;"><div class="soon-box"><div class="icon">⚙️</div><h3>Configuración</h3><div>Próximamente</div></div></div>
     </div>
   </div>
-  <div class="hdr-actions">
-    <div style="color:#94a3b8;font-size:12px;text-align:right;margin-right:8px;" id="ultimo-update"></div>
-    <button class="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
-    <button class="btn-pdf" onclick="exportarPDF()">⬇ Descargar PDF</button>
-  </div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="setVista('actual',this)">🔴 Ciclo actual</button>
-  <button class="tab" onclick="setVista('mes',this)">📅 Este mes</button>
-  <button class="tab" onclick="setVista('historico',this)">📊 Histórico</button>
-</div>
-
-<div class="content" id="main-content">
-
-  <!-- CARGANDO -->
-  <div id="loading" class="loading">
-    <div class="loading-spinner">⏳</div>
-    <div style="font-size:15px;font-weight:600;">Cargando datos del campo...</div>
-    <div style="font-size:13px;margin-top:6px;">Consultando registros de operarios</div>
-  </div>
-
-  <!-- VISTA: CICLO ACTUAL -->
-  <div id="vista-actual" class="vista" style="display:none;">
-    <div class="kpi-grid" id="kpi-actual"></div>
-    <div id="analisis-agronomico-actual"></div>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-title">🏆 Capturas por lote <span>Índice cap/trampa</span></div>
-        <div id="lotes-actual"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">🔴 Alertas activas <span id="fecha-actual-hdr"></span></div>
-        <div id="alertas-actual"></div>
-      </div>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-title">📊 Capturas H vs M <span>Ciclo actual</span></div>
-        <div class="chart-wrap"><canvas id="chart-hm-actual"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">⚙️ Estado de trampas</div>
-        <div class="chart-wrap"><canvas id="chart-estado-actual"></canvas></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">👷 Registro por operario</div>
-      <div id="operarios-actual"></div>
-    </div>
-  </div>
-
-  <!-- VISTA: MES -->
-  <div id="vista-mes" class="vista" style="display:none;">
-    <div class="kpi-grid" id="kpi-mes"></div>
-    <div id="analisis-agronomico-mes"></div>
-    <div class="card">
-      <div class="card-title">📈 Capturas diarias del mes <span id="mes-nombre"></span></div>
-      <div class="chart-wrap-tall"><canvas id="chart-mes-daily"></canvas></div>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-title">🌴 Capturas acumuladas por finca</div>
-        <div class="chart-wrap"><canvas id="chart-mes-finca"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">🏆 Top 10 lotes del mes</div>
-        <div id="top-lotes-mes"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 Detalle por ciclo del mes</div>
-      <div style="overflow-x:auto;"><table class="tbl" id="tbl-ciclos-mes">
-        <thead><tr><th>Período</th><th>Revisiones</th><th>Hembras</th><th>Machos</th><th>Total</th><th>IC Promedio</th><th>Estado</th></tr></thead>
-        <tbody id="ciclos-mes-body"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- VISTA: HISTÓRICO -->
-  <div id="vista-historico" class="vista" style="display:none;">
-    <div class="kpi-grid" id="kpi-historico"></div>
-    <div id="analisis-agronomico"></div>
-    <div class="card">
-      <div class="card-title">📈 Evolución del índice de captura <span>Por ciclo de revisión</span></div>
-      <div class="chart-wrap-tall"><canvas id="chart-hist-ic"></canvas></div>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-title">🔴 Tendencia hembras vs machos</div>
-        <div class="chart-wrap"><canvas id="chart-hist-hm"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">🌴 Capturas totales por finca</div>
-        <div class="chart-wrap"><canvas id="chart-hist-finca"></canvas></div>
-      </div>
-    </div>
-    <div class="card" id="card-historial-tabla">
-      <div class="card-title">📋 Historial completo por ciclo</div>
-      <div style="overflow-x:auto;"><table class="tbl">
-        <thead><tr><th>Fecha</th><th>Finca</th><th>Lote</th><th>Trampa</th><th>H</th><th>M</th><th>Total</th><th>Cebo</th><th>Trampa</th><th>Operario</th></tr></thead>
-        <tbody id="hist-body"></tbody>
-      </table>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -254,7 +239,8 @@ const UMBRAL_CRITICO = 5;  // límite superior del rango de alerta del boletín
 
 let historico = [];
 let charts = {};
-let vistaActual = 'actual';
+let vistaActual = 'resumen';
+const VISTAS_DISPONIBLES = ['resumen','analisis'];
 
 // ── INIT ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', cargarDatos);
@@ -264,7 +250,7 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast-dash';
-    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;';
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2030;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;border:1px solid var(--border);';
     document.body.appendChild(t);
   }
   t.textContent = msg;
@@ -274,11 +260,15 @@ function showToast(msg) {
 
 function setVista(v, btn) {
   vistaActual = v;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  document.querySelectorAll('.vista').forEach(el => el.style.display = 'none');
-  document.getElementById('vista-' + v).style.display = 'block';
-  renderVista(v);
+  document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+  document.getElementById('view-' + v).style.display = 'block';
+  if (VISTAS_DISPONIBLES.includes(v)) renderVista(v);
+}
+
+function onFiltroChange() {
+  renderVista(vistaActual);
 }
 
 // ── CARGA DE DATOS ────────────────────────
@@ -295,40 +285,37 @@ function gasJSONP(url) {
 
 async function cargarDatos() {
   document.getElementById('loading').style.display = 'block';
-  document.querySelectorAll('.vista').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
 
   const data = await gasJSONP(GAS_URL + '?accion=obtenerTrampasHistorico');
 
   document.getElementById('loading').style.display = 'none';
-  
-  if (!data || !data.historico || data.historico.length === 0) {
-    historico = [];
-    document.getElementById('vista-' + vistaActual).style.display = 'block';
-    renderVista(vistaActual);
-    if (!data) showToast('⚠️ GAS no responde — actualiza el script');
-    setTimeout(cargarDatos, 2 * 60 * 1000);
-    return;
-  }
 
   if (!data || !data.historico) {
-    document.getElementById('loading').style.display = 'none';
-    // Sin datos del GAS - mostrar vistas vacías igual
     historico = [];
-    document.getElementById('vista-' + vistaActual).style.display = 'block';
-    renderVista(vistaActual);
-    showToast('Sin conexión al servidor — mostrando datos locales');
+    document.getElementById('view-' + vistaActual).style.display = 'block';
+    if (VISTAS_DISPONIBLES.includes(vistaActual)) renderVista(vistaActual);
+    showToast(data ? 'Sin conexión al servidor — mostrando datos locales' : '⚠️ GAS no responde — actualiza el script');
+    setTimeout(cargarDatos, 2 * 60 * 1000);
     return;
   }
 
   historico = data.historico;
   document.getElementById('ultimo-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-CO');
+  poblarSelectFincas();
 
-  // Mostrar vista activa
-  document.getElementById('vista-' + vistaActual).style.display = 'block';
-  renderVista(vistaActual);
+  document.getElementById('view-' + vistaActual).style.display = 'block';
+  if (VISTAS_DISPONIBLES.includes(vistaActual)) renderVista(vistaActual);
 
-  // Auto-refresh cada 2 minutos
   setTimeout(cargarDatos, 2 * 60 * 1000);
+}
+
+function poblarSelectFincas() {
+  const sel = document.getElementById('sel-finca');
+  const actual = sel.value;
+  const fincas = [...new Set(historico.map(r => r.finca).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="todas">Todas las fincas</option>' + fincas.map(f => `<option value="${f}">${f.replace('FINCA ','Finca ')}</option>`).join('');
+  if (fincas.includes(actual)) sel.value = actual;
 }
 
 // ── HELPERS ───────────────────────────────
@@ -343,243 +330,181 @@ function mesActualISO() {
 }
 
 function cicloActual() {
-  // Últimos 15 días
   const hoy = new Date();
   const desde = new Date(hoy); desde.setDate(desde.getDate() - 15);
   const desdeISO = desde.getFullYear() + '-' + String(desde.getMonth()+1).padStart(2,'0') + '-' + String(desde.getDate()).padStart(2,'0');
   return historico.filter(r => r.fecha >= desdeISO && r.fecha <= hoyISO());
 }
 
+// Aplica el filtro de ciclo (actual/mes/histórico) Y el de finca seleccionados en la barra superior.
+function datosFiltrados() {
+  const ciclo = document.getElementById('sel-ciclo').value;
+  let base = ciclo === 'mes' ? historico.filter(r => r.fecha && r.fecha.startsWith(mesActualISO()))
+           : ciclo === 'historico' ? historico
+           : cicloActual();
+  const finca = document.getElementById('sel-finca').value;
+  if (finca !== 'todas') base = base.filter(r => r.finca === finca);
+  return base;
+}
+
 function badgeIC(ic) {
-  if (ic >= UMBRAL_CRITICO) return '<span class="badge b-crit">CRÍTICO ' + ic.toFixed(1) + '</span>';
-  if (ic >= UMBRAL_ALERTA)  return '<span class="badge b-alert">ALERTA ' + ic.toFixed(1) + '</span>';
-  if (ic >= 3)               return '<span class="badge b-warn">PRECAUCIÓN ' + ic.toFixed(1) + '</span>';
-  return '<span class="badge b-ok">NORMAL ' + ic.toFixed(1) + '</span>';
+  if (ic >= UMBRAL_CRITICO) return '<span class="badge b-crit">Crítico</span>';
+  if (ic >= UMBRAL_ALERTA)  return '<span class="badge b-warn">Alto</span>';
+  if (ic >= 1)               return '<span class="badge b-warn">Atención</span>';
+  return '<span class="badge b-ok">Óptimo</span>';
 }
 
 function destroyChart(id) {
   if (charts[id]) { charts[id].destroy(); delete charts[id]; }
 }
 
-// ── VISTA ACTUAL ──────────────────────────
+const CHART_TEXT = '#9aa1b5';
+const CHART_GRID = '#2a2f40';
+Chart.defaults.color = CHART_TEXT;
+Chart.defaults.borderColor = CHART_GRID;
+
 function renderVista(v) {
-  if (v === 'actual') renderActual();
-  if (v === 'mes') renderMes();
-  if (v === 'historico') renderHistorico();
+  if (v === 'resumen') renderResumen();
+  if (v === 'analisis') renderAnalisis();
 }
 
-function renderActual() {
-  const datos = cicloActual();
-  if (datos.length === 0) {
-    document.getElementById('kpi-actual').innerHTML = '<div style="color:var(--muted);padding:20px;">Sin registros en los últimos 15 días</div>';
-    document.getElementById('analisis-agronomico-actual').innerHTML = '';
-    return;
-  }
-  renderAnalisisAgronomico(datos, 'analisis-agronomico-actual');
-
-  const totalH = datos.reduce((s,r) => s + (r.hembras||0), 0);
-  const totalM = datos.reduce((s,r) => s + (r.machos||0), 0);
+// ── VISTA: RESUMEN EJECUTIVO ──────────────
+function renderResumen() {
+  const datos = datosFiltrados();
+  const instaladas = [...new Set(historico.map(r => r.trampaId))].length;
+  const activas = [...new Set(datos.map(r => r.trampaId))].length;
+  const totalH = datos.reduce((s,r) => s+(r.hembras||0), 0);
+  const totalM = datos.reduce((s,r) => s+(r.machos||0), 0);
   const totalCap = totalH + totalM;
-  const trampasUnicas = [...new Set(datos.map(r => r.trampaId))].length;
-  const ic = trampasUnicas > 0 ? (totalCap / trampasUnicas) : 0;
-  const alertas = datos.filter(r => (r.hembras||0)+(r.machos||0) >= UMBRAL_ALERTA).length;
+  const ic = activas>0 ? totalCap/activas : 0;
+  const cumplimiento = instaladas>0 ? Math.round(activas/instaladas*100) : 0;
 
-  // KPIs
-  document.getElementById('kpi-actual').innerHTML = `
-    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${trampasUnicas}</div><div class="kpi-lbl">Trampas revisadas</div><div class="kpi-sub">Ciclo 15 días</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">🔴 Hembras capturadas</div><div class="kpi-sub">Total del ciclo</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">🔵 Machos capturados</div><div class="kpi-sub">Total del ciclo</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':ic>=3?'var(--amber)':'var(--green)'};">${ic.toFixed(2)}</div><div class="kpi-lbl">Índice cap/trampa</div><div class="kpi-sub">Umbral alerta: ${UMBRAL_ALERTA}</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:${alertas>0?'var(--red)':'var(--green)'};">${alertas}</div><div class="kpi-lbl">Trampas en alerta</div><div class="kpi-sub">IC ≥ ${UMBRAL_ALERTA}</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--amber);">${totalM>0?(totalH/totalM).toFixed(2):'—'}</div><div class="kpi-lbl">Rel. H:M</div><div class="kpi-sub">&gt;1 = mayor riesgo</div></div>
+  document.getElementById('kpi-resumen').innerHTML = `
+    <div class="kpi"><div class="kpi-val" style="color:var(--text);">${instaladas}</div><div class="kpi-lbl">Trampas instaladas</div><div class="kpi-sub">Histórico total</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${activas}</div><div class="kpi-lbl">Trampas con registro</div><div class="kpi-sub">En el periodo</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(1)}</div><div class="kpi-lbl">Índice captura/trampa</div><div class="kpi-sub">Objetivo: &lt; ${UMBRAL_ALERTA}</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:${cumplimiento>=95?'var(--green)':'var(--amber)'};">${cumplimiento}%</div><div class="kpi-lbl">Cumplimiento revisiones</div><div class="kpi-sub">Objetivo: &gt; 95%</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div>
   `;
 
-  // Por lote
-  const porLote = {};
-  datos.forEach(r => {
-    const k = (r.finca||'').replace('FINCA ','F') + '_' + r.lote;
-    if (!porLote[k]) porLote[k] = {k, finca:r.finca, lote:r.lote, h:0, m:0, t:0, trampas:new Set()};
-    porLote[k].h += r.hembras||0;
-    porLote[k].m += r.machos||0;
-    porLote[k].t += (r.hembras||0)+(r.machos||0);
-    if (r.trampaId) porLote[k].trampas.add(r.trampaId);
-  });
-  const lotes = Object.values(porLote).sort((a,b) => b.t - a.t);
-  const maxT = lotes[0]?.t || 1;
-
-  document.getElementById('lotes-actual').innerHTML = lotes.map(l => {
-    const ic = l.trampas.size > 0 ? l.t / l.trampas.size : 0;
-    const cls = ic >= UMBRAL_CRITICO ? 'lf-crit' : ic >= UMBRAL_ALERTA ? 'lf-crit' : ic >= 3 ? 'lf-warn' : 'lf-ok';
-    return `<div class="lote-bar">
-      <div class="lb-top">
-        <span class="lb-name">${(l.finca||'').replace('FINCA ','F')} · Lote ${l.lote}</span>
-        <span class="lb-val">H:${l.h} M:${l.m} · IC:${ic.toFixed(1)}</span>
-      </div>
-      <div class="lb-track"><div class="lb-fill ${cls}" style="width:${Math.round(l.t/maxT*100)}%;"></div></div>
-    </div>`;
-  }).join('') || '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Sin datos</div>';
-
-  // Alertas
-  const alertasList = datos.filter(r => (r.hembras||0)+(r.machos||0) >= UMBRAL_ALERTA).sort((a,b) => ((b.hembras||0)+(b.machos||0)) - ((a.hembras||0)+(a.machos||0)));
-  document.getElementById('alertas-actual').innerHTML = alertasList.length === 0
-    ? '<div style="color:var(--green);font-size:13px;text-align:center;padding:20px;">✅ Sin alertas en el ciclo actual</div>'
-    : `<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Trampa</th><th>Lote</th><th>H</th><th>M</th><th>IC</th><th>Nivel</th></tr></thead><tbody>
-      ${alertasList.map(r => {
-        const ic = (r.hembras||0)+(r.machos||0);
-        return `<tr><td style="font-weight:700;font-family:'DM Mono',monospace;">${r.trampaId}</td><td>${(r.finca||'').replace('FINCA ','F')} L${r.lote}</td><td style="color:var(--red);">${r.hembras||0}</td><td style="color:var(--blue);">${r.machos||0}</td><td style="font-weight:700;">${ic}</td><td>${badgeIC(ic)}</td></tr>`;
-      }).join('')}
-    </tbody></table></div>`;
-
-  // Chart H vs M por finca
-  const porFinca = {};
-  datos.forEach(r => {
-    const f = (r.finca||'F?').replace('FINCA ','F');
-    if (!porFinca[f]) porFinca[f] = {h:0,m:0};
-    porFinca[f].h += r.hembras||0;
-    porFinca[f].m += r.machos||0;
-  });
-  const fincas = Object.keys(porFinca).sort();
-  destroyChart('chart-hm-actual');
-  charts['chart-hm-actual'] = new Chart(document.getElementById('chart-hm-actual'), {
-    type: 'bar',
-    data: {
-      labels: fincas,
-      datasets: [
-        { label: '🔴 Hembras', data: fincas.map(f => porFinca[f].h), backgroundColor: '#fca5a5', borderColor: '#dc2626', borderWidth: 2, borderRadius: 6 },
-        { label: '🔵 Machos', data: fincas.map(f => porFinca[f].m), backgroundColor: '#93c5fd', borderColor: '#2563eb', borderWidth: 2, borderRadius: 6 },
-      ]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true}} }
-  });
-
-  // Chart estado trampas
-  const estados = {};
-  datos.forEach(r => { const e = r.estadoTrampa||'Sin dato'; estados[e] = (estados[e]||0) + 1; });
-  destroyChart('chart-estado-actual');
-  charts['chart-estado-actual'] = new Chart(document.getElementById('chart-estado-actual'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(estados),
-      datasets: [{ data: Object.values(estados), backgroundColor: ['#86efac','#fcd34d','#fca5a5','#c4b5fd','#94a3b8'], borderWidth: 2 }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} }
-  });
-
-  // Operarios
-  const porOp = {};
-  datos.forEach(r => {
-    const op = r.operario || 'Desconocido';
-    if (!porOp[op]) porOp[op] = {trampas:0, h:0, m:0};
-    porOp[op].trampas++;
-    porOp[op].h += r.hembras||0;
-    porOp[op].m += r.machos||0;
-  });
-  document.getElementById('operarios-actual').innerHTML = Object.entries(porOp).map(([op,s]) => `
-    <div class="op-row">
-      <div><div class="op-name">👷 ${op}</div><div class="op-sub">${s.trampas} trampas revisadas</div></div>
-      <div class="op-stats">
-        <div><div class="op-stat-val" style="color:var(--red);">${s.h}</div><div class="op-stat-lbl">Hembras</div></div>
-        <div><div class="op-stat-val" style="color:var(--blue);">${s.m}</div><div class="op-stat-lbl">Machos</div></div>
-        <div><div class="op-stat-val">${s.h+s.m}</div><div class="op-stat-lbl">Total</div></div>
-      </div>
-    </div>`).join('') || '<div style="color:var(--muted);padding:16px;text-align:center;">Sin datos de operarios</div>';
-}
-
-// ── VISTA MES ─────────────────────────────
-function renderMes() {
-  const mes = mesActualISO();
-  const datos = historico.filter(r => r.fecha && r.fecha.startsWith(mes));
-  renderAnalisisAgronomico(datos, 'analisis-agronomico-mes');
-  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  document.getElementById('mes-nombre').textContent = meses[new Date().getMonth()] + ' ' + new Date().getFullYear();
-
-  const totalH = datos.reduce((s,r) => s+r.hembras,0);
-  const totalM = datos.reduce((s,r) => s+r.machos,0);
-  const totalCap = totalH + totalM;
-  const trampasUnicas = [...new Set(datos.map(r=>r.trampaId))].length;
-  const ic = trampasUnicas>0 ? (totalCap/trampasUnicas) : 0;
-
-  document.getElementById('kpi-mes').innerHTML = `
-    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${trampasUnicas}</div><div class="kpi-lbl">Trampas revisadas</div><div class="kpi-sub">En el mes</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">Hembras totales</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">Machos totales</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(2)}</div><div class="kpi-lbl">IC promedio mes</div></div>
-    <div class="kpi"><div class="kpi-val">${totalCap}</div><div class="kpi-lbl">Capturas totales</div></div>
-  `;
-
-  // Capturas diarias
+  // Tendencia IC por día
   const porDia = {};
   datos.forEach(r => {
-    if (!porDia[r.fecha]) porDia[r.fecha] = {h:0,m:0};
-    porDia[r.fecha].h += r.hembras||0;
-    porDia[r.fecha].m += r.machos||0;
+    if (!porDia[r.fecha]) porDia[r.fecha] = {h:0,m:0,tr:new Set()};
+    porDia[r.fecha].h += r.hembras||0; porDia[r.fecha].m += r.machos||0;
+    if (r.trampaId) porDia[r.fecha].tr.add(r.trampaId);
   });
   const dias = Object.keys(porDia).sort();
-  destroyChart('chart-mes-daily');
-  charts['chart-mes-daily'] = new Chart(document.getElementById('chart-mes-daily'), {
+  const icPorDia = dias.map(d => porDia[d].tr.size>0 ? (porDia[d].h+porDia[d].m)/porDia[d].tr.size : 0);
+  destroyChart('chart-tendencia-ic');
+  charts['chart-tendencia-ic'] = new Chart(document.getElementById('chart-tendencia-ic'), {
     type: 'line',
-    data: {
-      labels: dias.map(d => d.slice(8)),
-      datasets: [
-        { label: '🔴 Hembras', data: dias.map(d=>porDia[d].h), borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,.1)', fill:true, tension:.3, pointRadius:4 },
-        { label: '🔵 Machos', data: dias.map(d=>porDia[d].m), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.1)', fill:true, tension:.3, pointRadius:4 },
-      ]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{title:{display:true,text:'Día del mes'}},y:{beginAtZero:true,title:{display:true,text:'Capturas'}}} }
+    data: { labels: dias.map(d=>d.slice(5)), datasets: [
+      { label: 'IC (cap/trampa)', data: icPorDia, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', fill:true, tension:.3, pointRadius:2 },
+      { label: 'Umbral alerta', data: dias.map(()=>UMBRAL_ALERTA), borderColor:'#ef4444', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{boxWidth:12}}}, scales:{x:{grid:{color:CHART_GRID}},y:{beginAtZero:true,grid:{color:CHART_GRID}}} }
   });
 
-  // Por finca
-  const porFinca = {};
-  datos.forEach(r => { const f=(r.finca||'?').replace('FINCA ','F'); if(!porFinca[f])porFinca[f]=0; porFinca[f]+=(r.hembras||0)+(r.machos||0); });
-  destroyChart('chart-mes-finca');
-  charts['chart-mes-finca'] = new Chart(document.getElementById('chart-mes-finca'), {
-    type: 'bar',
-    data: {
-      labels: Object.keys(porFinca).sort(),
-      datasets: [{ label: 'Capturas totales', data: Object.keys(porFinca).sort().map(f=>porFinca[f]), backgroundColor:['#1e3a5f','#2563eb','#7c3aed'], borderRadius:8 }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  // Estado del sistema (según último estadoTrampa reportado por trampa)
+  const ultimoEstado = {};
+  [...datos].sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(r => { if (r.trampaId) ultimoEstado[r.trampaId] = r.estadoTrampa || 'Buena'; });
+  const grupos = {'Óptimo':0,'Atención':0,'Crítico':0,'Fuera de servicio':0};
+  Object.values(ultimoEstado).forEach(e => {
+    if (e === 'Buena') grupos['Óptimo']++;
+    else if (e === 'Reubicar') grupos['Atención']++;
+    else if (e === 'Dañada') grupos['Crítico']++;
+    else if (e === 'Perdida') grupos['Fuera de servicio']++;
+    else grupos['Óptimo']++;
+  });
+  destroyChart('chart-estado-sistema');
+  charts['chart-estado-sistema'] = new Chart(document.getElementById('chart-estado-sistema'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(grupos).map(k=>`${k} (${grupos[k]})`), datasets: [{ data: Object.values(grupos), backgroundColor:['#22c55e','#f59e0b','#ef4444','#5f6678'], borderWidth:2, borderColor:'#161922' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:11}}}} }
   });
 
-  // Top lotes
+  // Top 5 lotes por IC
   const porLote = {};
-  datos.forEach(r => { const k=(r.finca||'').replace('FINCA ','F')+'_Lote'+r.lote; if(!porLote[k])porLote[k]={n:k,t:0,tr:new Set()}; porLote[k].t+=(r.hembras||0)+(r.machos||0); if(r.trampaId)porLote[k].tr.add(r.trampaId); });
-  const topLotes = Object.values(porLote).sort((a,b)=>b.t-a.t).slice(0,10);
-  const maxT = topLotes[0]?.t || 1;
-  document.getElementById('top-lotes-mes').innerHTML = topLotes.map(l => {
-    const ic = l.tr.size>0?l.t/l.tr.size:0;
-    const cls = ic>=UMBRAL_CRITICO?'lf-crit':ic>=UMBRAL_ALERTA?'lf-crit':ic>=3?'lf-warn':'lf-ok';
-    return `<div class="lote-bar"><div class="lb-top"><span class="lb-name">${l.n.replace('_',' · ')}</span><span class="lb-val">${l.t} cap · IC ${ic.toFixed(1)}</span></div><div class="lb-track"><div class="lb-fill ${cls}" style="width:${Math.round(l.t/maxT*100)}%;"></div></div></div>`;
-  }).join('');
-
-  // Ciclos (agrupados por semana del mes)
-  const semanas = {};
   datos.forEach(r => {
-    const dia = parseInt(r.fecha.slice(8,10),10) || 1;
-    const semNum = Math.ceil(dia/7);
-    const key = 'Semana '+semNum;
-    if(!semanas[key]) semanas[key] = {revisiones:0,h:0,m:0,tr:new Set()};
-    semanas[key].revisiones++;
-    semanas[key].h += r.hembras||0;
-    semanas[key].m += r.machos||0;
-    if(r.trampaId) semanas[key].tr.add(r.trampaId);
+    const k = (r.finca||'?').replace('FINCA ','F')+' · L'+r.lote;
+    if (!porLote[k]) porLote[k] = {tot:0, tr:new Set()};
+    porLote[k].tot += (r.hembras||0)+(r.machos||0);
+    if (r.trampaId) porLote[k].tr.add(r.trampaId);
   });
-  const filasCiclo = Object.keys(semanas)
-    .sort((a,b)=>parseInt(a.split(' ')[1])-parseInt(b.split(' ')[1]))
-    .map(k => {
-      const s = semanas[k];
-      const total = s.h+s.m;
-      const ic = s.tr.size>0 ? total/s.tr.size : 0;
-      const estado = ic>=UMBRAL_CRITICO?'🔴 Crítico':ic>=UMBRAL_ALERTA?'🟡 Alerta':'🟢 Normal';
-      return `<tr><td>${k}</td><td>${s.revisiones}</td><td>${s.h}</td><td>${s.m}</td><td>${total}</td><td>${ic.toFixed(2)}</td><td>${estado}</td></tr>`;
-    }).join('');
-  document.getElementById('ciclos-mes-body').innerHTML = filasCiclo || '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Sin datos del mes actual</td></tr>';
+  const topLotes = Object.entries(porLote).map(([k,v]) => ({k, tr:v.tr.size, tot:v.tot, ic: v.tr.size>0?v.tot/v.tr.size:0})).sort((a,b)=>b.ic-a.ic).slice(0,5);
+  document.getElementById('top-lotes-resumen').innerHTML = topLotes.map(l => `<tr><td style="font-weight:700;">${l.k}</td><td>${l.tr}</td><td>${l.tot}</td><td style="font-weight:700;">${l.ic.toFixed(1)}</td><td>${badgeIC(l.ic)}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">Sin datos</td></tr>';
+
+  // Alertas activas: capturas altas + trampas sin revisión reciente
+  const capPorTrampa = {};
+  datos.forEach(r => { if (r.trampaId) capPorTrampa[r.trampaId] = (capPorTrampa[r.trampaId]||0) + (r.hembras||0)+(r.machos||0); });
+  const alertasCap = Object.entries(capPorTrampa).filter(([id,tot]) => tot >= UMBRAL_ALERTA).sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([id,tot]) => ({txt:`Trampa ${id} con ${tot} capturas`, nivel:tot>=UMBRAL_CRITICO?'b-crit':'b-warn', etq:tot>=UMBRAL_CRITICO?'Crítico':'Alto'}));
+  const ultimaFechaPorTrampa = {};
+  historico.forEach(r => { if (r.trampaId && (!ultimaFechaPorTrampa[r.trampaId] || r.fecha > ultimaFechaPorTrampa[r.trampaId])) ultimaFechaPorTrampa[r.trampaId] = r.fecha; });
+  const hoy = new Date();
+  const alertasRevision = Object.entries(ultimaFechaPorTrampa).map(([id,f]) => {
+    const dias = Math.round((hoy - new Date(f)) / 86400000);
+    return {id, dias};
+  }).filter(a => a.dias >= 15).sort((a,b)=>b.dias-a.dias).slice(0,5)
+    .map(a => ({txt:`Trampa ${a.id} sin revisión (${a.dias} días)`, nivel:a.dias>=20?'b-crit':'b-warn', etq:a.dias>=20?'Crítico':'Atención'}));
+  const alertas = [...alertasRevision, ...alertasCap].slice(0,8);
+  document.getElementById('alertas-resumen').innerHTML = alertas.length === 0
+    ? '<div style="color:var(--green);font-size:13px;text-align:center;padding:30px;">✅ Sin alertas activas</div>'
+    : alertas.map(a => `<div class="alert-row"><span class="alert-txt">${a.txt}</span><span class="badge ${a.nivel}">${a.etq}</span></div>`).join('');
 }
 
-// ── ANÁLISIS AGRONÓMICO ───────────────────
+// ── VISTA: ANÁLISIS (biológico + informe fitosanitario) ──
+function renderAnalisis() {
+  const datos = datosFiltrados();
+  renderAnalisisAgronomico(datos, 'informe-fitosanitario');
+  if (datos.length === 0) {
+    ['chart-sexo','chart-tendencia-sexo','chart-prop-lote'].forEach(destroyChart);
+    return;
+  }
+
+  const totalH = datos.reduce((s,r)=>s+(r.hembras||0),0);
+  const totalM = datos.reduce((s,r)=>s+(r.machos||0),0);
+  destroyChart('chart-sexo');
+  charts['chart-sexo'] = new Chart(document.getElementById('chart-sexo'), {
+    type: 'doughnut',
+    data: { labels:[`Hembras ${totalH}`,`Machos ${totalM}`], datasets:[{ data:[totalH,totalM], backgroundColor:['#ef4444','#3b82f6'], borderWidth:2, borderColor:'#161922' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}} }
+  });
+
+  const porDia = {};
+  datos.forEach(r => { if(!porDia[r.fecha]) porDia[r.fecha]={h:0,m:0}; porDia[r.fecha].h+=r.hembras||0; porDia[r.fecha].m+=r.machos||0; });
+  const dias = Object.keys(porDia).sort();
+  destroyChart('chart-tendencia-sexo');
+  charts['chart-tendencia-sexo'] = new Chart(document.getElementById('chart-tendencia-sexo'), {
+    type: 'line',
+    data: { labels: dias.map(d=>d.slice(5)), datasets: [
+      { label:'Total', data: dias.map(d=>porDia[d].h+porDia[d].m), borderColor:'#22c55e', backgroundColor:'transparent', tension:.3, pointRadius:2 },
+      { label:'Hembras', data: dias.map(d=>porDia[d].h), borderColor:'#ef4444', backgroundColor:'transparent', tension:.3, pointRadius:2 },
+      { label:'Machos', data: dias.map(d=>porDia[d].m), borderColor:'#3b82f6', backgroundColor:'transparent', tension:.3, pointRadius:2 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{boxWidth:12}}}, scales:{x:{grid:{color:CHART_GRID}},y:{beginAtZero:true,grid:{color:CHART_GRID}}} }
+  });
+
+  const porLote = {};
+  datos.forEach(r => {
+    const k = (r.finca||'?').replace('FINCA ','F')+' · L'+r.lote;
+    if(!porLote[k]) porLote[k]={h:0,m:0};
+    porLote[k].h += r.hembras||0; porLote[k].m += r.machos||0;
+  });
+  const lotesRatio = Object.entries(porLote).map(([k,v]) => ({k, ratio: v.m>0?v.h/v.m:v.h})).sort((a,b)=>b.ratio-a.ratio).slice(0,5);
+  destroyChart('chart-prop-lote');
+  charts['chart-prop-lote'] = new Chart(document.getElementById('chart-prop-lote'), {
+    type: 'bar',
+    data: { labels: lotesRatio.map(l=>l.k), datasets:[{ label:'Relación H/M', data: lotesRatio.map(l=>l.ratio), backgroundColor:'#ef4444', borderRadius:6 }] },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,grid:{color:CHART_GRID}},y:{grid:{display:false}}} }
+  });
+}
+
+// ── INFORME TÉCNICO FITOSANITARIO ─────────
 function renderAnalisisAgronomico(datos, contId) {
   const cont = document.getElementById(contId);
-  if (!datos || datos.length === 0) { cont.innerHTML = ''; return; }
+  if (!datos || datos.length === 0) { cont.innerHTML = '<div class="soon-box"><div class="icon">🧬</div><h3>Sin datos para el periodo/finca seleccionados</h3></div>'; return; }
 
   const fechas = [...new Set(datos.map(r => r.fecha))].sort();
   const mitad = Math.ceil(fechas.length/2);
@@ -597,7 +522,6 @@ function renderAnalisisAgronomico(datos, contId) {
   const variacion = icPrevio>0 ? ((icReciente-icPrevio)/icPrevio*100) : 0;
   const tendenciaTxt = variacion>10?'ascendente':variacion<-10?'descendente':'estable';
   const tendenciaIcon = variacion>10?'⚠️':variacion<-10?'✅':'➖';
-  // Proyección simple: continuación lineal de la variación observada entre los dos últimos periodos.
   const proyeccion = Math.max(0, icReciente + (icReciente - icPrevio));
 
   const porFinca = {};
@@ -612,7 +536,6 @@ function renderAnalisisAgronomico(datos, contId) {
     .sort((a,b) => b.ic-a.ic);
   const fincaCritica = fincasIC[0];
 
-  // Umbral histórico de la finca crítica: IC promedio de esa finca en TODO el histórico disponible.
   let icHistFinca = null;
   if (fincaCritica && historico.length) {
     const subHist = historico.filter(r => r.finca === fincaCritica.f);
@@ -633,7 +556,7 @@ function renderAnalisisAgronomico(datos, contId) {
     .sort((a,b) => b.ic-a.ic).slice(0,3);
 
   const nivelGeneral = icReciente>=UMBRAL_CRITICO?'CRÍTICO':icReciente>=UMBRAL_ALERTA?'EN ALERTA':'CONTROLADO';
-  const colorNivel = icReciente>=UMBRAL_CRITICO?'var(--red)':icReciente>=UMBRAL_ALERTA?'#d97706':'var(--green)';
+  const colorNivel = icReciente>=UMBRAL_CRITICO?'var(--red)':icReciente>=UMBRAL_ALERTA?'var(--amber)':'var(--green)';
   const esCritico = icReciente>=UMBRAL_CRITICO;
   const esAlerta = icReciente>=UMBRAL_ALERTA;
 
@@ -643,52 +566,29 @@ function renderAnalisisAgronomico(datos, contId) {
         : `, dentro de su comportamiento histórico habitual (IC hist. ${icHistFinca.toFixed(2)})`)
     : '';
 
-  // ── Plan de Manejo Integrado (MIP), graduado según el nivel de riesgo ──
   const mip = [
-    {
-      icono:'🪤', titulo:'Control etológico',
-      txt: esCritico
-        ? 'Reducir el intervalo de revisión a 5–7 días en los lotes críticos; renovar feromona de agregación y cebo de inmediato en las trampas con mayor captura.'
-        : esAlerta
-        ? 'Mantener revisión semanal y verificar vigencia de feromona y cebo en los puntos con índice de captura elevado.'
-        : 'Continuar con el cronograma de revisión cada 15 días según protocolo vigente.'
-    },
-    {
-      icono:'🌿', titulo:'Control cultural',
-      txt: esCritico
-        ? 'Intensificar el saneamiento: eliminar y picar palmas afectadas, estípites caídos y cogollos en descomposición que sirven de criadero, en un radio prioritario alrededor de los focos detectados.'
-        : esAlerta
-        ? 'Mantener el saneamiento rutinario de residuos de cosecha y palmas hospederas; inspeccionar lotes vecinos a los focos de alerta.'
-        : 'Mantener las labores rutinarias de saneamiento y manejo de residuos de cosecha.'
-    },
-    {
-      icono:'🦠', titulo:'Control biológico',
-      txt: (esCritico||esAlerta)
-        ? 'Evaluar aplicación de hongos entomopatógenos (Metarhizium anisopliae / Beauveria bassiana) en cebos trampa de los focos activos y monitorear la presencia de enemigos naturales.'
-        : 'Conservar y favorecer la fauna benéfica presente; sin intervención adicional requerida en este nivel.'
-    },
-    {
-      icono:'⚗️', titulo:'Control químico',
-      txt: esCritico
-        ? 'Considerar como última opción el uso de insecticida autorizado por el ICA en cebo-trampa, exclusivamente en los focos críticos y bajo supervisión del responsable de Sanidad Vegetal.'
-        : 'No se justifica intervención química en el nivel de riesgo actual; reservar como medida de último recurso.'
-    },
+    { icono:'🪤', titulo:'Control etológico',
+      txt: esCritico ? 'Reducir el intervalo de revisión a 5–7 días en los lotes críticos; renovar feromona de agregación y cebo de inmediato en las trampas con mayor captura.'
+        : esAlerta ? 'Mantener revisión semanal y verificar vigencia de feromona y cebo en los puntos con índice de captura elevado.'
+        : 'Continuar con el cronograma de revisión cada 15 días según protocolo vigente.' },
+    { icono:'🌿', titulo:'Control cultural',
+      txt: esCritico ? 'Intensificar el saneamiento: eliminar y picar palmas afectadas, estípites caídos y cogollos en descomposición que sirven de criadero, en un radio prioritario alrededor de los focos detectados.'
+        : esAlerta ? 'Mantener el saneamiento rutinario de residuos de cosecha y palmas hospederas; inspeccionar lotes vecinos a los focos de alerta.'
+        : 'Mantener las labores rutinarias de saneamiento y manejo de residuos de cosecha.' },
+    { icono:'🦠', titulo:'Control biológico',
+      txt: (esCritico||esAlerta) ? 'Evaluar aplicación de hongos entomopatógenos (Metarhizium anisopliae / Beauveria bassiana) en cebos trampa de los focos activos y monitorear la presencia de enemigos naturales.'
+        : 'Conservar y favorecer la fauna benéfica presente; sin intervención adicional requerida en este nivel.' },
+    { icono:'⚗️', titulo:'Control químico',
+      txt: esCritico ? 'Considerar como última opción el uso de insecticida autorizado por el ICA en cebo-trampa, exclusivamente en los focos críticos y bajo supervisión del responsable de Sanidad Vegetal.'
+        : 'No se justifica intervención química en el nivel de riesgo actual; reservar como medida de último recurso.' },
   ];
 
   const recomendaciones = [];
-  if (esCritico) {
-    recomendaciones.push('Intensificar la frecuencia de revisión de trampas (cada 5-7 días) en los lotes críticos y activar el plan de manejo integrado descrito a continuación.');
-  } else if (esAlerta) {
-    recomendaciones.push('Mantener monitoreo semanal estricto; reforzar el cambio de feromonas y cebo en los puntos con mayor índice de captura.');
-  } else {
-    recomendaciones.push('Mantener el programa de monitoreo actual; el nivel de presión poblacional se encuentra dentro de parámetros aceptables.');
-  }
-  if (variacion>10) {
-    recomendaciones.push('La tendencia ascendente sugiere una posible fuente de reinfestación cercana; se recomienda inspección de campo en los lotes con mayor incremento.');
-  }
-  if (fincaCritica) {
-    recomendaciones.push(`Priorizar ${fincaCritica.f} por concentrar el mayor índice de captura promedio (IC ${fincaCritica.ic.toFixed(2)})${comparativoHistTxt}.`);
-  }
+  if (esCritico) recomendaciones.push('Intensificar la frecuencia de revisión de trampas (cada 5-7 días) en los lotes críticos y activar el plan de manejo integrado descrito a continuación.');
+  else if (esAlerta) recomendaciones.push('Mantener monitoreo semanal estricto; reforzar el cambio de feromonas y cebo en los puntos con mayor índice de captura.');
+  else recomendaciones.push('Mantener el programa de monitoreo actual; el nivel de presión poblacional se encuentra dentro de parámetros aceptables.');
+  if (variacion>10) recomendaciones.push('La tendencia ascendente sugiere una posible fuente de reinfestación cercana; se recomienda inspección de campo en los lotes con mayor incremento.');
+  if (fincaCritica) recomendaciones.push(`Priorizar ${fincaCritica.f} por concentrar el mayor índice de captura promedio (IC ${fincaCritica.ic.toFixed(2)})${comparativoHistTxt}.`);
 
   cont.innerHTML = `
     <div class="card informe-card">
@@ -719,7 +619,7 @@ function renderAnalisisAgronomico(datos, contId) {
         </p>
 
         <h3>2. Recomendaciones técnicas</h3>
-        <ul style="margin:0 0 4px;padding-left:18px;line-height:1.65;font-size:13px;">
+        <ul style="margin:0 0 4px;padding-left:18px;line-height:1.65;font-size:13px;color:var(--text);">
           ${recomendaciones.map(r => `<li>${r}</li>`).join('')}
         </ul>
 
@@ -736,99 +636,13 @@ function renderAnalisisAgronomico(datos, contId) {
   `;
 }
 
-// ── VISTA HISTÓRICO ───────────────────────
-function renderHistorico() {
-  if (historico.length === 0) {
-    document.getElementById('kpi-historico').innerHTML = '<div style="color:var(--muted);padding:20px;">Sin datos históricos</div>';
-    document.getElementById('analisis-agronomico').innerHTML = '';
-    return;
-  }
-  renderAnalisisAgronomico(historico, 'analisis-agronomico');
-
-  const totalH = historico.reduce((s,r) => s+r.hembras,0);
-  const totalM = historico.reduce((s,r) => s+r.machos,0);
-  const totalCap = totalH + totalM;
-  const ciclos = [...new Set(historico.map(r => r.fecha))].length;
-  const trampas = [...new Set(historico.map(r => r.trampaId))].length;
-  const ic = trampas>0 ? (totalCap/trampas) : 0;
-
-  document.getElementById('kpi-historico').innerHTML = `
-    <div class="kpi"><div class="kpi-val" style="color:var(--primary);">${trampas}</div><div class="kpi-lbl">Trampas con registro</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--muted);">${historico.length}</div><div class="kpi-lbl">Registros totales</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--red);">${totalH}</div><div class="kpi-lbl">Hembras históricas</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:var(--blue);">${totalM}</div><div class="kpi-lbl">Machos históricos</div></div>
-    <div class="kpi"><div class="kpi-val">${totalCap}</div><div class="kpi-lbl">Capturas totales</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(2)}</div><div class="kpi-lbl">IC histórico</div></div>
-    <div class="kpi"><div class="kpi-val">${ciclos}</div><div class="kpi-lbl">Días con registro</div></div>
-  `;
-
-  // IC por fecha
-  const porFecha = {};
-  historico.forEach(r => {
-    if (!porFecha[r.fecha]) porFecha[r.fecha] = {h:0,m:0,tr:new Set()};
-    porFecha[r.fecha].h += r.hembras||0;
-    porFecha[r.fecha].m += r.machos||0;
-    if (r.trampaId) porFecha[r.fecha].tr.add(r.trampaId);
-  });
-  const fechas = Object.keys(porFecha).sort();
-  const icPorFecha = fechas.map(f => porFecha[f].tr.size>0 ? (porFecha[f].h+porFecha[f].m)/porFecha[f].tr.size : 0);
-
-  destroyChart('chart-hist-ic');
-  charts['chart-hist-ic'] = new Chart(document.getElementById('chart-hist-ic'), {
-    type: 'line',
-    data: {
-      labels: fechas,
-      datasets: [
-        { label: 'IC (cap/trampa)', data: icPorFecha, borderColor:'#1e3a5f', backgroundColor:'rgba(30,58,95,.1)', fill:true, tension:.3, pointRadius:3 },
-        { label: 'Umbral alerta', data: fechas.map(() => UMBRAL_ALERTA), borderColor:'#dc2626', borderDash:[5,5], borderWidth:2, pointRadius:0, fill:false },
-      ]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true,title:{display:true,text:'IC (capturas/trampa)'}}} }
-  });
-
-  // H vs M histórico
-  destroyChart('chart-hist-hm');
-  charts['chart-hist-hm'] = new Chart(document.getElementById('chart-hist-hm'), {
-    type: 'bar',
-    data: {
-      labels: fechas,
-      datasets: [
-        { label: '🔴 Hembras', data: fechas.map(f=>porFecha[f].h), backgroundColor:'rgba(220,38,38,.6)', borderRadius:3 },
-        { label: '🔵 Machos', data: fechas.map(f=>porFecha[f].m), backgroundColor:'rgba(37,99,235,.6)', borderRadius:3 },
-      ]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}} }
-  });
-
-  // Por finca histórico
-  const porFinca = {};
-  historico.forEach(r => { const f=(r.finca||'?').replace('FINCA ','F'); if(!porFinca[f])porFinca[f]=0; porFinca[f]+=(r.hembras||0)+(r.machos||0); });
-  destroyChart('chart-hist-finca');
-  charts['chart-hist-finca'] = new Chart(document.getElementById('chart-hist-finca'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(porFinca).sort(),
-      datasets: [{ data: Object.keys(porFinca).sort().map(f=>porFinca[f]), backgroundColor:['#1e3a5f','#2563eb','#7c3aed'], borderWidth:3 }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} }
-  });
-
-  // Tabla histórico (últimos 100)
-  const recientes = [...historico].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,100);
-  document.getElementById('hist-body').innerHTML = recientes.map(r => {
-    const tot = (r.hembras||0)+(r.machos||0);
-    const bg = tot>=UMBRAL_CRITICO?'background:#fef2f2':tot>=UMBRAL_ALERTA?'background:#fff7ed':'';
-    return `<tr style="${bg}"><td>${r.fecha}</td><td>${(r.finca||'').replace('FINCA ','F')}</td><td>${r.lote}</td><td style="font-family:'DM Mono',monospace;font-weight:700;">${r.trampaId}</td><td style="color:var(--red);">${r.hembras||0}</td><td style="color:var(--blue);">${r.machos||0}</td><td style="font-weight:700;">${tot}</td><td>${r.estadoCebo||'—'}</td><td>${r.estadoTrampa||'—'}</td><td>${r.operario||'—'}</td></tr>`;
-  }).join('');
-}
-
 // ── PDF EXPORT ────────────────────────────
 function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   const hoy = new Date();
   const fechaStr = hoy.toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' });
-  doc.setFillColor(15,17,23);
+  doc.setFillColor(12,14,20);
   doc.rect(0, 0, pageW, 16, 'F');
-  doc.setTextColor(240,201,106);
+  doc.setTextColor(212,175,55);
   doc.setFont('helvetica','bold');
   doc.setFontSize(13);
   doc.text('Análisis de Trampas — Palma Grande S.A.S.', 8, 9.5);
@@ -838,22 +652,15 @@ function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   doc.text('Rhynchophorus palmarum  ·  Vista: ' + nombreVista + '  ·  Generado: ' + fechaStr, 8, 13.5);
 }
 
-// Si el bloque tiene una lista de filas reconocible (filas de tabla o de
-// "lote-bar"), la paginación corta exactamente entre filas para no partir
-// ningún registro a la mitad; si no hay filas reconocibles (p. ej. un
-// gráfico), corta por píxeles como última opción.
 function paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, startYmm) {
   let filas = Array.from(bloqueEl.querySelectorAll('table.tbl tbody tr'));
-  if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar'));
+  if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar, .alert-row'));
   const bloqueRect = bloqueEl.getBoundingClientRect();
   const escala = canvas.width / bloqueRect.width;
   const limitesPx = filas
     .map(f => (f.getBoundingClientRect().bottom - bloqueRect.top) * escala)
     .filter(v => v > 0 && v <= canvas.height);
   const pxPerMm = canvas.width / anchoMm;
-  // Si hay filas reconocibles, se ignora cualquier relleno/padding que quede
-  // después de la última fila (footer del card, etc.) para que esa sobra no
-  // dispare una página adicional casi en blanco.
   const totalHpx = limitesPx.length ? Math.min(canvas.height, limitesPx[limitesPx.length - 1]) : canvas.height;
 
   let offsetPx = 0;
@@ -881,28 +688,23 @@ function paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nomb
 }
 
 async function exportarPDF() {
+  if (!VISTAS_DISPONIBLES.includes(vistaActual)) { showToast('Esta vista todavía no tiene exportación a PDF'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const nombreVista = vistaActual==='actual' ? 'Ciclo actual' : vistaActual==='mes' ? 'Este mes' : 'Histórico';
+  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : 'Análisis';
   const topMargin = 19, bottomMargin = 6, sideMargin = 7, gap = 3;
   const imgW = pageW - sideMargin*2;
-  const availableH = pageH - topMargin - bottomMargin;
-  const TOLERANCIA_ENCOGER = 0.15; // % máximo que se reduce un bloque para que quepa sin saltar de página
+  const TOLERANCIA_ENCOGER = 0.15;
 
-  const el = document.getElementById('vista-' + vistaActual);
+  const el = document.getElementById('view-' + vistaActual);
   el.style.display = 'block';
   await new Promise(r => setTimeout(r, 300));
 
   dibujarEncabezadoPDF(doc, nombreVista, pageW);
   const estado = { y: topMargin, esPrimerBloqueDePagina: true };
 
-  // Coloca un bloque ya capturado (canvas) con el ancho indicado, intentando
-  // siempre llenar el espacio disponible: si cabe completo se dibuja tal
-  // cual; si casi cabe (hasta 15% de diferencia) se encoge para no saltar de
-  // página ni dejar huecos; si es realmente más alto que una página se
-  // pagina cortando entre filas (nunca a la mitad de una fila).
   async function colocarBloque(bloqueEl, canvas, anchoMm) {
     const h = canvas.height * anchoMm / canvas.width;
     const xMm = sideMargin + (imgW - anchoMm) / 2;
@@ -914,7 +716,6 @@ async function exportarPDF() {
       estado.esPrimerBloqueDePagina = false;
       return;
     }
-
     if (!estado.esPrimerBloqueDePagina && h <= espacioRestante * (1 + TOLERANCIA_ENCOGER)) {
       const factor = espacioRestante / h;
       const wEnc = anchoMm * factor;
@@ -924,19 +725,10 @@ async function exportarPDF() {
       estado.esPrimerBloqueDePagina = false;
       return;
     }
-
-    // Si el bloque tiene filas reconocibles (tabla o lote-bar), siempre se
-    // pagina por filas en vez de forzar una página nueva: así se aprovecha
-    // primero lo que quede de la página actual (si alcanza para al menos
-    // una fila) y solo se salta de página cuando de verdad no cabe nada.
-    // Esto NO aplica a una fila grid2/grid3 combinada (varias tarjetas
-    // distintas en una sola imagen): cortar por los límites de fila de una
-    // de sus tarjetas podría partir a la mitad otra tarjeta (p. ej. un
-    // gráfico) que no comparte esos límites.
     const esGridCombinado = bloqueEl.classList.contains('grid2') || bloqueEl.classList.contains('grid3');
-    const tieneFilas = !esGridCombinado && bloqueEl.querySelector('table.tbl tbody tr, .lote-bar') !== null;
+    const tieneFilas = !esGridCombinado && bloqueEl.querySelector('table.tbl tbody tr, .lote-bar, .alert-row') !== null;
     if (tieneFilas) {
-      const espacioMinUtil = 14; // mm
+      const espacioMinUtil = 14;
       if (espacioRestante >= espacioMinUtil) {
         paginarConFilas(doc, bloqueEl, canvas, anchoMm, xMm, pageW, pageH, nombreVista, topMargin, bottomMargin, estado.y);
       } else {
@@ -947,16 +739,12 @@ async function exportarPDF() {
       estado.esPrimerBloqueDePagina = false;
       return;
     }
-
     if (!estado.esPrimerBloqueDePagina) {
       doc.addPage();
       dibujarEncabezadoPDF(doc, nombreVista, pageW);
       estado.y = topMargin;
       estado.esPrimerBloqueDePagina = true;
     }
-
-    // Bloque sin filas reconocibles (p. ej. un gráfico): nunca se recorta,
-    // se encoge lo que sea necesario para que quepa entero en la página.
     const espacioFresco = pageH - bottomMargin - estado.y;
     if (h <= espacioFresco) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, estado.y, anchoMm, h);
@@ -971,8 +759,6 @@ async function exportarPDF() {
     estado.esPrimerBloqueDePagina = false;
   }
 
-  // Asegura que el documento tenga al menos n páginas, creando las que falten
-  // (con su encabezado) sin afectar las ya existentes.
   function asegurarPagina(n) {
     while (doc.internal.getNumberOfPages() < n) {
       doc.addPage();
@@ -980,13 +766,9 @@ async function exportarPDF() {
     }
   }
 
-  // Igual que paginarConFilas, pero para una columna individual de una fila
-  // aplanada: en vez de llamar a doc.addPage() directamente, avanza un
-  // cursor de página propio (puede coincidir con el de la columna vecina o
-  // crear páginas nuevas si esta columna necesita más).
   function paginarConFilasColumna(bloqueEl, canvas, anchoMm, xMm, paginaInicio, startYmm) {
     let filas = Array.from(bloqueEl.querySelectorAll('table.tbl tbody tr'));
-    if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar'));
+    if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar, .alert-row'));
     const bloqueRect = bloqueEl.getBoundingClientRect();
     const escala = canvas.width / bloqueRect.width;
     const limitesPx = filas
@@ -1019,10 +801,6 @@ async function exportarPDF() {
     return { page: pagina, y: pageH, primera: false };
   }
 
-  // Coloca una columna de una fila aplanada (grid2/grid3) con su ancho
-  // natural (no el ancho completo de página), paginando de forma
-  // independiente: si esta columna necesita más páginas que su vecina, las
-  // crea; si la vecina ya las creó, simplemente reutiliza esa página.
   function colocarColumna(hijoEl, canvas, colWidth, xCol, cursor) {
     const h = canvas.height * colWidth / canvas.width;
     doc.setPage(cursor.page);
@@ -1039,13 +817,9 @@ async function exportarPDF() {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, cursor.y, wEnc, espacioRestante);
       return { page: cursor.page, y: cursor.y + espacioRestante + gap, primera: false };
     }
-
-    // Si la columna tiene filas reconocibles, siempre se pagina por filas
-    // aprovechando primero lo que quede de la página actual (si alcanza para
-    // al menos una fila) en vez de saltar de página y dejar ese hueco vacío.
-    const tieneFilas = hijoEl.querySelector('table.tbl tbody tr, .lote-bar') !== null;
+    const tieneFilas = hijoEl.querySelector('table.tbl tbody tr, .lote-bar, .alert-row') !== null;
     if (tieneFilas) {
-      const espacioMinUtil = 14; // mm
+      const espacioMinUtil = 14;
       if (espacioRestante >= espacioMinUtil) {
         return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, cursor.page, cursor.y);
       }
@@ -1053,7 +827,6 @@ async function exportarPDF() {
       if (!cursor.primera) { pagina += 1; asegurarPagina(pagina); doc.setPage(pagina); }
       return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, pagina, topMargin);
     }
-
     let pagina = cursor.page, y = cursor.y, primera = cursor.primera;
     if (!primera) {
       pagina += 1;
@@ -1062,8 +835,6 @@ async function exportarPDF() {
       y = topMargin;
       primera = true;
     }
-    // Columna sin filas reconocibles (gráfico): nunca se recorta, se encoge
-    // lo necesario para que quepa entera en la página.
     const espacioFresco = pageH - bottomMargin - y;
     if (h <= espacioFresco) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCol, y, colWidth, h);
@@ -1077,17 +848,12 @@ async function exportarPDF() {
   }
 
   for (const c of Array.from(el.children)) {
-    if (c.id === 'card-historial-tabla' || c.offsetHeight === 0) continue;
+    if (c.offsetHeight === 0) continue;
 
     if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
-      // Se intenta capturar la fila completa (columnas lado a lado, igual
-      // que en pantalla) para no desperdiciar espacio horizontal. Solo si de
-      // verdad no entra ni encogiéndola se "aplana" en columnas individuales
-      // que mantienen su ancho natural y paginan cada una por su cuenta, para
-      // que una columna muy alta (p. ej. Alertas activas con muchas filas)
-      // no obligue a cortar ni a inflar a su vecina.
-      const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+      const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#0c0e14', logging:false });
       const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
+      const availableH = pageH - topMargin - bottomMargin;
       if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
         await colocarBloque(c, canvasCombinado, imgW);
       } else {
@@ -1098,48 +864,18 @@ async function exportarPDF() {
         let cursorFinal = cursorInicio;
         for (let i = 0; i < hijos.length; i++) {
           const xCol = sideMargin + i * (colWidth + gap);
-          const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+          const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#0c0e14', logging:false });
           const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio);
-          if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) {
-            cursorFinal = r;
-          }
+          if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) cursorFinal = r;
         }
         doc.setPage(cursorFinal.page);
         estado.y = cursorFinal.y;
         estado.esPrimerBloqueDePagina = cursorFinal.primera;
       }
     } else {
-      const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#f0f4f8', logging:false });
+      const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#0c0e14', logging:false });
       await colocarBloque(c, canvas, imgW);
     }
-  }
-
-  if (vistaActual === 'historico' && historico.length > 0) {
-    const filas = [...historico].sort((a,b) => b.fecha.localeCompare(a.fecha)).map(r => {
-      const total = (r.hembras||0) + (r.machos||0);
-      return [r.fecha, (r.finca||'').replace('FINCA ','F'), r.lote||'—', r.trampaId||'—',
-        String(r.hembras||0), String(r.machos||0), String(total),
-        r.estadoCebo||'—', r.estadoTrampa||'—', r.operario||'—'];
-    });
-    doc.addPage();
-    dibujarEncabezadoPDF(doc, nombreVista + ' · Detalle completo', pageW);
-    doc.autoTable({
-      head: [['Fecha','Finca','Lote','Trampa','Hembras','Machos','Total','Cebo','Trampa','Operario']],
-      body: filas,
-      startY: topMargin,
-      margin: { left:sideMargin, right:sideMargin },
-      styles: { fontSize:7.5, cellPadding:1.8, valign:'middle' },
-      headStyles: { fillColor:[30,58,95], textColor:255, fontStyle:'bold', fontSize:8 },
-      alternateRowStyles: { fillColor:[248,250,252] },
-      didParseCell: function(data){
-        if (data.section === 'body') {
-          const total = parseInt(data.row.raw[6], 10) || 0;
-          if (total >= UMBRAL_CRITICO) data.cell.styles.fillColor = [254,242,242];
-          else if (total >= UMBRAL_ALERTA) data.cell.styles.fillColor = [255,247,237];
-        }
-      },
-      didDrawPage: () => dibujarEncabezadoPDF(doc, nombreVista + ' · Detalle completo', pageW),
-    });
   }
 
   const hoy = new Date();
