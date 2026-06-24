@@ -192,7 +192,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
         <div class="kpi-grid" id="kpi-resumen"></div>
         <div class="grid2">
           <div class="card">
-            <div class="card-title">📈 Tendencia índice de captura <span>Por día</span></div>
+            <div class="card-title">📈 Tendencia índice de captura <span>Acumulado del periodo</span></div>
             <div class="chart-wrap"><canvas id="chart-tendencia-ic"></canvas></div>
           </div>
           <div class="card">
@@ -431,7 +431,9 @@ function renderResumen() {
     <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div></div>
   `;
 
-  // Tendencia IC por día
+  // Tendencia IC acumulada por día (el último punto coincide con el KPI "Índice captura/trampa",
+  // que es el acumulado del periodo completo; un IC por día aislado solo refleja las trampas
+  // revisadas ese día puntual y no es comparable con el umbral mensual del boletín).
   const porDia = {};
   datos.forEach(r => {
     if (!porDia[r.fecha]) porDia[r.fecha] = {h:0,m:0,tr:new Set()};
@@ -439,12 +441,18 @@ function renderResumen() {
     if (r.trampaId) porDia[r.fecha].tr.add(r.trampaId);
   });
   const dias = Object.keys(porDia).sort();
-  const icPorDia = dias.map(d => porDia[d].tr.size>0 ? (porDia[d].h+porDia[d].m)/porDia[d].tr.size : 0);
+  let capAcum = 0;
+  const trAcum = new Set();
+  const icPorDia = dias.map(d => {
+    capAcum += porDia[d].h + porDia[d].m;
+    porDia[d].tr.forEach(t => trAcum.add(t));
+    return trAcum.size>0 ? capAcum/trAcum.size : 0;
+  });
   destroyChart('chart-tendencia-ic');
   charts['chart-tendencia-ic'] = new Chart(document.getElementById('chart-tendencia-ic'), {
     type: 'line',
     data: { labels: dias.map(d=>d.slice(5)), datasets: [
-      { label: 'IC (cap/trampa)', data: icPorDia, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', fill:true, tension:.3, pointRadius:2 },
+      { label: 'IC acumulado (cap/trampa)', data: icPorDia, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', fill:true, tension:.3, pointRadius:2 },
       { label: 'Umbral alerta', data: dias.map(()=>UMBRAL_ALERTA), borderColor:'#ef4444', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false },
     ]},
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{boxWidth:12}}}, scales:{x:{grid:{color:CHART_GRID}},y:{beginAtZero:true,grid:{color:CHART_GRID}}} }
