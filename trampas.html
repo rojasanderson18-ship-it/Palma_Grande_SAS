@@ -805,6 +805,9 @@ function buildForm(t,r){
   const h=tmp.h!==undefined?tmp.h:(r?.hembras||0);
   const m=tmp.m!==undefined?tmp.m:(r?.machos||0);
   const cb=tmp.cebo||r?.estadoCebo||'', ct=tmp.trampa||r?.estadoTrampa||'';
+  const obs=tmp.obs!==undefined?tmp.obs:(r?.obs||'');
+  const chkCebo=tmp.cambioCebo!==undefined?tmp.cambioCebo:(r?.cambioCebo||false);
+  const chkFeromona=tmp.cambioFeromona!==undefined?tmp.cambioFeromona:(r?.cambioFeromona||false);
   const cebos=['Bueno','Regular','Malo','Sin cebo'];
   const estados=['Buena','Dañada','Perdida','Reubicar'];
   return `
@@ -834,19 +837,19 @@ function buildForm(t,r){
   <div class="option-grid" id="trap-grid-${t.id}">
     ${estados.map(e=>`<button class="opt-btn${ct===e?' sel-'+e.toLowerCase():''}" onclick="selOpt('${t.id}','trampa','${e}',this,'trap-grid-${t.id}')">${e==='Buena'?'✅':e==='Dañada'?'🔧':e==='Perdida'?'❓':'📍'} ${e}</button>`).join('')}
   </div>
-  <input class="obs-input" type="text" placeholder="Observaciones (opcional)" id="obs-${t.id}" value="${r?.obs||''}"/>
-  
+  <input class="obs-input" type="text" placeholder="Observaciones (opcional)" id="obs-${t.id}" value="${obs}" oninput="actualizarTemp('${t.id}','obs',this.value)"/>
+
   <div class="section-label">Cambios realizados</div>
   <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
     <label style="display:flex;align-items:center;gap:10px;background:#f8fafc;padding:12px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;">
-      <input type="checkbox" id="chk-cebo-${t.id}" ${r?.cambioCebo?'checked':''} style="width:20px;height:20px;cursor:pointer;accent-color:var(--green);"/>
+      <input type="checkbox" id="chk-cebo-${t.id}" ${chkCebo?'checked':''} onchange="actualizarTemp('${t.id}','cambioCebo',this.checked)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--green);"/>
       <div>
         <div style="font-size:14px;font-weight:600;">🌿 Cambié el cebo hoy</div>
         <div style="font-size:11px;color:var(--muted);">Próximo cambio: ${proximoCambio(t.id,'cebo')}</div>
       </div>
     </label>
     <label style="display:flex;align-items:center;gap:10px;background:#f8fafc;padding:12px;border-radius:10px;border:1.5px solid ${esHoraFeromona(t.id)?'var(--amber)':'var(--border)'};cursor:pointer;">
-      <input type="checkbox" id="chk-feromona-${t.id}" ${r?.cambioFeromona?'checked':''} style="width:20px;height:20px;cursor:pointer;accent-color:var(--amber);"/>
+      <input type="checkbox" id="chk-feromona-${t.id}" ${chkFeromona?'checked':''} onchange="actualizarTemp('${t.id}','cambioFeromona',this.checked)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--amber);"/>
       <div>
         <div style="font-size:14px;font-weight:600;">🧪 Cambié la feromona hoy</div>
         <div style="font-size:11px;color:${esHoraFeromona(t.id)?'var(--amber)':'var(--muted)'};">${esHoraFeromona(t.id)?'⚠️ TOCA CAMBIAR HOY — ':''}Próximo cambio: ${proximoCambio(t.id,'feromona')}</div>
@@ -915,6 +918,11 @@ function selOpt(id,campo,val,btn,gridId){
   document.getElementById(gridId).querySelectorAll('.opt-btn').forEach(b=>b.className='opt-btn');
   const cls='sel-'+val.toLowerCase().replace(' ','-');
   btn.className='opt-btn '+cls;
+}
+
+function actualizarTemp(id,campo,val){
+  if(!conteoTemp[id]) conteoTemp[id]={};
+  conteoTemp[id][campo]=val;
 }
 
 // ─── CAMBIO CEBO / FEROMONA ─────────────
