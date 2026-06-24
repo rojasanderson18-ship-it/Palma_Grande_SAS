@@ -541,6 +541,13 @@ function init(){
   window.addEventListener('offline',()=>{ document.getElementById('offline-pill').classList.add('show'); });
   if(!navigator.onLine) document.getElementById('offline-pill').classList.add('show');
 
+  // Reintento periódico: si un envío individual falla (timeout, mala señal)
+  // queda en `pendientes`, pero antes solo se reintentaba al volver a entrar
+  // o al pasar de offline a online. Si el operario se queda todo el día
+  // logueado y conectado, esos registros podían quedar sin subir hasta el
+  // próximo login. Este intervalo cierra ese hueco.
+  setInterval(()=>{ if(navigator.onLine && pendientes.length) enviarPendientes(); }, 60000);
+
   // PWA: cachea el shell de la app para que abra sin conexión y pueda
   // instalarse como app (incluido el empaquetado a APK vía TWA/PWABuilder).
   if('serviceWorker' in navigator){
