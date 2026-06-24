@@ -803,30 +803,42 @@ function buildForm(t,r){
   </div>`;
 }
 
+function mostrarNav(){
+  const nav=document.getElementById('bottom-nav');
+  if(nav) nav.style.display='';
+}
+
 function toggleForm(id){
   const form=document.getElementById('tf-'+id);
   const open=form.style.display!=='none';
   document.querySelectorAll('[id^="tf-"]').forEach(f=>f.style.display='none');
   const lista=document.getElementById('lista-trampas');
   if(lista) lista.style.paddingBottom='';
+  mostrarNav();
   if(!open){
     form.style.display='block';
-    form.scrollIntoView({behavior:'smooth',block:'nearest'});
+    // Mientras se llena el formulario ocultamos el nav inferior (fixed):
+    // libera espacio abajo en vez de pelear por el mismo espacio con scroll.
+    const nav=document.getElementById('bottom-nav');
+    if(nav) nav.style.display='none';
+    // Salto instantáneo (sin animación) para que la medición de abajo sea
+    // sobre la posición final real, no a mitad de un scroll "smooth" largo.
+    form.scrollIntoView({behavior:'auto',block:'nearest'});
     setTimeout(()=>{
+      const header=document.querySelector('.hdr');
       const acciones=form.querySelector('.form-actions');
-      const nav=document.getElementById('bottom-nav');
-      if(!acciones||!nav) return;
-      // El nav inferior es position:fixed y no lo considera scrollIntoView,
-      // así que medimos el solape real con el botón Guardar y corregimos.
-      const overlap=acciones.getBoundingClientRect().bottom - nav.getBoundingClientRect().top;
-      if(overlap>0){
-        // Si hay pocas trampas (p.ej. una sola), puede no haber suficiente
-        // alto de página para desplazar lo necesario: garantizamos espacio
-        // extra abajo antes de hacer scroll.
-        if(lista) lista.style.paddingBottom=(overlap+120)+'px';
-        window.scrollBy({top:overlap+14,behavior:'smooth'});
+      const conteo=form.querySelector('.conteo-row');
+      if(!header||!acciones||!conteo) return;
+      const espacioAbajo=window.innerHeight-acciones.getBoundingClientRect().bottom;
+      if(espacioAbajo<14){
+        // Si el botón Guardar queda fuera por abajo, bajamos lo necesario,
+        // pero sin tapar con el header el inicio del formulario (Hembras/Machos).
+        if(lista) lista.style.paddingBottom='160px';
+        const margenArriba=conteo.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+        const bajar=Math.min(14-espacioAbajo, Math.max(0,margenArriba));
+        if(bajar>0) window.scrollBy({top:bajar,behavior:'smooth'});
       }
-    },300);
+    },50);
   }
 }
 
@@ -905,6 +917,7 @@ function guardar(id){
   const tot=h+m;
   showToast(tot>=UMBRAL_ALERTA?'🔴 Alerta: '+tot+' capturas en '+id:'✅ '+id+' guardada');
   renderTrampas();
+  mostrarNav();
 }
 
 function borrar(id){
@@ -912,6 +925,7 @@ function borrar(id){
   if(registros[fecha]) delete registros[fecha][id];
   guardarLocal();
   renderTrampas();
+  mostrarNav();
   showToast('Registro borrado');
   enviarGAS({accion:'eliminarTrampaRegistro',trampaId:id,fecha});
 }
