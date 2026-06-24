@@ -9,6 +9,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="lotes_geo.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{overflow-x:hidden;max-width:100%;}
@@ -151,7 +154,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
     <nav>
       <button class="nav-item active" data-view="resumen" onclick="setVista('resumen',this)">📊 Resumen</button>
       <button class="nav-item" data-view="trampas" onclick="setVista('trampas',this)">🪤 Trampas <span class="nav-soon">Próx.</span></button>
-      <button class="nav-item" data-view="mapa" onclick="setVista('mapa',this)">🗺️ Mapa <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="mapa" onclick="setVista('mapa',this)">🗺️ Mapa</button>
       <button class="nav-item" data-view="analisis" onclick="setVista('analisis',this)">🧬 Análisis</button>
       <button class="nav-item" data-view="operarios" onclick="setVista('operarios',this)">👷 Operarios <span class="nav-soon">Próx.</span></button>
       <button class="nav-item" data-view="reportes" onclick="setVista('reportes',this)">📋 Reportes <span class="nav-soon">Próx.</span></button>
@@ -234,7 +237,34 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 
       <!-- VISTAS PRÓXIMAMENTE -->
       <div id="view-trampas" class="view" style="display:none;"><div class="soon-box"><div class="icon">🪤</div><h3>Listado y gestión de trampas</h3><div>Próximamente</div></div></div>
-      <div id="view-mapa" class="view" style="display:none;"><div class="soon-box"><div class="icon">🗺️</div><h3>Mapa de calor por lote</h3><div>Próximamente</div></div></div>
+      <!-- VISTA: MAPA DE CALOR POR LOTE -->
+      <div id="view-mapa" class="view" style="display:none;">
+        <div class="grid2" style="grid-template-columns:2.2fr 1fr;">
+          <div class="card">
+            <div class="card-title">🗺️ Mapa de presión por lote <span>Índice de captura / trampa</span></div>
+            <div id="mapa-trampas" style="height:480px;border-radius:10px;border:1px solid var(--border);"></div>
+            <div id="leyenda-mapa" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text2);align-items:center;"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📊 Resumen de presión</div>
+            <div id="resumen-presion-mapa"></div>
+            <div class="chart-wrap" style="height:180px;margin-top:10px;"><canvas id="chart-presion-lotes"></canvas></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">🏆 Top 10 lotes con mayor presión</div>
+            <div style="overflow-x:auto;"><table class="tbl">
+              <thead><tr><th>Lote</th><th>Finca</th><th>Trampas</th><th>Capturas</th><th>Índice</th><th>Nivel</th></tr></thead>
+              <tbody id="top10-lotes-mapa"></tbody>
+            </table></div>
+          </div>
+          <div class="card">
+            <div class="card-title">💡 Recomendaciones automáticas</div>
+            <div id="recomendaciones-mapa"></div>
+          </div>
+        </div>
+      </div>
       <div id="view-operarios" class="view" style="display:none;"><div class="soon-box"><div class="icon">👷</div><h3>Desempeño por operario</h3><div>Próximamente</div></div></div>
       <div id="view-reportes" class="view" style="display:none;"><div class="soon-box"><div class="icon">📋</div><h3>Reportes detallados</h3><div>Próximamente</div></div></div>
       <div id="view-economico" class="view" style="display:none;"><div class="soon-box"><div class="icon">💰</div><h3>Análisis económico</h3><div>Próximamente — requiere registrar costos de trampas, atrayente y mano de obra</div></div></div>
@@ -251,7 +281,7 @@ const UMBRAL_CRITICO = 5;  // límite superior del rango de alerta del boletín
 let historico = [];
 let charts = {};
 let vistaActual = 'resumen';
-const VISTAS_DISPONIBLES = ['resumen','analisis'];
+const VISTAS_DISPONIBLES = ['resumen','analisis','mapa'];
 
 // ── INIT ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', cargarDatos);
@@ -377,6 +407,7 @@ Chart.defaults.borderColor = CHART_GRID;
 function renderVista(v) {
   if (v === 'resumen') renderResumen();
   if (v === 'analisis') renderAnalisis();
+  if (v === 'mapa') setTimeout(renderMapa, 50);
 }
 
 // ── VISTA: RESUMEN EJECUTIVO ──────────────
@@ -481,6 +512,135 @@ function renderResumen() {
     <div class="decision-icon">✓</div>
     <div><div class="decision-title">Decisión recomendada</div><div class="decision-txt">${decisionTxt}</div></div>
   `;
+}
+
+// ── VISTA: MAPA DE CALOR POR LOTE ─────────
+const NIVELES_MAPA = [
+  { max:1, key:'muybajo', label:'Muy bajo (0-1)', color:'#16a34a' },
+  { max:2, key:'bajo', label:'Bajo (1-2)', color:'#84cc16' },
+  { max:3, key:'medio', label:'Medio (2-3)', color:'#eab308' },
+  { max:5, key:'alto', label:'Alto (3-5)', color:'#f97316' },
+  { max:Infinity, key:'critico', label:'Crítico (>5)', color:'#dc2626' },
+];
+function nivelPorIC(ic) {
+  for (const n of NIVELES_MAPA) if (ic <= n.max) return n;
+  return NIVELES_MAPA[NIVELES_MAPA.length - 1];
+}
+function badgeNivelMapa(n) {
+  if (n.key === 'critico') return '<span class="badge b-crit">Crítico</span>';
+  if (n.key === 'alto') return '<span class="badge b-warn">Alto</span>';
+  if (n.key === 'medio') return '<span class="badge" style="background:#fef9c3;color:#854d0e;">Medio</span>';
+  return '<span class="badge b-ok">Bajo</span>';
+}
+function polygonCentroidMapa(ring) {
+  let twiceArea = 0, cx = 0, cy = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    const [x0,y0] = ring[i], [x1,y1] = ring[i+1];
+    const f = x0*y1 - x1*y0;
+    twiceArea += f; cx += (x0+x1)*f; cy += (y0+y1)*f;
+  }
+  if (Math.abs(twiceArea) < 1e-12) return null;
+  return [cx/(3*twiceArea), cy/(3*twiceArea)];
+}
+function centroidFeatureMapa(feature) {
+  const geom = feature.geometry;
+  let ring = null;
+  if (geom.type === 'Polygon') ring = geom.coordinates[0];
+  else if (geom.type === 'MultiPolygon') ring = geom.coordinates[0][0];
+  const c = ring ? polygonCentroidMapa(ring) : null;
+  return c ? L.latLng(c[1], c[0]) : null;
+}
+let mapaTrampas = null, mapaTrampasLayer = null, mapaLabelsLayer = null;
+function renderMapa() {
+  const datos = datosFiltrados();
+  const finca = document.getElementById('sel-finca').value;
+
+  const porLoteMapa = {};
+  datos.forEach(r => {
+    if (!r.lote || !r.finca) return;
+    const k = r.finca + '|' + r.lote;
+    if (!porLoteMapa[k]) porLoteMapa[k] = { finca:r.finca, lote:r.lote, tot:0, tr:new Set() };
+    porLoteMapa[k].tot += (r.hembras||0) + (r.machos||0);
+    if (r.trampaId) porLoteMapa[k].tr.add(r.trampaId);
+  });
+  const lotesIC = Object.values(porLoteMapa).map(v => ({ finca:v.finca, lote:v.lote, tot:v.tot, tr:v.tr.size, ic: v.tr.size>0 ? v.tot/v.tr.size : 0 }));
+  const icByKey = {};
+  lotesIC.forEach(l => icByKey[l.finca + '|' + l.lote] = l);
+
+  document.getElementById('leyenda-mapa').innerHTML = NIVELES_MAPA.map(n =>
+    `<span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${n.color};margin-right:4px;vertical-align:middle;"></span>${n.label}</span>`
+  ).join('') + `<span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#9aa1b5;margin-right:4px;vertical-align:middle;"></span>Sin registro</span>`;
+
+  const conteoNiveles = { muybajo:0, bajo:0, medio:0, alto:0, critico:0 };
+  lotesIC.forEach(l => conteoNiveles[nivelPorIC(l.ic).key]++);
+  document.getElementById('resumen-presion-mapa').innerHTML = NIVELES_MAPA.map(n =>
+    `<div class="alert-row"><span class="alert-txt"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${n.color};margin-right:8px;"></span>${n.label}</span><b>${conteoNiveles[n.key]}</b></div>`
+  ).join('');
+
+  destroyChart('chart-presion-lotes');
+  charts['chart-presion-lotes'] = new Chart(document.getElementById('chart-presion-lotes'), {
+    type: 'doughnut',
+    data: { labels: NIVELES_MAPA.map(n=>n.label), datasets: [{ data: NIVELES_MAPA.map(n=>conteoNiveles[n.key]), backgroundColor: NIVELES_MAPA.map(n=>n.color), borderWidth:2, borderColor:'#ffffff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
+  });
+
+  const top10 = [...lotesIC].sort((a,b)=>b.ic-a.ic).slice(0,10);
+  document.getElementById('top10-lotes-mapa').innerHTML = top10.map(l =>
+    `<tr><td style="font-weight:700;">${l.lote}</td><td>${l.finca.replace('FINCA ','Finca ')}</td><td>${l.tr}</td><td>${l.tot}</td><td style="font-weight:700;">${l.ic.toFixed(1)}</td><td>${badgeNivelMapa(nivelPorIC(l.ic))}</td></tr>`
+  ).join('') || '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px;">Sin datos</td></tr>';
+
+  const recs = [];
+  const criticos = lotesIC.filter(l => nivelPorIC(l.ic).key === 'critico').sort((a,b)=>b.ic-a.ic);
+  const altos = lotesIC.filter(l => nivelPorIC(l.ic).key === 'alto');
+  if (criticos.length) recs.push(`🔴 Priorizar control en ${criticos.length} lote(s) crítico(s): ${criticos.slice(0,3).map(l=>l.lote).join(', ')}${criticos.length>3?'…':''}.`);
+  if (altos.length) recs.push(`🟠 Reforzar monitoreo en ${altos.length} lote(s) con índice alto.`);
+  if (typeof LOTES_GEOJSON !== 'undefined') {
+    const featsAll = finca === 'todas' ? LOTES_GEOJSON.features : LOTES_GEOJSON.features.filter(f => f.properties.finca === finca);
+    const sinRegistro = featsAll.filter(f => !icByKey[f.properties.finca + '|' + f.properties.lote]);
+    if (sinRegistro.length) recs.push(`⚪ ${sinRegistro.length} lote(s) sin registros en el periodo seleccionado: revisar trampas instaladas.`);
+  }
+  if (!recs.length) recs.push('✅ Niveles de presión bajo control en todos los lotes monitoreados.');
+  document.getElementById('recomendaciones-mapa').innerHTML = recs.map(r => `<div class="alert-row"><span class="alert-txt">${r}</span></div>`).join('');
+
+  if (typeof L === 'undefined' || typeof LOTES_GEOJSON === 'undefined') {
+    document.getElementById('mapa-trampas').innerHTML = '<div style="padding:60px 20px;text-align:center;color:var(--muted);">Mapa no disponible (sin conexión)</div>';
+    return;
+  }
+
+  const geoData = finca === 'todas' ? LOTES_GEOJSON : { type:'FeatureCollection', features: LOTES_GEOJSON.features.filter(f => f.properties.finca === finca) };
+  function estiloLoteMapa(feature) {
+    const l = icByKey[feature.properties.finca + '|' + feature.properties.lote];
+    const color = l ? nivelPorIC(l.ic).color : '#9aa1b5';
+    return { fillColor:color, fillOpacity:.6, color:'#1c2030', weight:1.5, opacity:.7 };
+  }
+
+  if (!mapaTrampas) {
+    mapaTrampas = L.map('mapa-trampas', { renderer: L.canvas() });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom:19, attribution:'Esri'
+    }).addTo(mapaTrampas);
+  }
+  if (mapaTrampasLayer) mapaTrampas.removeLayer(mapaTrampasLayer);
+  if (mapaLabelsLayer) mapaTrampas.removeLayer(mapaLabelsLayer);
+
+  mapaTrampasLayer = L.geoJSON(geoData, {
+    style: estiloLoteMapa,
+    onEachFeature: (feature, layer) => {
+      const l = icByKey[feature.properties.finca + '|' + feature.properties.lote];
+      const txt = l ? `IC: ${l.ic.toFixed(1)} · ${nivelPorIC(l.ic).label}` : 'Sin registro';
+      layer.bindTooltip(`<b>${feature.properties.finca.replace('FINCA ','Finca ')} · Lote ${feature.properties.lote}</b><br/>${txt}`, { sticky:true });
+    }
+  }).addTo(mapaTrampas);
+
+  const marcadores = geoData.features.map(feature => {
+    const c = centroidFeatureMapa(feature);
+    if (!c) return null;
+    return L.marker(c, { icon: L.divIcon({ className:'lote-label-mapa', html:`<div style="font-size:11px;font-weight:700;color:#1a1f2e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;">${feature.properties.lote}</div>`, iconSize:[40,16], iconAnchor:[20,8] }) });
+  }).filter(Boolean);
+  mapaLabelsLayer = L.layerGroup(marcadores).addTo(mapaTrampas);
+
+  mapaTrampas.fitBounds(mapaTrampasLayer.getBounds(), { padding:[20,20] });
+  setTimeout(() => mapaTrampas.invalidateSize(), 100);
 }
 
 // ── VISTA: ANÁLISIS (biológico + informe fitosanitario) ──
@@ -722,7 +882,7 @@ async function exportarPDF() {
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : 'Análisis';
+  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : vistaActual==='mapa' ? 'Mapa de presión por lote' : 'Análisis';
   const topMargin = 19, bottomMargin = 6, sideMargin = 7, gap = 3;
   const imgW = pageW - sideMargin*2;
   const TOLERANCIA_ENCOGER = 0.15;
