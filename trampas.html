@@ -807,6 +807,8 @@ function toggleForm(id){
   const form=document.getElementById('tf-'+id);
   const open=form.style.display!=='none';
   document.querySelectorAll('[id^="tf-"]').forEach(f=>f.style.display='none');
+  const lista=document.getElementById('lista-trampas');
+  if(lista) lista.style.paddingBottom='';
   if(!open){
     form.style.display='block';
     form.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -817,7 +819,13 @@ function toggleForm(id){
       // El nav inferior es position:fixed y no lo considera scrollIntoView,
       // así que medimos el solape real con el botón Guardar y corregimos.
       const overlap=acciones.getBoundingClientRect().bottom - nav.getBoundingClientRect().top;
-      if(overlap>0) window.scrollBy({top:overlap+14,behavior:'smooth'});
+      if(overlap>0){
+        // Si hay pocas trampas (p.ej. una sola), puede no haber suficiente
+        // alto de página para desplazar lo necesario: garantizamos espacio
+        // extra abajo antes de hacer scroll.
+        if(lista) lista.style.paddingBottom=(overlap+120)+'px';
+        window.scrollBy({top:overlap+14,behavior:'smooth'});
+      }
     },300);
   }
 }
