@@ -379,7 +379,9 @@ function renderVista(v) {
 // ── VISTA: RESUMEN EJECUTIVO ──────────────
 function renderResumen() {
   const datos = datosFiltrados();
-  const instaladas = [...new Set(historico.map(r => r.trampaId))].length;
+  const finca = document.getElementById('sel-finca').value;
+  const historicoFinca = finca === 'todas' ? historico : historico.filter(r => r.finca === finca);
+  const instaladas = [...new Set(historicoFinca.map(r => r.trampaId))].length;
   const activas = [...new Set(datos.map(r => r.trampaId))].length;
   const totalH = datos.reduce((s,r) => s+(r.hembras||0), 0);
   const totalM = datos.reduce((s,r) => s+(r.machos||0), 0);
