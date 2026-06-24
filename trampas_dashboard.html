@@ -19,6 +19,9 @@ html,body{overflow-x:hidden;max-width:100%;}
   --red:#dc2626;--red-bg:rgba(220,38,38,.10);
   --amber:#d97706;--amber-bg:rgba(217,119,6,.10);
   --blue:#2563eb;--blue-bg:rgba(37,99,235,.10);--gold:#b8860b;
+  --badge-crit-bg:#fee2e2;--badge-crit-txt:#dc2626;
+  --badge-warn-bg:#fef3c7;--badge-warn-txt:#b45309;
+  --badge-ok-bg:#dcfce7;--badge-ok-txt:#15803d;
 }
 body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 
@@ -78,9 +81,9 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 
 /* BADGE */
 .badge{padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block;}
-.b-ok{background:var(--green-bg);color:var(--green);}
-.b-warn{background:var(--amber-bg);color:var(--amber);}
-.b-crit{background:var(--red-bg);color:var(--red);}
+.b-ok{background:var(--badge-ok-bg);color:var(--badge-ok-txt);}
+.b-warn{background:var(--badge-warn-bg);color:var(--badge-warn-txt);}
+.b-crit{background:var(--badge-crit-bg);color:var(--badge-crit-txt);}
 .b-gray{background:var(--surface2);color:var(--text2);}
 
 /* LOTE BAR */
@@ -390,11 +393,11 @@ function renderResumen() {
   const cumplimiento = instaladas>0 ? Math.round(activas/instaladas*100) : 0;
 
   document.getElementById('kpi-resumen').innerHTML = `
-    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">🪣</div><div><div class="kpi-val" style="color:var(--text);">${instaladas}</div><div class="kpi-lbl">Trampas instaladas</div><div class="kpi-sub">Histórico total</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--amber-bg);">🪣</div><div><div class="kpi-val" style="color:var(--text);">${instaladas}</div><div class="kpi-lbl">Trampas instaladas</div><div class="kpi-sub">Histórico total</div></div></div>
     <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">✅</div><div><div class="kpi-val" style="color:var(--primary);">${activas}</div><div class="kpi-lbl">Trampas con registro</div><div class="kpi-sub">En el periodo (${cumplimiento}% del total)</div></div></div>
     <div class="kpi"><div class="kpi-icon" style="background:${ic>=UMBRAL_ALERTA?'var(--red-bg)':'var(--green-bg)'};">🐛</div><div><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(1)}</div><div class="kpi-lbl">Índice captura/trampa</div><div class="kpi-sub">Objetivo: &lt; ${UMBRAL_ALERTA}</div></div></div>
     <div class="kpi"><div class="kpi-icon" style="background:${cumplimiento>=95?'var(--green-bg)':'var(--amber-bg)'};">📋</div><div><div class="kpi-val" style="color:${cumplimiento>=95?'var(--green)':'var(--amber)'};">${cumplimiento}%</div><div class="kpi-lbl">Cumplimiento revisiones</div><div class="kpi-sub">Objetivo: &gt; 95%</div></div></div>
-    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div></div>
   `;
 
   // Tendencia IC por día
