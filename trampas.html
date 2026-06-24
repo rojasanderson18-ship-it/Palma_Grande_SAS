@@ -202,18 +202,6 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .lrb-crit{background:var(--red-bg);color:var(--red);}
 .lr-sub{font-size:11px;color:var(--text2);}
 
-/* ─── GRÁFICAS DASHBOARD ─── */
-.bar-row{margin-bottom:10px;}
-.bar-row:last-child{margin-bottom:0;}
-.bar-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
-.bar-head-lbl{font-weight:700;color:var(--text);}
-.bar-head-val{font-weight:700;color:var(--text2);}
-.bar-track{background:var(--border);border-radius:6px;height:10px;overflow:hidden;display:flex;}
-.bar-fill{height:100%;border-radius:6px;transition:width .3s;}
-.bar-fill-h{background:var(--red);}
-.bar-fill-m{background:var(--blue);}
-.trend-empty,.bar-empty{text-align:center;color:var(--muted);font-size:12px;padding:14px 0;}
-
 /* ─── ADMIN ─── */
 .trampa-row{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--border);}
 .trampa-row:last-child{border-bottom:none;}
@@ -326,25 +314,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
   <div class="pb-80" style="padding:14px 16px;">
     <div class="stats-grid" id="stats-grid"></div>
     <div class="card">
-      <div class="card-title">📈 Tendencia (últimos 14 días)</div>
-      <div id="chart-tendencia"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">📍 Comparativo por lote</div>
-      <div id="chart-lotes"></div>
+      <div class="card-title">📍 Estado por lote</div>
       <div id="lotes-list"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">👤 Por operario (hoy)</div>
-      <div id="chart-operarios"></div>
     </div>
     <div class="card">
       <div class="card-title">🔴 Alertas activas</div>
       <div id="alertas-list"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">🧪 Mantenimiento cebo/feromona</div>
-      <div id="chart-mantenimiento"></div>
     </div>
     <div class="card">
       <div class="card-title">🔧 Estado de trampas</div>
@@ -421,7 +396,6 @@ const LS_T = 'palma_trampas_v1';
 const LS_R = 'palma_trap_reg_v1';
 const LS_P = 'palma_trap_pend_v1';
 const LS_SESION = 'palma_trap_sesion_v1';
-const LS_HIST = 'palma_trap_hist_v1';
 
 const OPERARIOS = [
   'Anderson Rojas',
@@ -551,7 +525,6 @@ let filtro = 'todas';
 let busqueda = '';
 const conteoTemp = {};
 let formAbierto = null;
-let historico = [];
 
 // ─── INIT ────────────────────────────────
 function init(){
@@ -617,7 +590,6 @@ function cargarLocal(){
     if(!t) localStorage.setItem(LS_T,JSON.stringify(trampas));
     const r=localStorage.getItem(LS_R); if(r) registros=JSON.parse(r);
     const p=localStorage.getItem(LS_P); if(p) pendientes=JSON.parse(p);
-    const h=localStorage.getItem(LS_HIST); if(h) historico=JSON.parse(h);
   }catch(e){ trampas=[...TRAMPAS_INICIALES]; }
 }
 
@@ -721,10 +693,7 @@ function setScreen(s){
   const nb=document.getElementById('nav-'+s);
   if(nb) nb.classList.add('active');
   if(s==='registro') renderTrampas();
-  if(s==='dashboard'){
-    renderDashboard();
-    if(navigator.onLine) cargarHistorico().then(renderDashboard);
-  }
+  if(s==='dashboard') renderDashboard();
   if(s==='admin') renderAdmin();
 }
 
@@ -1030,59 +999,6 @@ function borrar(id){
   enviarGAS({accion:'eliminarTrampaRegistro',trampaId:id,fecha});
 }
 
-// ─── DASHBOARD: helpers de gráficas ──────
-function barChartHTML(items){
-  if(items.length===0) return '<div class="bar-empty">Sin datos</div>';
-  const max=Math.max(1,...items.map(i=>i.h+i.m));
-  return items.map(i=>`
-    <div class="bar-row">
-      <div class="bar-head"><span class="bar-head-lbl">${i.label}</span><span class="bar-head-val">${i.sub}</span></div>
-      <div class="bar-track">
-        <div class="bar-fill bar-fill-h" style="width:${Math.round(i.h/max*100)}%"></div>
-        <div class="bar-fill bar-fill-m" style="width:${Math.round(i.m/max*100)}%"></div>
-      </div>
-    </div>`).join('');
-}
-
-function lineChartHTML(puntos){
-  if(puntos.every(p=>p.total===0)) return '<div class="trend-empty">Sin capturas registradas en este periodo</div>';
-  const w=300,h=90,pad=6;
-  const max=Math.max(1,...puntos.map(p=>p.total));
-  const stepX=puntos.length>1?(w-pad*2)/(puntos.length-1):0;
-  const coords=puntos.map((p,i)=>{
-    const x=pad+i*stepX;
-    const y=h-pad-(p.total/max)*(h-pad*2);
-    return [x,y];
-  });
-  const linea=coords.map(c=>c.join(',')).join(' ');
-  const area=`${pad},${h-pad} ${linea} ${w-pad},${h-pad}`;
-  const puntosCirc=coords.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.5" fill="var(--primary)"></circle>`).join('');
-  const etiquetas=puntos.map((p,i)=>i%3===0||i===puntos.length-1?`<text x="${coords[i][0]}" y="${h-1}" font-size="7" fill="var(--muted)" text-anchor="middle">${p.fecha.slice(5)}</text>`:'').join('');
-  return `<svg viewBox="0 0 ${w} ${h+10}" style="width:100%;height:auto;">
-    <polygon points="${area}" fill="var(--blue-bg)"></polygon>
-    <polyline points="${linea}" fill="none" stroke="var(--primary)" stroke-width="2"></polyline>
-    ${puntosCirc}${etiquetas}
-  </svg>`;
-}
-
-function ultimoCambioGlobal(trampaId,campo){
-  // Combina el registro local (este dispositivo) con el histórico del Sheet
-  // (todos los dispositivos), para que el mantenimiento no dependa de quién
-  // sincronizó último desde dónde.
-  let ultima=cambios[trampaId]?.[campo==='cambioCebo'?'cebo':'feromona']||null;
-  historico.filter(r=>r.trampaId===trampaId&&r[campo]).forEach(r=>{
-    if(!ultima||r.fecha>ultima) ultima=r.fecha;
-  });
-  return ultima;
-}
-
-function diasVencido(fechaStr,dias){
-  if(!fechaStr) return null;
-  const d=new Date(fechaStr); d.setDate(d.getDate()+dias);
-  const hoy=new Date(); hoy.setHours(0,0,0,0); d.setHours(0,0,0,0);
-  return Math.round((hoy-d)/86400000);
-}
-
 // ─── DASHBOARD ───────────────────────────
 function renderDashboard(){
   const fecha=hoyISO();
@@ -1105,19 +1021,6 @@ function renderDashboard(){
     <div class="stat-card"><div class="stat-val" style="color:var(--blue);">${totalM}</div><div class="stat-lbl">🔵 Machos</div><div class="stat-sub">Total del día</div></div>
   `;
 
-  // Tendencia: últimos 14 días (usa el histórico del Sheet, todas las trampas/dispositivos)
-  const dias14=[];
-  for(let i=13;i>=0;i--){
-    const d=new Date(); d.setDate(d.getDate()-i);
-    dias14.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
-  }
-  const porDia={};
-  historico.forEach(r=>{ if(!porDia[r.fecha]) porDia[r.fecha]={h:0,m:0}; porDia[r.fecha].h+=r.hembras||0; porDia[r.fecha].m+=r.machos||0; });
-  // El día de hoy aún no está en el histórico hasta que se sincronice; lo completamos con lo local.
-  porDia[fecha]={h:totalH,m:totalM};
-  const puntosTendencia=dias14.map(f=>({fecha:f,total:(porDia[f]?.h||0)+(porDia[f]?.m||0)}));
-  document.getElementById('chart-tendencia').innerHTML=lineChartHTML(puntosTendencia);
-
   // Por lote
   const porLote={};
   trampas.forEach(t=>{
@@ -1127,13 +1030,6 @@ function renderDashboard(){
     const r=regs[t.id];
     if(r){porLote[k].rev++;porLote[k].h+=r.hembras||0;porLote[k].m+=r.machos||0;}
   });
-  document.getElementById('chart-lotes').innerHTML=barChartHTML(
-    Object.values(porLote).sort((a,b)=>(b.h+b.m)-(a.h+a.m)).slice(0,8).map(l=>({
-      label:l.finca.replace('FINCA ','F')+' · L'+l.lote,
-      sub:'H:'+l.h+' M:'+l.m,
-      h:l.h, m:l.m
-    }))
-  );
   document.getElementById('lotes-list').innerHTML=Object.values(porLote).sort((a,b)=>(b.h+b.m)-(a.h+a.m)).map(l=>{
     const ind=l.rev>0?((l.h+l.m)/l.rev).toFixed(1):'—';
     const pct=l.total>0?Math.round(l.rev/l.total*100):0;
@@ -1149,39 +1045,6 @@ function renderDashboard(){
       <div class="prog-wrap"><div class="prog-bar pb-green" style="width:${pct}%;"></div></div>
     </div>`;
   }).join('')||'<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin datos hoy</div></div>';
-
-  // Por operario (hoy)
-  const porOperario={};
-  Object.entries(regs).forEach(([id,r])=>{
-    const op=r.operario||'—';
-    if(!porOperario[op]) porOperario[op]={op,rev:0,h:0,m:0};
-    porOperario[op].rev++;
-    porOperario[op].h+=r.hembras||0; porOperario[op].m+=r.machos||0;
-  });
-  document.getElementById('chart-operarios').innerHTML=barChartHTML(
-    Object.values(porOperario).sort((a,b)=>(b.h+b.m)-(a.h+a.m)).map(o=>({
-      label:o.op,
-      sub:o.rev+' trampas · H:'+o.h+' M:'+o.m,
-      h:o.h, m:o.m
-    }))
-  );
-
-  // Mantenimiento cebo/feromona
-  const mant=[];
-  trampas.forEach(t=>{
-    const cebo=ultimoCambioGlobal(t.id,'cambioCebo');
-    const feromona=ultimoCambioGlobal(t.id,'cambioFeromona');
-    const vCebo=diasVencido(cebo,15);
-    const vFeromona=diasVencido(feromona,90);
-    if(vCebo===null||vCebo>=0) mant.push({label:t.id+' · Cebo',sub:cebo?vCebo+' días vencido':'Sin registro',dias:vCebo===null?9999:vCebo});
-    if(vFeromona===null||vFeromona>=0) mant.push({label:t.id+' · Feromona',sub:feromona?vFeromona+' días vencido':'Sin registro',dias:vFeromona===null?9999:vFeromona});
-  });
-  document.getElementById('chart-mantenimiento').innerHTML=mant.length===0
-    ?'<div class="bar-empty">Todo al día ✅</div>'
-    :mant.sort((a,b)=>b.dias-a.dias).slice(0,10).map(m=>`
-      <div class="bar-row">
-        <div class="bar-head"><span class="bar-head-lbl">${m.label}</span><span class="bar-head-val" style="color:${m.dias===9999?'var(--muted)':'var(--red)'};">${m.sub}</span></div>
-      </div>`).join('');
 
   // Alertas
   const alertList=trampas.filter(t=>{const r=regs[t.id];return r&&(r.hembras||0)+(r.machos||0)>=UMBRAL_ALERTA;}).sort((a,b)=>{const ra=regs[a.id],rb=regs[b.id];return((rb.hembras||0)+(rb.machos||0))-((ra.hembras||0)+(ra.machos||0));});
@@ -1337,15 +1200,6 @@ async function cargarGAS(){
   }
   guardarLocal();renderTrampas();
   if(document.getElementById('screen-admin').classList.contains('active')) renderAdmin();
-}
-
-async function cargarHistorico(){
-  if(!navigator.onLine) return;
-  const resp=await gasJSONP(GAS_URL+'?accion=obtenerTrampasHistorico');
-  if(resp?.historico){
-    historico=resp.historico;
-    try{ localStorage.setItem(LS_HIST,JSON.stringify(historico)); }catch(e){}
-  }
 }
 
 async function enviarPendientes(){
