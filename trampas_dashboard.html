@@ -318,8 +318,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
       <!-- VISTA: INFORME CONSOLIDADO -->
       <div id="view-reportes" class="view" style="display:none;">
         <div class="kpi-grid" id="kpi-informe"></div>
-        <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;">
-          <div class="card">
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;grid-template-rows:auto auto;gap:14px;margin-bottom:14px;align-items:start;">
+          <div class="card" style="grid-row:span 2;">
             <div class="card-title">🗺️ 1. Mapa de calor por lote</div>
             <div id="mapa-informe" style="height:260px;border-radius:10px;border:1px solid var(--border);"></div>
             <div id="leyenda-informe-mapa" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--text2);"></div>
@@ -343,8 +343,6 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
             <div id="resumen-informe-biologico"></div>
             <div class="chart-wrap" style="height:150px;margin-top:8px;"><canvas id="chart-informe-composicion"></canvas></div>
           </div>
-        </div>
-        <div class="grid3">
           <div class="card">
             <div class="card-title">✅ 5. Conclusiones generales</div>
             <div id="conclusiones-informe"></div>
