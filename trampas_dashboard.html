@@ -369,12 +369,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
         <div class="card" id="config-costos" style="display:none;margin-bottom:14px;">
           <div class="card-title">⚙️ Parámetros de costo <span>Se guardan en este navegador</span></div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px;">
-            <label style="font-size:12px;color:var(--text2);">Mano de obra / revisión (COP)<br/><input type="number" id="cfg-manoObra" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Materiales / cambio de cebo o feromona (COP)<br/><input type="number" id="cfg-materiales" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Transporte / revisión (COP)<br/><input type="number" id="cfg-transporte" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Otros (admin./imprevistos) — fijo del periodo (COP)<br/><input type="number" id="cfg-otros" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Hectáreas totales bajo trampeo<br/><input type="number" id="cfg-hectareas" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Pérdida evitada / insecto capturado (COP)<br/><input type="number" id="cfg-valorPerdida" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Mano de obra por jornada (COP)<br/><input type="number" id="cfg-manoObraJornada" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Transporte por jornada (COP)<br/><input type="number" id="cfg-transporteJornada" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Cambio de atrayente / feromona por trampa (COP)<br/><input type="number" id="cfg-costoCambioAtrayente" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Frecuencia de cambio de atrayente (días)<br/><input type="number" id="cfg-frecuenciaCambioDias" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Costos administrativos del periodo (COP)<br/><input type="number" id="cfg-administrativos" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Hectáreas monitoreadas<br/><input type="number" id="cfg-hectareas" class="fsel" style="width:100%;margin-top:4px;"/></label>
           </div>
           <button class="fsel" style="margin-top:12px;background:var(--primary);color:#fff;border:none;cursor:pointer;" onclick="guardarConfigCostos()">Guardar</button>
         </div>
@@ -896,9 +896,12 @@ function renderOperarios() {
 
 // ── VISTA: ANÁLISIS ECONÓMICO ─────────────
 // Costos no se registran en ningún lado (ni hoja ni backend); el usuario los define aquí y
-// se guardan en localStorage. Se derivan de la actividad real (revisiones y cambios de cebo/
-// feromona) en el periodo filtrado, en vez de un monto fijo desconectado de los datos.
-const CONFIG_COSTOS_DEFAULT = { manoObra:5000, materiales:8000, transporte:3000, otros:200000, hectareas:150, valorPerdida:30000 };
+// se guardan en localStorage. Son parámetros UNITARIOS (por jornada de trabajo, por trampa,
+// por hectárea) más un fijo administrativo del periodo; nunca se mezclan unidades: todo lo
+// que es "por jornada" se multiplica por jornadas trabajadas (días con al menos una revisión
+// registrada), y todo lo que es "por trampa" se multiplica por trampas activas o estimación
+// de cambios — así el costo total siempre escala con la actividad real del periodo filtrado.
+const CONFIG_COSTOS_DEFAULT = { manoObraJornada:80000, transporteJornada:60000, costoCambioAtrayente:25000, frecuenciaCambioDias:30, administrativos:200000, hectareas:150 };
 function getConfigCostos() {
   try {
     const raw = localStorage.getItem('costosConfig');
@@ -924,44 +927,77 @@ function guardarConfigCostos() {
 }
 function fmtCOP(n) { return '$' + Math.round(n).toLocaleString('es-CO'); }
 
+// Calcula el costo total y sus componentes para un subconjunto de filas ya filtradas
+// (se reutiliza tanto para el periodo completo como para la mitad previa/reciente al
+// calcular la tendencia de costos entre ciclos).
+function calcularCostos(sub, cfg) {
+  const fechasSub = [...new Set(sub.map(r => r.fecha))].sort();
+  const jornadas = fechasSub.length;
+  const trampas = new Set(sub.map(r => r.trampaId)).size;
+  const diasPeriodo = fechasSub.length>0
+    ? Math.round((parseFechaLocal(fechasSub[fechasSub.length-1]) - parseFechaLocal(fechasSub[0])) / 86400000) + 1
+    : 0;
+  const cambiosAtrayente = cfg.frecuenciaCambioDias>0 ? Math.round(trampas * diasPeriodo / cfg.frecuenciaCambioDias) : 0;
+  const costoManoObra = jornadas * cfg.manoObraJornada;
+  const costoTransporte = jornadas * cfg.transporteJornada;
+  const costoAtrayente = cambiosAtrayente * cfg.costoCambioAtrayente;
+  const costoAdministrativo = cfg.administrativos;
+  const costoTotal = costoManoObra + costoTransporte + costoAtrayente + costoAdministrativo;
+  return { fechasSub, jornadas, trampas, diasPeriodo, cambiosAtrayente, costoManoObra, costoTransporte, costoAtrayente, costoAdministrativo, costoTotal };
+}
+
 function renderEconomico() {
   const cfg = getConfigCostos();
   const datos = datosFiltrados();
   const revisiones = datos.length;
-  const cambios = datos.filter(r => r.cambioCebo || r.cambioFeromona).length;
-  const trampasActivas = new Set(datos.map(r => r.trampaId)).size;
   const totalCap = datos.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
+  const lotesMonitoreados = new Set(datos.map(r => r.lote).filter(Boolean)).size;
 
-  const costoManoObra = revisiones * cfg.manoObra;
-  const costoTransporte = revisiones * cfg.transporte;
-  const costoMateriales = cambios * cfg.materiales;
-  const costoOtros = cfg.otros;
-  const costoTotal = costoManoObra + costoTransporte + costoMateriales + costoOtros;
-  const costoPorTrampa = trampasActivas>0 ? costoTotal/trampasActivas : 0;
-  const costoPorCaptura = totalCap>0 ? costoTotal/totalCap : 0;
-  const costoPorHa = cfg.hectareas>0 ? costoTotal/cfg.hectareas : 0;
-  const ahorro = totalCap * cfg.valorPerdida;
-  const ro = costoTotal>0 ? ahorro/costoTotal : 0;
+  const c = calcularCostos(datos, cfg);
+  const costoPorJornada = c.jornadas>0 ? c.costoTotal/c.jornadas : 0;
+  const costoPorRevision = revisiones>0 ? c.costoTotal/revisiones : 0;
+  const costoPorTrampa = c.trampas>0 ? c.costoTotal/c.trampas : 0;
+  const costoPorCaptura = totalCap>0 ? c.costoTotal/totalCap : 0;
+  const costoPorHa = cfg.hectareas>0 ? c.costoTotal/cfg.hectareas : 0;
+  const costoPorLote = lotesMonitoreados>0 ? c.costoTotal/lotesMonitoreados : 0;
+
+  // Tendencia de costos entre ciclos: compara el costo por revisión de la mitad reciente
+  // del periodo filtrado contra la mitad previa (mismo patrón usado en Análisis biológico).
+  const mitad = Math.ceil(c.fechasSub.length/2);
+  const fechasPrevias = c.fechasSub.slice(0, mitad);
+  const fechasRecientes = c.fechasSub.length>1 ? c.fechasSub.slice(mitad) : c.fechasSub;
+  function costoPorRevisionDe(listaFechas) {
+    const sub = datos.filter(r => listaFechas.includes(r.fecha));
+    if (!sub.length) return 0;
+    const cc = calcularCostos(sub, cfg);
+    return cc.costoTotal / sub.length;
+  }
+  const costoRevisionReciente = costoPorRevisionDe(fechasRecientes.length ? fechasRecientes : c.fechasSub);
+  const costoRevisionPrevio = costoPorRevisionDe(fechasPrevias);
+  const variacionCosto = costoRevisionPrevio>0 ? ((costoRevisionReciente-costoRevisionPrevio)/costoRevisionPrevio*100) : 0;
+  const tendenciaCostoTxt = variacionCosto>10 ? 'Al alza' : variacionCosto<-10 ? 'A la baja' : 'Estable';
+  const tendenciaCostoColor = variacionCosto>10 ? 'var(--red)' : 'var(--green)';
 
   document.getElementById('kpi-economico').innerHTML = `
-    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">💲</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoTotal)}</div><div class="kpi-lbl">Costo total del programa</div><div class="kpi-sub">En el periodo</div></div></div>
-    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">👛</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorTrampa)}</div><div class="kpi-lbl">Costo por trampa</div><div class="kpi-sub">Promedio en el periodo</div></div></div>
-    <div class="kpi"><div class="kpi-icon" style="background:var(--amber-bg);">🎯</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorCaptura)}</div><div class="kpi-lbl">Costo por captura</div><div class="kpi-sub">Promedio en el periodo</div></div></div>
-    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🌿</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorHa)}</div><div class="kpi-lbl">Costo por hectárea</div><div class="kpi-sub">En el periodo</div></div></div>
-    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">📊</div><div><div class="kpi-val" style="color:var(--primary);font-size:20px;">${fmtCOP(ahorro)}</div><div class="kpi-lbl">Ahorro estimado</div><div class="kpi-sub">Ev. pérdidas potenciales</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">💲</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(c.costoTotal)}</div><div class="kpi-lbl">Costo total del programa</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">📅</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorJornada)}</div><div class="kpi-lbl">Costo por jornada</div><div class="kpi-sub">${c.jornadas} jornada(s)</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--amber-bg);">📋</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorRevision)}</div><div class="kpi-lbl">Costo por revisión</div><div class="kpi-sub">${revisiones} revisión(es)</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">👛</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorTrampa)}</div><div class="kpi-lbl">Costo por trampa activa</div><div class="kpi-sub">${c.trampas} trampa(s)</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--amber-bg);">🎯</div><div><div class="kpi-val" style="color:var(--text);font-size:20px;">${fmtCOP(costoPorCaptura)}</div><div class="kpi-lbl">Costo por captura</div><div class="kpi-sub">${totalCap} captura(s)</div></div></div>
   `;
 
-  // Evolución de costos por día (distribuye "otros" uniformemente entre los días con actividad)
+  // Evolución de costos por día: mano de obra y transporte son "por jornada" (constantes en
+  // cada día con actividad); el cambio de atrayente y los administrativos no tienen fecha
+  // propia, así que se prorratean por igual entre las jornadas del periodo.
   const porDia = {};
   datos.forEach(r => {
-    if (!porDia[r.fecha]) porDia[r.fecha] = { rev:0, cambios:0, cap:0 };
-    porDia[r.fecha].rev++;
-    if (r.cambioCebo || r.cambioFeromona) porDia[r.fecha].cambios++;
+    if (!porDia[r.fecha]) porDia[r.fecha] = { cap:0 };
     porDia[r.fecha].cap += (r.hembras||0)+(r.machos||0);
   });
   const dias = Object.keys(porDia).sort();
-  const otrosPorDia = dias.length>0 ? cfg.otros/dias.length : 0;
-  const costoDia = dias.map(d => porDia[d].rev*(cfg.manoObra+cfg.transporte) + porDia[d].cambios*cfg.materiales + otrosPorDia);
+  const atrayentePorDia = dias.length>0 ? c.costoAtrayente/dias.length : 0;
+  const administrativoPorDia = dias.length>0 ? c.costoAdministrativo/dias.length : 0;
+  const costoDia = dias.map(() => cfg.manoObraJornada + cfg.transporteJornada + atrayentePorDia + administrativoPorDia);
   const capDia = dias.map(d => porDia[d].cap);
   const costoPorCapDia = dias.map((d,i) => capDia[i]>0 ? costoDia[i]/capDia[i] : 0);
 
@@ -969,7 +1005,7 @@ function renderEconomico() {
   charts['chart-evolucion-costos'] = new Chart(document.getElementById('chart-evolucion-costos'), {
     type: 'line',
     data: { labels: dias.map(d=>d.slice(5)), datasets: [
-      { label:'Costo total', data: costoDia, borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.08)', yAxisID:'y', tension:.3, pointRadius:2 },
+      { label:'Costo por jornada', data: costoDia, borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.08)', yAxisID:'y', tension:.3, pointRadius:2 },
       { label:'Capturas', data: capDia, borderColor:'#86efac', yAxisID:'y1', tension:.3, pointRadius:2 },
       { label:'Costo por captura', data: costoPorCapDia, borderColor:'#2563eb', borderDash:[5,5], yAxisID:'y', tension:.3, pointRadius:2 },
     ]},
@@ -977,24 +1013,22 @@ function renderEconomico() {
       scales:{ y:{position:'left',beginAtZero:true,grid:{color:CHART_GRID},title:{display:true,text:'Costo (COP)'}}, y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'Capturas'}}, x:{grid:{display:false}} } }
   });
 
-  const instaladas = [...new Set(historico.map(r => r.trampaId))].length;
-  const ic = trampasActivas>0 ? totalCap/trampasActivas : 0;
   document.getElementById('resumen-economico').innerHTML = `
-    <div class="alert-row"><span class="alert-txt">Total trampas instaladas</span><span style="font-weight:700;">${instaladas}</span></div>
-    <div class="alert-row"><span class="alert-txt">Capturas totales</span><span style="font-weight:700;">${totalCap}</span></div>
-    <div class="alert-row"><span class="alert-txt">Índice captura/trampa</span><span style="font-weight:700;">${ic.toFixed(1)}</span></div>
-    <div class="alert-row"><span class="alert-txt">Costo total del programa</span><span style="font-weight:700;">${fmtCOP(costoTotal)}</span></div>
-    <div class="alert-row"><span class="alert-txt">Costo por trampa</span><span style="font-weight:700;">${fmtCOP(costoPorTrampa)}</span></div>
-    <div class="alert-row"><span class="alert-txt">Costo por captura</span><span style="font-weight:700;">${fmtCOP(costoPorCaptura)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Jornadas trabajadas</span><span style="font-weight:700;">${c.jornadas}</span></div>
+    <div class="alert-row"><span class="alert-txt">Revisiones realizadas</span><span style="font-weight:700;">${revisiones}</span></div>
+    <div class="alert-row"><span class="alert-txt">Trampas activas</span><span style="font-weight:700;">${c.trampas}</span></div>
+    <div class="alert-row"><span class="alert-txt">Lotes monitoreados</span><span style="font-weight:700;">${lotesMonitoreados}</span></div>
+    <div class="alert-row"><span class="alert-txt">Cambios de atrayente estimados</span><span style="font-weight:700;">${c.cambiosAtrayente}</span></div>
     <div class="alert-row"><span class="alert-txt">Costo por hectárea</span><span style="font-weight:700;">${fmtCOP(costoPorHa)}</span></div>
-    <div class="alert-row"><span class="alert-txt">Retorno estimado (RO)</span><span style="font-weight:700;color:${ro>=1?'var(--green)':'var(--red)'};">${ro.toFixed(2)} : 1</span></div>
+    <div class="alert-row"><span class="alert-txt">Costo promedio por lote</span><span style="font-weight:700;">${fmtCOP(costoPorLote)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Tendencia de costos</span><span style="font-weight:700;color:${tendenciaCostoColor};">${tendenciaCostoTxt}</span></div>
   `;
 
   const conceptos = [
-    { k:'Mano de obra', v:costoManoObra, color:'#16a34a', icon:'👷' },
-    { k:'Materiales y repuestos', v:costoMateriales, color:'#2563eb', icon:'🧪' },
-    { k:'Transporte', v:costoTransporte, color:'#f97316', icon:'🚚' },
-    { k:'Otros (administrativos, imprevistos)', v:costoOtros, color:'#9333ea', icon:'📎' },
+    { k:'Mano de obra', v:c.costoManoObra, color:'#16a34a', icon:'👷' },
+    { k:'Transporte', v:c.costoTransporte, color:'#f97316', icon:'🚚' },
+    { k:'Cambio de atrayente', v:c.costoAtrayente, color:'#2563eb', icon:'🧪' },
+    { k:'Administrativos', v:c.costoAdministrativo, color:'#9333ea', icon:'📎' },
   ];
   destroyChart('chart-distribucion-costos');
   charts['chart-distribucion-costos'] = new Chart(document.getElementById('chart-distribucion-costos'), {
@@ -1006,23 +1040,22 @@ function renderEconomico() {
     <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c.color};margin-right:6px;"></span>${c.k}</span><span style="font-weight:700;">${fmtCOP(c.v)}</span></div>
   `).join('');
 
-  document.getElementById('detalle-costos').innerHTML = conceptos.map(c => `
-    <tr><td>${c.icon} ${c.k}</td><td>${fmtCOP(c.v)}</td><td>${costoTotal>0?Math.round(c.v/costoTotal*100):0}%</td></tr>
+  document.getElementById('detalle-costos').innerHTML = conceptos.map(co => `
+    <tr><td>${co.icon} ${co.k}</td><td>${fmtCOP(co.v)}</td><td>${c.costoTotal>0?Math.round(co.v/c.costoTotal*100):0}%</td></tr>
   `).join('');
 
-  // Top 5 lotes por costo: el costo total se distribuye según el peso de trampas por lote
+  // Top 5 lotes por costo: el costo total se distribuye según el peso de revisiones por lote
   // (no hay datos de costo individual por lote); "costo/captura" sí varía por lote porque
   // depende del índice de captura real de cada lote.
   const porLote = {};
   datos.forEach(r => {
     const k = (r.finca||'?').replace('FINCA ','F')+' · L'+r.lote;
-    if (!porLote[k]) porLote[k] = { tr:new Set(), cap:0 };
-    porLote[k].tr.add(r.trampaId);
+    if (!porLote[k]) porLote[k] = { rev:0, cap:0 };
+    porLote[k].rev++;
     porLote[k].cap += (r.hembras||0)+(r.machos||0);
   });
-  const totalTrampasLotes = Object.values(porLote).reduce((s,l) => s+l.tr.size, 0);
   const topLotesCosto = Object.entries(porLote).map(([k,l]) => {
-    const costo = totalTrampasLotes>0 ? costoTotal*(l.tr.size/totalTrampasLotes) : 0;
+    const costo = revisiones>0 ? c.costoTotal*(l.rev/revisiones) : 0;
     return { k, costo, cap:l.cap, costoCap: l.cap>0 ? costo/l.cap : 0 };
   }).sort((a,b) => b.costo-a.costo).slice(0,5);
   document.getElementById('top5-lotes-costo').innerHTML = topLotesCosto.map(l => `
@@ -1032,16 +1065,17 @@ function renderEconomico() {
   const lotesIneficientes = topLotesCosto.filter(l => l.costoCap > costoPorCaptura*1.3);
   const recos = [];
   if (lotesIneficientes.length) recos.push({ icon:'🎯', t:`Concentrar esfuerzo en lotes críticos (${lotesIneficientes.map(l=>l.k).join(', ')})`, d:'Mayor presión y mayor costo por captura.' });
-  recos.push({ icon:'🛣️', t:'Optimizar rutas de revisión', d:'Reducir costos de transporte y tiempo operativo.' });
-  recos.push({ icon:'🔧', t:'Revisar trampas de bajo rendimiento', d:'Evaluar reubicación o cambio de feromona.' });
-  recos.push({ icon:'🧮', t:'Mantener índice captura/trampa < ' + UMBRAL_ALERTA, d:'Para mejorar el retorno de la inversión.' });
+  recos.push({ icon:'🛣️', t:'Optimizar rutas de revisión', d:'Reducir jornadas necesarias y costos de transporte.' });
+  if (variacionCosto>10) recos.push({ icon:'📈', t:'Revisar el alza en el costo por revisión', d:`Aumentó ${variacionCosto.toFixed(1)}% respecto a la mitad previa del periodo.` });
+  recos.push({ icon:'🔧', t:'Revisar trampas de bajo rendimiento', d:'Evaluar reubicación o cambio de atrayente.' });
+  recos.push({ icon:'🧮', t:'Mantener índice captura/trampa < ' + UMBRAL_ALERTA, d:'Para mejorar la eficiencia del costo por captura.' });
   document.getElementById('recomendaciones-economico').innerHTML = recos.map(r => `
     <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);"><span style="font-size:16px;">${r.icon}</span><div><div style="font-weight:700;font-size:12.5px;">${r.t}</div><div style="font-size:11.5px;color:var(--text2);">${r.d}</div></div></div>
   `).join('');
 
   document.getElementById('decision-economico').innerHTML = `
     <div class="decision-icon">✓</div>
-    <div><div class="decision-title">Conclusión</div><div class="decision-txt">${ro>=1 ? `El programa es rentable y controlado. Continuar con la estrategia actual${lotesIneficientes.length?' y priorizar lotes críticos para optimizar costos.':'.'}` : 'El costo del programa supera el ahorro estimado en este periodo; revisar lotes de bajo rendimiento y costos de transporte/materiales.'}</div></div>
+    <div><div class="decision-title">Conclusión</div><div class="decision-txt">${tendenciaCostoTxt==='Al alza' ? `El costo por revisión está al alza (${variacionCosto>=0?'+':''}${variacionCosto.toFixed(1)}%); revisar jornadas y lotes de bajo rendimiento.` : `El costo del programa se mantiene ${tendenciaCostoTxt.toLowerCase()}${lotesIneficientes.length?'; priorizar lotes críticos para optimizar costos.':'.'}`}</div></div>
   `;
 }
 
@@ -1264,28 +1298,25 @@ function renderInforme() {
 
   // 3. Análisis económico
   const cfg = getConfigCostos();
+  const costos = calcularCostos(datos, cfg);
   const revisiones = datos.length;
-  const cambios = datos.filter(r => r.cambioCebo || r.cambioFeromona).length;
-  const costoManoObra = revisiones * cfg.manoObra;
-  const costoTransporte = revisiones * cfg.transporte;
-  const costoMateriales = cambios * cfg.materiales;
-  const costoOtros = cfg.otros;
-  const costoTotal = costoManoObra + costoTransporte + costoMateriales + costoOtros;
+  const costoTotal = costos.costoTotal;
+  const costoPorJornada = costos.jornadas>0 ? costoTotal/costos.jornadas : 0;
+  const costoPorRevision = revisiones>0 ? costoTotal/revisiones : 0;
   const costoPorTrampa = activas>0 ? costoTotal/activas : 0;
   const costoPorCaptura = totalCap>0 ? costoTotal/totalCap : 0;
-  const ahorro = totalCap * cfg.valorPerdida;
-  const ro = costoTotal>0 ? ahorro/costoTotal : 0;
   document.getElementById('resumen-informe-economico').innerHTML = `
     <div class="alert-row"><span class="alert-txt">Costo total</span><span style="font-weight:700;">${fmtCOP(costoTotal)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Costo por jornada</span><span style="font-weight:700;">${fmtCOP(costoPorJornada)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Costo por revisión</span><span style="font-weight:700;">${fmtCOP(costoPorRevision)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Costo por trampa activa</span><span style="font-weight:700;">${fmtCOP(costoPorTrampa)}</span></div>
     <div class="alert-row"><span class="alert-txt">Costo por captura</span><span style="font-weight:700;">${fmtCOP(costoPorCaptura)}</span></div>
-    <div class="alert-row"><span class="alert-txt">Costo por trampa</span><span style="font-weight:700;">${fmtCOP(costoPorTrampa)}</span></div>
-    <div class="alert-row"><span class="alert-txt">Retorno estimado</span><span style="font-weight:700;color:${ro>=1?'var(--green)':'var(--red)'};">${ro.toFixed(2)} : 1</span></div>
   `;
   const conceptosInforme = [
-    { k:'Mano de obra', v:costoManoObra, color:'#16a34a' },
-    { k:'Materiales', v:costoMateriales, color:'#2563eb' },
-    { k:'Transporte', v:costoTransporte, color:'#f97316' },
-    { k:'Otros', v:costoOtros, color:'#9333ea' },
+    { k:'Mano de obra', v:costos.costoManoObra, color:'#16a34a' },
+    { k:'Transporte', v:costos.costoTransporte, color:'#f97316' },
+    { k:'Cambio de atrayente', v:costos.costoAtrayente, color:'#2563eb' },
+    { k:'Administrativos', v:costos.costoAdministrativo, color:'#9333ea' },
   ];
   destroyChart('chart-informe-costos');
   charts['chart-informe-costos'] = new Chart(document.getElementById('chart-informe-costos'), {
@@ -1327,7 +1358,6 @@ function renderInforme() {
   const conclusionesGen = [];
   conclusionesGen.push({ icon: cumplimiento>=95?'✅':'⚠️', t: cumplimiento>=95 ? 'El desempeño operativo es óptimo.' : `El cumplimiento de revisiones (${cumplimiento}%) está por debajo del objetivo del 95%.` });
   conclusionesGen.push({ icon: variacion<=10?'✅':'⚠️', t: `La tendencia de capturas se mantiene ${tendenciaTxt.toLowerCase()} respecto al ciclo anterior.` });
-  if (ro>0) conclusionesGen.push({ icon: ro>=1?'✅':'⚠️', t: ro>=1 ? 'El programa es rentable: el ahorro estimado supera el costo total.' : 'El costo del programa supera el ahorro estimado en este periodo.' });
   const lotesCriticosInforme = lotesIC.filter(l => l.ic >= UMBRAL_CRITICO).sort((a,b)=>b.ic-a.ic);
   if (lotesCriticosInforme.length) conclusionesGen.push({ icon:'⚠️', t: `${lotesCriticosInforme.length} lote(s) en nivel crítico de presión.` });
   document.getElementById('conclusiones-informe').innerHTML = conclusionesGen.map(c => `<div class="alert-row"><span class="alert-txt">${c.icon} ${c.t}</span></div>`).join('');
@@ -1336,7 +1366,6 @@ function renderInforme() {
   if (lotesCriticosInforme.length) recosGen.push({ icon:'🔴', t:`Priorizar acciones en lotes críticos: ${lotesCriticosInforme.slice(0,3).map(l=>l.lote).join(', ')}.` });
   const opsBajos = filasOp.filter(f => f.cumplimiento < 95);
   if (opsBajos.length) recosGen.push({ icon:'🟠', t:`Reforzar seguimiento a ${opsBajos.map(f=>f.op).join(', ')}.` });
-  if (ro < 1 && costoTotal > 0) recosGen.push({ icon:'💲', t:'Revisar costos de transporte y materiales para mejorar el retorno.' });
   recosGen.push({ icon:'📊', t:'Continuar con el monitoreo y análisis biológico periódico.' });
   document.getElementById('recomendaciones-informe').innerHTML = recosGen.map(r => `<div class="alert-row"><span class="alert-txt">${r.icon} ${r.t}</span></div>`).join('');
 
