@@ -69,7 +69,11 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 /* GRID */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
-@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr;}.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:static;flex-direction:row;overflow-x:auto;padding:8px;}.brand{display:none;}.nav-item{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;}.nav-item.active{border-bottom-color:var(--primary);}}
+.grid-mapa{display:grid;grid-template-columns:2.2fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
+.grid-reportes{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;grid-template-rows:auto auto;gap:14px;margin-bottom:14px;align-items:start;}
+.grid-economico-top{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
+.grid-economico-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;}
+@media(max-width:900px){.grid2,.grid3,.grid-mapa,.grid-economico-top,.grid-economico-bottom{grid-template-columns:1fr;}.grid-reportes{grid-template-columns:1fr;grid-template-rows:auto;}.grid-reportes>.card{grid-row:auto!important;}.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:static;flex-direction:row;overflow-x:auto;padding:8px;}.brand{display:none;}.sidebar nav{display:flex;flex-direction:row;}.nav-item{width:auto;white-space:nowrap;border-left:none;border-bottom:3px solid transparent;}.nav-item.active{border-bottom-color:var(--primary);}.content{padding:12px;}.kpi-val{font-size:21px;}.kpi{padding:12px;}.topbar{padding:10px 12px;}}
 
 /* CARD */
 .card{background:var(--surface);border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:0;}
@@ -255,7 +259,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
       <div id="view-trampas" class="view" style="display:none;"><div class="soon-box"><div class="icon">🪤</div><h3>Listado y gestión de trampas</h3><div>Próximamente</div></div></div>
       <!-- VISTA: MAPA DE CALOR POR LOTE -->
       <div id="view-mapa" class="view" style="display:none;">
-        <div class="grid2" style="grid-template-columns:2.2fr 1fr;">
+        <div class="grid-mapa">
           <div class="card">
             <div class="card-title">🗺️ Mapa de presión por lote <span>Índice de captura / trampa</span></div>
             <div id="mapa-trampas" style="height:480px;border-radius:10px;border:1px solid var(--border);"></div>
@@ -318,7 +322,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
       <!-- VISTA: INFORME CONSOLIDADO -->
       <div id="view-reportes" class="view" style="display:none;">
         <div class="kpi-grid" id="kpi-informe"></div>
-        <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;grid-template-rows:auto auto;gap:14px;margin-bottom:14px;align-items:start;">
+        <div class="grid-reportes">
           <div class="card" style="grid-row:span 2;">
             <div class="card-title">🗺️ 1. Mapa de calor por lote</div>
             <div id="mapa-informe" style="height:260px;border-radius:10px;border:1px solid var(--border);"></div>
@@ -382,7 +386,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
         </div>
 
         <div class="kpi-grid" id="kpi-economico"></div>
-        <div class="grid2" style="grid-template-columns:1.6fr 1fr 1fr;">
+        <div class="grid-economico-top">
           <div class="card">
             <div class="card-title">📈 Evolución de costos en el periodo</div>
             <div class="chart-wrap"><canvas id="chart-evolucion-costos"></canvas></div>
@@ -397,7 +401,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
             <div id="leyenda-distribucion-costos" style="margin-top:10px;font-size:12px;"></div>
           </div>
         </div>
-        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="grid-economico-bottom">
           <div class="card">
             <div class="card-title">🧾 Detalle de costos</div>
             <div style="overflow-x:auto;"><table class="tbl">
