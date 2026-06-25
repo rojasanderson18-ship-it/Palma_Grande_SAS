@@ -76,6 +76,19 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
 .grid2>*,.grid3>*,.grid-mapa>*,.grid-reportes>*,.grid-economico-top>*,.grid-economico-bottom>*{min-width:0;}
 @media(max-width:900px){.grid2,.grid3,.grid-mapa,.grid-economico-top,.grid-economico-bottom{grid-template-columns:1fr;}.grid-reportes{grid-template-columns:1fr;grid-template-rows:auto;}.grid-reportes>.card{grid-row:auto!important;}[style*="grid-column:span"]{grid-column:auto!important;}.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:static;flex-direction:row;overflow-x:auto;padding:8px;}.brand{display:none;}.sidebar nav{display:flex;flex-direction:row;}.nav-item{width:auto;white-space:nowrap;border-left:none;border-bottom:3px solid transparent;}.nav-item.active{border-bottom-color:var(--primary);}.content{padding:12px;}.kpi-val{font-size:21px;}.kpi{padding:12px;}.topbar{padding:10px 12px;}}
 
+/* Forzar diseño de escritorio al exportar a PDF desde un celular, ignorando la media query móvil */
+html.force-desktop-pdf .grid2{grid-template-columns:1fr 1fr!important;}
+html.force-desktop-pdf .grid3{grid-template-columns:1fr 1fr 1fr!important;}
+html.force-desktop-pdf .grid-mapa{grid-template-columns:2.2fr 1fr!important;}
+html.force-desktop-pdf .grid-reportes{grid-template-columns:1.6fr 1fr 1fr 1fr!important;grid-template-rows:auto auto!important;}
+html.force-desktop-pdf .grid-reportes>.card[style*="grid-row:span 2"]{grid-row:span 2!important;}
+html.force-desktop-pdf .grid-economico-top{grid-template-columns:1.6fr 1fr 1fr!important;}
+html.force-desktop-pdf .grid-economico-bottom{grid-template-columns:1fr 1fr 1fr!important;}
+html.force-desktop-pdf [style*="grid-column:span 2"]{grid-column:span 2!important;}
+html.force-desktop-pdf .kpi-val{font-size:26px!important;}
+html.force-desktop-pdf .kpi{padding:16px!important;}
+
+
 /* CARD */
 .card{background:var(--surface);border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:0;}
 .card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
@@ -1455,7 +1468,20 @@ async function exportarPDF() {
 
   const el = document.getElementById('view-' + vistaActual);
   el.style.display = 'block';
+
+  const esMovil = window.innerWidth < 900;
+  function refrescarMapasYGraficos() {
+    Object.values(charts).forEach(c => { if (c && c.resize) c.resize(); });
+    if (typeof mapaTrampas !== 'undefined' && mapaTrampas) mapaTrampas.invalidateSize();
+    if (typeof mapaInforme !== 'undefined' && mapaInforme) mapaInforme.invalidateSize();
+  }
+  if (esMovil) {
+    document.documentElement.classList.add('force-desktop-pdf');
+    el.style.width = '1400px';
+    el.style.maxWidth = '1400px';
+  }
   await new Promise(r => setTimeout(r, 300));
+  if (esMovil) { refrescarMapasYGraficos(); await new Promise(r => setTimeout(r, 300)); }
 
   dibujarEncabezadoPDF(doc, nombreVista, pageW);
   const estado = { y: topMargin, esPrimerBloqueDePagina: true };
@@ -1602,39 +1628,48 @@ async function exportarPDF() {
     return { page: pagina, y: pageH, primera: false };
   }
 
-  for (const c of Array.from(el.children)) {
-    if (c.offsetHeight === 0) continue;
+  try {
+    for (const c of Array.from(el.children)) {
+      if (c.offsetHeight === 0) continue;
 
-    if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
-      const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
-      const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
-      const availableH = pageH - topMargin - bottomMargin;
-      if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
-        await colocarBloque(c, canvasCombinado, imgW);
-      } else {
-        const hijos = Array.from(c.children).filter(h => h.offsetHeight > 0);
-        const numCols = hijos.length;
-        const colWidth = (imgW - gap * (numCols - 1)) / numCols;
-        const cursorInicio = { page: doc.internal.getNumberOfPages(), y: estado.y, primera: estado.esPrimerBloqueDePagina };
-        let cursorFinal = cursorInicio;
-        for (let i = 0; i < hijos.length; i++) {
-          const xCol = sideMargin + i * (colWidth + gap);
-          const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
-          const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio);
-          if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) cursorFinal = r;
+      if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
+        const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+        const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
+        const availableH = pageH - topMargin - bottomMargin;
+        if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
+          await colocarBloque(c, canvasCombinado, imgW);
+        } else {
+          const hijos = Array.from(c.children).filter(h => h.offsetHeight > 0);
+          const numCols = hijos.length;
+          const colWidth = (imgW - gap * (numCols - 1)) / numCols;
+          const cursorInicio = { page: doc.internal.getNumberOfPages(), y: estado.y, primera: estado.esPrimerBloqueDePagina };
+          let cursorFinal = cursorInicio;
+          for (let i = 0; i < hijos.length; i++) {
+            const xCol = sideMargin + i * (colWidth + gap);
+            const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+            const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio);
+            if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) cursorFinal = r;
+          }
+          doc.setPage(cursorFinal.page);
+          estado.y = cursorFinal.y;
+          estado.esPrimerBloqueDePagina = cursorFinal.primera;
         }
-        doc.setPage(cursorFinal.page);
-        estado.y = cursorFinal.y;
-        estado.esPrimerBloqueDePagina = cursorFinal.primera;
+      } else {
+        const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+        await colocarBloque(c, canvas, imgW);
       }
-    } else {
-      const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
-      await colocarBloque(c, canvas, imgW);
+    }
+
+    const hoy = new Date();
+    doc.save('trampas-' + vistaActual + '-' + hoy.toISOString().slice(0,10) + '.pdf');
+  } finally {
+    if (esMovil) {
+      el.style.width = '';
+      el.style.maxWidth = '';
+      document.documentElement.classList.remove('force-desktop-pdf');
+      refrescarMapasYGraficos();
     }
   }
-
-  const hoy = new Date();
-  doc.save('trampas-' + vistaActual + '-' + hoy.toISOString().slice(0,10) + '.pdf');
 }
 </script>
 </body>
