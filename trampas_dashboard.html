@@ -157,7 +157,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
       <button class="nav-item" data-view="mapa" onclick="setVista('mapa',this)">🗺️ Mapa</button>
       <button class="nav-item" data-view="analisis" onclick="setVista('analisis',this)">🧬 Análisis</button>
       <button class="nav-item" data-view="operarios" onclick="setVista('operarios',this)">👷 Operarios</button>
-      <button class="nav-item" data-view="reportes" onclick="setVista('reportes',this)">📋 Reportes <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="reportes" onclick="setVista('reportes',this)">📋 Reportes</button>
       <button class="nav-item" data-view="economico" onclick="setVista('economico',this)">💰 Económico</button>
       <button class="nav-item" data-view="config" onclick="setVista('config',this)">⚙️ Configuración <span class="nav-soon">Próx.</span></button>
     </nav>
@@ -315,7 +315,54 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
         </div>
         <div class="decision-box" id="decision-operarios"></div>
       </div>
-      <div id="view-reportes" class="view" style="display:none;"><div class="soon-box"><div class="icon">📋</div><h3>Reportes detallados</h3><div>Próximamente</div></div></div>
+      <!-- VISTA: INFORME CONSOLIDADO -->
+      <div id="view-reportes" class="view" style="display:none;">
+        <div class="kpi-grid" id="kpi-informe"></div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start;">
+          <div class="card">
+            <div class="card-title">🗺️ 1. Mapa de calor por lote</div>
+            <div id="mapa-informe" style="height:260px;border-radius:10px;border:1px solid var(--border);"></div>
+            <div id="leyenda-informe-mapa" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--text2);"></div>
+            <table class="tbl" style="margin-top:10px;font-size:11px;">
+              <thead><tr><th>Lote</th><th>Índice</th><th>Nivel</th></tr></thead>
+              <tbody id="top5-informe-mapa"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title">👷 2. Desempeño operativo</div>
+            <div id="resumen-informe-operativo"></div>
+            <div class="chart-wrap" style="height:150px;margin-top:8px;"><canvas id="chart-informe-cumplimiento"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">💲 3. Análisis económico</div>
+            <div id="resumen-informe-economico"></div>
+            <div class="chart-wrap" style="height:150px;margin-top:8px;"><canvas id="chart-informe-costos"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🐞 4. Análisis biológico</div>
+            <div id="resumen-informe-biologico"></div>
+            <div class="chart-wrap" style="height:150px;margin-top:8px;"><canvas id="chart-informe-composicion"></canvas></div>
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="card">
+            <div class="card-title">✅ 5. Conclusiones generales</div>
+            <div id="conclusiones-informe"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">💡 Recomendaciones principales</div>
+            <div id="recomendaciones-informe"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📋 Resumen del periodo</div>
+            <div id="resumen-informe-periodo"></div>
+          </div>
+        </div>
+        <div class="decision-box" style="background:var(--surface2);border-color:var(--border);">
+          <div class="decision-icon">ℹ️</div>
+          <div><div class="decision-title">Nota</div><div class="decision-txt">Este informe consolida en una sola vista los indicadores de las secciones Resumen, Mapa, Operarios, Económico y Análisis, aplicando el mismo filtro de finca y periodo seleccionado arriba.</div></div>
+        </div>
+      </div>
       <!-- VISTA: ANÁLISIS ECONÓMICO -->
       <div id="view-economico" class="view" style="display:none;">
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
@@ -385,7 +432,7 @@ const UMBRAL_CRITICO = 5;  // límite superior del rango de alerta del boletín
 let historico = [];
 let charts = {};
 let vistaActual = 'resumen';
-const VISTAS_DISPONIBLES = ['resumen','analisis','mapa','operarios','economico'];
+const VISTAS_DISPONIBLES = ['resumen','analisis','mapa','operarios','economico','reportes'];
 
 // ── INIT ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', cargarDatos);
@@ -521,6 +568,7 @@ function renderVista(v) {
   if (v === 'mapa') setTimeout(renderMapa, 50);
   if (v === 'operarios') renderOperarios();
   if (v === 'economico') renderEconomico();
+  if (v === 'reportes') setTimeout(renderInforme, 50);
 }
 
 // ── VISTA: RESUMEN EJECUTIVO ──────────────
@@ -1115,6 +1163,193 @@ function renderAnalisis() {
   `).join('');
 }
 
+// ── VISTA: INFORME CONSOLIDADO (Resumen + Mapa + Operarios + Económico + Análisis en una hoja) ──
+let mapaInforme = null, mapaInformeLayer = null;
+function renderInforme() {
+  const datos = datosFiltrados();
+  const finca = document.getElementById('sel-finca').value;
+  const historicoFinca = finca === 'todas' ? historico : historico.filter(r => r.finca === finca);
+
+  const instaladas = [...new Set(historicoFinca.map(r => r.trampaId))].length;
+  const activas = [...new Set(datos.map(r => r.trampaId))].length;
+  const totalH = datos.reduce((s,r) => s+(r.hembras||0), 0);
+  const totalM = datos.reduce((s,r) => s+(r.machos||0), 0);
+  const totalReg = datos.reduce((s,r) => s+(r.total||0), 0);
+  const totalCap = Math.max(totalH+totalM, totalReg);
+  const totalInd = Math.max(0, totalCap-totalH-totalM);
+  const ic = activas>0 ? totalCap/activas : 0;
+  const cumplimiento = instaladas>0 ? Math.round(activas/instaladas*100) : 0;
+
+  document.getElementById('kpi-informe').innerHTML = `
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">🪣</div><div><div class="kpi-val" style="color:var(--text);">${instaladas}</div><div class="kpi-lbl">Trampas instaladas</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">✅</div><div><div class="kpi-val" style="color:var(--primary);">${activas}</div><div class="kpi-lbl">Trampas con registro</div><div class="kpi-sub">${cumplimiento}% del total</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:${ic>=UMBRAL_ALERTA?'var(--red-bg)':'var(--green-bg)'};">🐛</div><div><div class="kpi-val" style="color:${ic>=UMBRAL_ALERTA?'var(--red)':'var(--green)'};">${ic.toFixed(1)}</div><div class="kpi-lbl">Índice captura/trampa</div><div class="kpi-sub">Objetivo: &lt; ${UMBRAL_ALERTA}</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:${cumplimiento>=95?'var(--green-bg)':'var(--amber-bg)'};">📋</div><div><div class="kpi-val" style="color:${cumplimiento>=95?'var(--green)':'var(--amber)'};">${cumplimiento}%</div><div class="kpi-lbl">Cumplimiento revisiones</div><div class="kpi-sub">Objetivo: &gt; 95%</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div></div>
+  `;
+
+  // 1. Mapa de calor por lote
+  const porLoteMapa = {};
+  datos.forEach(r => {
+    if (!r.lote || !r.finca) return;
+    const k = r.finca + '|' + r.lote;
+    if (!porLoteMapa[k]) porLoteMapa[k] = { finca:r.finca, lote:r.lote, tot:0, tr:new Set() };
+    porLoteMapa[k].tot += (r.hembras||0) + (r.machos||0);
+    if (r.trampaId) porLoteMapa[k].tr.add(r.trampaId);
+  });
+  const lotesIC = Object.values(porLoteMapa).map(v => ({ finca:v.finca, lote:v.lote, tot:v.tot, tr:v.tr.size, ic: v.tr.size>0 ? v.tot/v.tr.size : 0 }));
+  const icByKey = {};
+  lotesIC.forEach(l => icByKey[l.finca + '|' + l.lote] = l);
+
+  document.getElementById('leyenda-informe-mapa').innerHTML = NIVELES_MAPA.map(n =>
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${n.color};margin-right:3px;vertical-align:middle;"></span>${n.label}</span>`
+  ).join('');
+
+  const top5Mapa = [...lotesIC].sort((a,b)=>b.ic-a.ic).slice(0,5);
+  document.getElementById('top5-informe-mapa').innerHTML = top5Mapa.map(l =>
+    `<tr><td style="font-weight:700;">${l.lote}</td><td>${l.ic.toFixed(1)}</td><td>${badgeNivelMapa(nivelPorIC(l.ic))}</td></tr>`
+  ).join('') || '<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:10px;">Sin datos</td></tr>';
+
+  if (typeof L === 'undefined' || typeof LOTES_GEOJSON === 'undefined') {
+    document.getElementById('mapa-informe').innerHTML = '<div style="padding:30px 10px;text-align:center;color:var(--muted);font-size:11px;">Mapa no disponible (sin conexión)</div>';
+  } else {
+    try {
+      const geoData = finca === 'todas' ? LOTES_GEOJSON : { type:'FeatureCollection', features: LOTES_GEOJSON.features.filter(f => f.properties.finca === finca) };
+      function estiloLoteInforme(feature) {
+        const l = icByKey[feature.properties.finca + '|' + feature.properties.lote];
+        const color = l ? nivelPorIC(l.ic).color : '#9aa1b5';
+        return { fillColor:color, fillOpacity:.6, color:'#1c2030', weight:1, opacity:.7 };
+      }
+      if (!mapaInforme) {
+        mapaInforme = L.map('mapa-informe', { renderer: L.canvas(), zoomControl:false });
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19, attribution:'Esri' }).addTo(mapaInforme);
+      }
+      if (mapaInformeLayer) mapaInforme.removeLayer(mapaInformeLayer);
+      mapaInformeLayer = L.geoJSON(geoData, {
+        style: estiloLoteInforme,
+        onEachFeature: (feature, layer) => {
+          const l = icByKey[feature.properties.finca + '|' + feature.properties.lote];
+          const txt = l ? `IC: ${l.ic.toFixed(1)} · ${nivelPorIC(l.ic).label}` : 'Sin registro';
+          layer.bindTooltip(`<b>Lote ${feature.properties.lote}</b><br/>${txt}`, { sticky:true });
+        }
+      }).addTo(mapaInforme);
+      mapaInforme.fitBounds(mapaInformeLayer.getBounds(), { padding:[10,10] });
+      setTimeout(() => mapaInforme.invalidateSize(), 100);
+    } catch (e) { /* mapa no crítico para el resto del informe */ }
+  }
+
+  // 2. Desempeño operativo
+  const operarios = [...new Set(historicoFinca.map(r => r.operario).filter(Boolean))].sort();
+  const filasOp = operarios.map(op => {
+    const asignadas = new Set(historicoFinca.filter(r => r.operario === op).map(r => r.trampaId));
+    const revisadasSet = new Set(datos.filter(r => r.operario === op).map(r => r.trampaId));
+    const cumplimientoOp = asignadas.size>0 ? Math.round(revisadasSet.size/asignadas.size*100) : 0;
+    return { op, asignadas: asignadas.size, revisadas: revisadasSet.size, cumplimiento: cumplimientoOp };
+  });
+  const totalAsignadas = [...new Set(historicoFinca.map(r => r.trampaId))].length;
+  const totalRevisadas = activas;
+  const totalPendientes = Math.max(0, totalAsignadas - totalRevisadas);
+  const cumplimientoGeneral = totalAsignadas>0 ? Math.round(totalRevisadas/totalAsignadas*100) : 0;
+  document.getElementById('resumen-informe-operativo').innerHTML = `
+    <div class="alert-row"><span class="alert-txt">Operarios activos</span><span style="font-weight:700;">${operarios.length}</span></div>
+    <div class="alert-row"><span class="alert-txt">Trampas asignadas</span><span style="font-weight:700;">${totalAsignadas}</span></div>
+    <div class="alert-row"><span class="alert-txt">Trampas pendientes</span><span style="font-weight:700;">${totalPendientes}</span></div>
+    <div class="alert-row"><span class="alert-txt">Cumplimiento general</span><span style="font-weight:700;color:${cumplimientoGeneral>=95?'var(--green)':'var(--amber)'};">${cumplimientoGeneral}%</span></div>
+  `;
+  destroyChart('chart-informe-cumplimiento');
+  charts['chart-informe-cumplimiento'] = new Chart(document.getElementById('chart-informe-cumplimiento'), {
+    type: 'bar',
+    data: { labels: filasOp.map(f=>f.op), datasets: [{ label:'Cumplimiento (%)', data: filasOp.map(f=>f.cumplimiento), backgroundColor:'#22c55e', borderRadius:4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100,grid:{color:CHART_GRID}},x:{grid:{display:false},ticks:{font:{size:9}}}} }
+  });
+
+  // 3. Análisis económico
+  const cfg = getConfigCostos();
+  const revisiones = datos.length;
+  const cambios = datos.filter(r => r.cambioCebo || r.cambioFeromona).length;
+  const costoManoObra = revisiones * cfg.manoObra;
+  const costoTransporte = revisiones * cfg.transporte;
+  const costoMateriales = cambios * cfg.materiales;
+  const costoOtros = cfg.otros;
+  const costoTotal = costoManoObra + costoTransporte + costoMateriales + costoOtros;
+  const costoPorTrampa = activas>0 ? costoTotal/activas : 0;
+  const costoPorCaptura = totalCap>0 ? costoTotal/totalCap : 0;
+  const ahorro = totalCap * cfg.valorPerdida;
+  const ro = costoTotal>0 ? ahorro/costoTotal : 0;
+  document.getElementById('resumen-informe-economico').innerHTML = `
+    <div class="alert-row"><span class="alert-txt">Costo total</span><span style="font-weight:700;">${fmtCOP(costoTotal)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Costo por captura</span><span style="font-weight:700;">${fmtCOP(costoPorCaptura)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Costo por trampa</span><span style="font-weight:700;">${fmtCOP(costoPorTrampa)}</span></div>
+    <div class="alert-row"><span class="alert-txt">Retorno estimado</span><span style="font-weight:700;color:${ro>=1?'var(--green)':'var(--red)'};">${ro.toFixed(2)} : 1</span></div>
+  `;
+  const conceptosInforme = [
+    { k:'Mano de obra', v:costoManoObra, color:'#16a34a' },
+    { k:'Materiales', v:costoMateriales, color:'#2563eb' },
+    { k:'Transporte', v:costoTransporte, color:'#f97316' },
+    { k:'Otros', v:costoOtros, color:'#9333ea' },
+  ];
+  destroyChart('chart-informe-costos');
+  charts['chart-informe-costos'] = new Chart(document.getElementById('chart-informe-costos'), {
+    type: 'doughnut',
+    data: { labels: conceptosInforme.map(c=>c.k), datasets: [{ data: conceptosInforme.map(c=>c.v), backgroundColor: conceptosInforme.map(c=>c.color), borderWidth:2, borderColor:'#ffffff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}}} }
+  });
+
+  // 4. Análisis biológico
+  const pctH = totalCap>0 ? totalH/totalCap*100 : 0;
+  const pctM = totalCap>0 ? totalM/totalCap*100 : 0;
+  const fechas = [...new Set(datos.map(r => r.fecha))].sort();
+  const mitad = Math.ceil(fechas.length/2);
+  const fechasPrevias = fechas.slice(0, mitad);
+  const fechasRecientes = fechas.length>1 ? fechas.slice(mitad) : fechas;
+  function calcICInforme(listaFechas) {
+    const sub = datos.filter(r => listaFechas.includes(r.fecha));
+    const tot = sub.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
+    const tr = new Set(sub.map(r => r.trampaId)).size;
+    return tr>0 ? tot/tr : 0;
+  }
+  const icReciente = calcICInforme(fechasRecientes.length ? fechasRecientes : fechas);
+  const icPrevio = calcICInforme(fechasPrevias);
+  const variacion = icPrevio>0 ? ((icReciente-icPrevio)/icPrevio*100) : 0;
+  const tendenciaTxt = variacion>10?'Ascendente':variacion<-10?'Descendente':'Estable';
+  document.getElementById('resumen-informe-biologico').innerHTML = `
+    <div class="alert-row"><span class="alert-txt">Tendencia biológica</span><span style="font-weight:700;">${tendenciaTxt}</span></div>
+    <div class="alert-row"><span class="alert-txt">% Hembras</span><span style="font-weight:700;">${pctH.toFixed(1)}%</span></div>
+    <div class="alert-row"><span class="alert-txt">% Machos</span><span style="font-weight:700;">${pctM.toFixed(1)}%</span></div>
+  `;
+  destroyChart('chart-informe-composicion');
+  charts['chart-informe-composicion'] = new Chart(document.getElementById('chart-informe-composicion'), {
+    type: 'doughnut',
+    data: { labels:['Hembras','Machos','Indeterminados'], datasets:[{ data:[totalH,totalM,totalInd], backgroundColor:['#22c55e','#3b82f6','#eab308'], borderWidth:2, borderColor:'#ffffff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}}} }
+  });
+
+  // 5. Conclusiones generales, recomendaciones y resumen del periodo
+  const conclusionesGen = [];
+  conclusionesGen.push({ icon: cumplimiento>=95?'✅':'⚠️', t: cumplimiento>=95 ? 'El desempeño operativo es óptimo.' : `El cumplimiento de revisiones (${cumplimiento}%) está por debajo del objetivo del 95%.` });
+  conclusionesGen.push({ icon: variacion<=10?'✅':'⚠️', t: `La tendencia de capturas se mantiene ${tendenciaTxt.toLowerCase()} respecto al ciclo anterior.` });
+  if (ro>0) conclusionesGen.push({ icon: ro>=1?'✅':'⚠️', t: ro>=1 ? 'El programa es rentable: el ahorro estimado supera el costo total.' : 'El costo del programa supera el ahorro estimado en este periodo.' });
+  const lotesCriticosInforme = lotesIC.filter(l => l.ic >= UMBRAL_CRITICO).sort((a,b)=>b.ic-a.ic);
+  if (lotesCriticosInforme.length) conclusionesGen.push({ icon:'⚠️', t: `${lotesCriticosInforme.length} lote(s) en nivel crítico de presión.` });
+  document.getElementById('conclusiones-informe').innerHTML = conclusionesGen.map(c => `<div class="alert-row"><span class="alert-txt">${c.icon} ${c.t}</span></div>`).join('');
+
+  const recosGen = [];
+  if (lotesCriticosInforme.length) recosGen.push({ icon:'🔴', t:`Priorizar acciones en lotes críticos: ${lotesCriticosInforme.slice(0,3).map(l=>l.lote).join(', ')}.` });
+  const opsBajos = filasOp.filter(f => f.cumplimiento < 95);
+  if (opsBajos.length) recosGen.push({ icon:'🟠', t:`Reforzar seguimiento a ${opsBajos.map(f=>f.op).join(', ')}.` });
+  if (ro < 1 && costoTotal > 0) recosGen.push({ icon:'💲', t:'Revisar costos de transporte y materiales para mejorar el retorno.' });
+  recosGen.push({ icon:'📊', t:'Continuar con el monitoreo y análisis biológico periódico.' });
+  document.getElementById('recomendaciones-informe').innerHTML = recosGen.map(r => `<div class="alert-row"><span class="alert-txt">${r.icon} ${r.t}</span></div>`).join('');
+
+  const lotesMonitoreados = new Set(datos.map(r => r.lote).filter(Boolean)).size;
+  document.getElementById('resumen-informe-periodo').innerHTML = `
+    <div class="alert-row"><span class="alert-txt">Periodo evaluado</span><span style="font-weight:700;">${etiquetaPeriodo()}</span></div>
+    <div class="alert-row"><span class="alert-txt">Fincas incluidas</span><span style="font-weight:700;">${finca==='todas'?'Todas':finca.replace('FINCA ','Finca ')}</span></div>
+    <div class="alert-row"><span class="alert-txt">Lotes monitoreados</span><span style="font-weight:700;">${lotesMonitoreados}</span></div>
+    <div class="alert-row"><span class="alert-txt">Reporte generado</span><span style="font-weight:700;">${new Date().toLocaleString('es-CO')}</span></div>
+  `;
+}
+
 // ── PDF EXPORT ────────────────────────────
 function dibujarEncabezadoPDF(doc, nombreVista, pageW) {
   const hoy = new Date();
@@ -1172,7 +1407,7 @@ async function exportarPDF() {
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : vistaActual==='mapa' ? 'Mapa de presión por lote' : vistaActual==='operarios' ? 'Eficiencia operativa' : vistaActual==='economico' ? 'Análisis económico' : 'Análisis';
+  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : vistaActual==='mapa' ? 'Mapa de presión por lote' : vistaActual==='operarios' ? 'Eficiencia operativa' : vistaActual==='economico' ? 'Análisis económico' : vistaActual==='reportes' ? 'Informe de trampeo' : 'Análisis';
   const topMargin = 19, bottomMargin = 6, sideMargin = 7, gap = 3;
   const imgW = pageW - sideMargin*2;
   const TOLERANCIA_ENCOGER = 0.15;
