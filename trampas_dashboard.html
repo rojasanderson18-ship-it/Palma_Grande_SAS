@@ -156,7 +156,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
       <button class="nav-item" data-view="trampas" onclick="setVista('trampas',this)">🪤 Trampas <span class="nav-soon">Próx.</span></button>
       <button class="nav-item" data-view="mapa" onclick="setVista('mapa',this)">🗺️ Mapa</button>
       <button class="nav-item" data-view="analisis" onclick="setVista('analisis',this)">🧬 Análisis</button>
-      <button class="nav-item" data-view="operarios" onclick="setVista('operarios',this)">👷 Operarios <span class="nav-soon">Próx.</span></button>
+      <button class="nav-item" data-view="operarios" onclick="setVista('operarios',this)">👷 Operarios</button>
       <button class="nav-item" data-view="reportes" onclick="setVista('reportes',this)">📋 Reportes <span class="nav-soon">Próx.</span></button>
       <button class="nav-item" data-view="economico" onclick="setVista('economico',this)">💰 Económico <span class="nav-soon">Próx.</span></button>
       <button class="nav-item" data-view="config" onclick="setVista('config',this)">⚙️ Configuración <span class="nav-soon">Próx.</span></button>
@@ -265,7 +265,40 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
           </div>
         </div>
       </div>
-      <div id="view-operarios" class="view" style="display:none;"><div class="soon-box"><div class="icon">👷</div><h3>Desempeño por operario</h3><div>Próximamente</div></div></div>
+      <!-- VISTA: EFICIENCIA OPERATIVA (desempeño por operario) -->
+      <div id="view-operarios" class="view" style="display:none;">
+        <div class="kpi-grid" id="kpi-operarios"></div>
+        <div class="grid2">
+          <div class="card" style="grid-column:span 2;">
+            <div class="card-title">👷 Desempeño por operario</div>
+            <div style="overflow-x:auto;"><table class="tbl">
+              <thead><tr><th>Operario</th><th>Trampas asignadas</th><th>Trampas revisadas</th><th>Cumplimiento</th><th>Capturas registradas</th><th>Índice captura/trampa</th></tr></thead>
+              <tbody id="tbl-operarios"></tbody>
+            </table></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">📊 Cumplimiento por operario (%)</div>
+            <div class="chart-wrap"><canvas id="chart-cumplimiento-operarios"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">⚙️ Distribución de trampas por estado</div>
+            <div class="chart-wrap"><canvas id="chart-estado-operarios"></canvas></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">⏰ Trampas pendientes por operario</div>
+            <div id="pendientes-operarios"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📋 Resumen operativo</div>
+            <div class="kpi-grid" id="resumen-operarios" style="margin-bottom:0;"></div>
+          </div>
+        </div>
+        <div class="decision-box" id="decision-operarios"></div>
+      </div>
       <div id="view-reportes" class="view" style="display:none;"><div class="soon-box"><div class="icon">📋</div><h3>Reportes detallados</h3><div>Próximamente</div></div></div>
       <div id="view-economico" class="view" style="display:none;"><div class="soon-box"><div class="icon">💰</div><h3>Análisis económico</h3><div>Próximamente — requiere registrar costos de trampas, atrayente y mano de obra</div></div></div>
       <div id="view-config" class="view" style="display:none;"><div class="soon-box"><div class="icon">⚙️</div><h3>Configuración</h3><div>Próximamente</div></div></div>
@@ -281,7 +314,7 @@ const UMBRAL_CRITICO = 5;  // límite superior del rango de alerta del boletín
 let historico = [];
 let charts = {};
 let vistaActual = 'resumen';
-const VISTAS_DISPONIBLES = ['resumen','analisis','mapa'];
+const VISTAS_DISPONIBLES = ['resumen','analisis','mapa','operarios'];
 
 // ── INIT ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', cargarDatos);
@@ -415,6 +448,7 @@ function renderVista(v) {
   if (v === 'resumen') renderResumen();
   if (v === 'analisis') renderAnalisis();
   if (v === 'mapa') setTimeout(renderMapa, 50);
+  if (v === 'operarios') renderOperarios();
 }
 
 // ── VISTA: RESUMEN EJECUTIVO ──────────────
@@ -657,6 +691,91 @@ function renderMapa() {
   setTimeout(() => mapaTrampas.invalidateSize(), 100);
 }
 
+// ── VISTA: EFICIENCIA OPERATIVA (desempeño por operario) ──
+function etiquetaPeriodo() {
+  const ciclo = document.getElementById('sel-ciclo').value;
+  if (ciclo === 'mes') return new Date().toLocaleDateString('es-CO', { month:'long', year:'numeric' });
+  if (ciclo === 'historico') return 'Todo el histórico';
+  return 'Ciclo actual';
+}
+
+function renderOperarios() {
+  const datos = datosFiltrados();
+  const finca = document.getElementById('sel-finca').value;
+  const historicoFinca = finca === 'todas' ? historico : historico.filter(r => r.finca === finca);
+
+  // Trampas asignadas a un operario = el conjunto de trampas que ese operario ha revisado
+  // alguna vez (histórico, respeta finca); trampas revisadas = las de ese conjunto con
+  // registro dentro del periodo filtrado (ciclo/mes/histórico).
+  const operarios = [...new Set(historicoFinca.map(r => r.operario).filter(Boolean))].sort();
+  const filas = operarios.map(op => {
+    const asignadas = new Set(historicoFinca.filter(r => r.operario === op).map(r => r.trampaId));
+    const revisadasSet = new Set(datos.filter(r => r.operario === op).map(r => r.trampaId));
+    const cap = datos.filter(r => r.operario === op).reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
+    const revisadas = revisadasSet.size;
+    const pendientes = Math.max(0, asignadas.size - revisadas);
+    const cumplimiento = asignadas.size>0 ? Math.round(revisadas/asignadas.size*100) : 0;
+    const ic = revisadas>0 ? cap/revisadas : 0;
+    return { op, asignadas: asignadas.size, revisadas, pendientes, cumplimiento, cap, ic };
+  }).sort((a,b) => b.cap - a.cap);
+
+  const totalAsignadas = [...new Set(historicoFinca.map(r => r.trampaId))].length;
+  const totalRevisadas = [...new Set(datos.map(r => r.trampaId))].length;
+  const totalPendientes = Math.max(0, totalAsignadas - totalRevisadas);
+  const cumplimientoGeneral = totalAsignadas>0 ? Math.round(totalRevisadas/totalAsignadas*100) : 0;
+  const totalCap = datos.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
+  const icGeneral = totalRevisadas>0 ? totalCap/totalRevisadas : 0;
+
+  document.getElementById('kpi-operarios').innerHTML = `
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">👷</div><div><div class="kpi-val" style="color:var(--text);">${operarios.length}</div><div class="kpi-lbl">Operarios activos</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">📋</div><div><div class="kpi-val" style="color:var(--text);">${totalAsignadas}</div><div class="kpi-lbl">Trampas asignadas</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">✅</div><div><div class="kpi-val" style="color:var(--primary);">${totalRevisadas} (${cumplimientoGeneral}%)</div><div class="kpi-lbl">Trampas revisadas</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--amber-bg);">⏰</div><div><div class="kpi-val" style="color:var(--amber);">${totalPendientes}</div><div class="kpi-lbl">Trampas pendientes</div><div class="kpi-sub">${totalAsignadas>0?Math.round(totalPendientes/totalAsignadas*100):0}% del total</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:${cumplimientoGeneral>=95?'var(--green-bg)':'var(--amber-bg)'};">🎯</div><div><div class="kpi-val" style="color:${cumplimientoGeneral>=95?'var(--green)':'var(--amber)'};">${cumplimientoGeneral}%</div><div class="kpi-lbl">Cumplimiento general</div><div class="kpi-sub">Objetivo: &gt; 95%</div></div></div>
+  `;
+
+  document.getElementById('tbl-operarios').innerHTML = filas.map(f => `
+    <tr><td style="font-weight:700;">${f.op}</td><td>${f.asignadas}</td><td>${f.revisadas}</td>
+    <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${f.cumplimiento}%;background:${f.cumplimiento>=95?'var(--green)':'var(--amber)'};"></div></div><span style="font-size:11.5px;color:var(--text2);">${f.cumplimiento}%</span></div></td>
+    <td>${f.cap}</td><td style="font-weight:700;">${f.ic.toFixed(1)}</td></tr>
+  `).join('') || '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px;">Sin datos</td></tr>';
+
+  destroyChart('chart-cumplimiento-operarios');
+  charts['chart-cumplimiento-operarios'] = new Chart(document.getElementById('chart-cumplimiento-operarios'), {
+    type: 'bar',
+    data: { labels: filas.map(f=>f.op), datasets: [{ label:'Cumplimiento (%)', data: filas.map(f=>f.cumplimiento), backgroundColor:'#22c55e', borderRadius:4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{boxWidth:12}}}, scales:{y:{beginAtZero:true,max:100,grid:{color:CHART_GRID}},x:{grid:{display:false}}} }
+  });
+
+  destroyChart('chart-estado-operarios');
+  charts['chart-estado-operarios'] = new Chart(document.getElementById('chart-estado-operarios'), {
+    type: 'doughnut',
+    data: { labels: [`Revisadas (${totalRevisadas})`, `Pendientes (${totalPendientes})`], datasets: [{ data: [totalRevisadas, totalPendientes], backgroundColor:['#22c55e','#f59e0b'], borderWidth:2, borderColor:'#ffffff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:11}}}} }
+  });
+
+  const conPendientes = filas.filter(f => f.pendientes > 0);
+  document.getElementById('pendientes-operarios').innerHTML = conPendientes.length === 0
+    ? '<div style="color:var(--green);font-size:13px;text-align:center;padding:30px;">✅ ¡Excelente! No hay trampas pendientes en el periodo seleccionado.</div>'
+    : conPendientes.map(f => `<div class="alert-row"><span class="alert-txt">${f.op}: ${f.pendientes} trampa(s) pendiente(s)</span><span class="badge ${f.pendientes>=3?'b-crit':'b-warn'}">${f.pendientes>=3?'Crítico':'Atención'}</span></div>`).join('');
+
+  document.getElementById('resumen-operarios').innerHTML = `
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">📅</div><div><div class="kpi-val" style="color:var(--text);font-size:18px;">${etiquetaPeriodo()}</div><div class="kpi-lbl">Periodo evaluado</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:${cumplimientoGeneral>=95?'var(--green-bg)':'var(--amber-bg)'};">🎯</div><div><div class="kpi-val" style="color:${cumplimientoGeneral>=95?'var(--green)':'var(--amber)'};">${cumplimientoGeneral}%</div><div class="kpi-lbl">Cumplimiento del periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${icGeneral.toFixed(1)}</div><div class="kpi-lbl">Índice promedio captura/trampa</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🐛</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div></div></div>
+  `;
+
+  const opsBajos = filas.filter(f => f.cumplimiento < 95);
+  const decisionTxt = opsBajos.length === 0
+    ? 'El desempeño operativo es óptimo; todos los operarios cumplen con el 100% de las revisiones programadas.'
+    : `Reforzar seguimiento a ${opsBajos.map(f=>f.op).join(', ')}, con cumplimiento por debajo del objetivo del 95%.`;
+  document.getElementById('decision-operarios').innerHTML = `
+    <div class="decision-icon">✓</div>
+    <div><div class="decision-title">Conclusión</div><div class="decision-txt">${decisionTxt}</div></div>
+  `;
+}
+
 // ── VISTA: ANÁLISIS (biológico + informe fitosanitario) ──
 function renderAnalisis() {
   const datos = datosFiltrados();
@@ -896,7 +1015,7 @@ async function exportarPDF() {
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : vistaActual==='mapa' ? 'Mapa de presión por lote' : 'Análisis';
+  const nombreVista = vistaActual==='resumen' ? 'Resumen ejecutivo' : vistaActual==='mapa' ? 'Mapa de presión por lote' : vistaActual==='operarios' ? 'Eficiencia operativa' : 'Análisis';
   const topMargin = 19, bottomMargin = 6, sideMargin = 7, gap = 3;
   const imgW = pageW - sideMargin*2;
   const TOLERANCIA_ENCOGER = 0.15;
