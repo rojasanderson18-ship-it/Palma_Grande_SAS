@@ -371,8 +371,10 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px;">
             <label style="font-size:12px;color:var(--text2);">Mano de obra por jornada (COP)<br/><input type="number" id="cfg-manoObraJornada" class="fsel" style="width:100%;margin-top:4px;"/></label>
             <label style="font-size:12px;color:var(--text2);">Transporte por jornada (COP)<br/><input type="number" id="cfg-transporteJornada" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Cambio de atrayente / feromona por trampa (COP)<br/><input type="number" id="cfg-costoCambioAtrayente" class="fsel" style="width:100%;margin-top:4px;"/></label>
-            <label style="font-size:12px;color:var(--text2);">Frecuencia de cambio de atrayente (días)<br/><input type="number" id="cfg-frecuenciaCambioDias" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Cambio de cebo por trampa (COP)<br/><input type="number" id="cfg-costoCambioCebo" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Frecuencia de cambio de cebo (días)<br/><input type="number" id="cfg-frecuenciaCambioCebo" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Cambio de feromona por trampa (COP)<br/><input type="number" id="cfg-costoCambioFeromona" class="fsel" style="width:100%;margin-top:4px;"/></label>
+            <label style="font-size:12px;color:var(--text2);">Frecuencia de cambio de feromona (días)<br/><input type="number" id="cfg-frecuenciaCambioFeromona" class="fsel" style="width:100%;margin-top:4px;"/></label>
             <label style="font-size:12px;color:var(--text2);">Costos administrativos del periodo (COP)<br/><input type="number" id="cfg-administrativos" class="fsel" style="width:100%;margin-top:4px;"/></label>
             <label style="font-size:12px;color:var(--text2);">Hectáreas monitoreadas<br/><input type="number" id="cfg-hectareas" class="fsel" style="width:100%;margin-top:4px;"/></label>
           </div>
@@ -901,7 +903,7 @@ function renderOperarios() {
 // que es "por jornada" se multiplica por jornadas trabajadas (días con al menos una revisión
 // registrada), y todo lo que es "por trampa" se multiplica por trampas activas o estimación
 // de cambios — así el costo total siempre escala con la actividad real del periodo filtrado.
-const CONFIG_COSTOS_DEFAULT = { manoObraJornada:80000, transporteJornada:60000, costoCambioAtrayente:25000, frecuenciaCambioDias:30, administrativos:200000, hectareas:150 };
+const CONFIG_COSTOS_DEFAULT = { manoObraJornada:80000, transporteJornada:60000, costoCambioCebo:25000, frecuenciaCambioCebo:15, costoCambioFeromona:25000, frecuenciaCambioFeromona:90, administrativos:200000, hectareas:150 };
 function getConfigCostos() {
   try {
     const raw = localStorage.getItem('costosConfig');
@@ -937,13 +939,16 @@ function calcularCostos(sub, cfg) {
   const diasPeriodo = fechasSub.length>0
     ? Math.round((parseFechaLocal(fechasSub[fechasSub.length-1]) - parseFechaLocal(fechasSub[0])) / 86400000) + 1
     : 0;
-  const cambiosAtrayente = cfg.frecuenciaCambioDias>0 ? Math.round(trampas * diasPeriodo / cfg.frecuenciaCambioDias) : 0;
+  const cambiosCebo = cfg.frecuenciaCambioCebo>0 ? Math.round(trampas * diasPeriodo / cfg.frecuenciaCambioCebo) : 0;
+  const cambiosFeromona = cfg.frecuenciaCambioFeromona>0 ? Math.round(trampas * diasPeriodo / cfg.frecuenciaCambioFeromona) : 0;
   const costoManoObra = jornadas * cfg.manoObraJornada;
   const costoTransporte = jornadas * cfg.transporteJornada;
-  const costoAtrayente = cambiosAtrayente * cfg.costoCambioAtrayente;
+  const costoCebo = cambiosCebo * cfg.costoCambioCebo;
+  const costoFeromona = cambiosFeromona * cfg.costoCambioFeromona;
+  const costoAtrayente = costoCebo + costoFeromona;
   const costoAdministrativo = cfg.administrativos;
   const costoTotal = costoManoObra + costoTransporte + costoAtrayente + costoAdministrativo;
-  return { fechasSub, jornadas, trampas, diasPeriodo, cambiosAtrayente, costoManoObra, costoTransporte, costoAtrayente, costoAdministrativo, costoTotal };
+  return { fechasSub, jornadas, trampas, diasPeriodo, cambiosCebo, cambiosFeromona, costoManoObra, costoTransporte, costoCebo, costoFeromona, costoAtrayente, costoAdministrativo, costoTotal };
 }
 
 function renderEconomico() {
@@ -1018,7 +1023,8 @@ function renderEconomico() {
     <div class="alert-row"><span class="alert-txt">Revisiones realizadas</span><span style="font-weight:700;">${revisiones}</span></div>
     <div class="alert-row"><span class="alert-txt">Trampas activas</span><span style="font-weight:700;">${c.trampas}</span></div>
     <div class="alert-row"><span class="alert-txt">Lotes monitoreados</span><span style="font-weight:700;">${lotesMonitoreados}</span></div>
-    <div class="alert-row"><span class="alert-txt">Cambios de atrayente estimados</span><span style="font-weight:700;">${c.cambiosAtrayente}</span></div>
+    <div class="alert-row"><span class="alert-txt">Cambios de cebo estimados</span><span style="font-weight:700;">${c.cambiosCebo}</span></div>
+    <div class="alert-row"><span class="alert-txt">Cambios de feromona estimados</span><span style="font-weight:700;">${c.cambiosFeromona}</span></div>
     <div class="alert-row"><span class="alert-txt">Costo por hectárea</span><span style="font-weight:700;">${fmtCOP(costoPorHa)}</span></div>
     <div class="alert-row"><span class="alert-txt">Costo promedio por lote</span><span style="font-weight:700;">${fmtCOP(costoPorLote)}</span></div>
     <div class="alert-row"><span class="alert-txt">Tendencia de costos</span><span style="font-weight:700;color:${tendenciaCostoColor};">${tendenciaCostoTxt}</span></div>
@@ -1027,7 +1033,8 @@ function renderEconomico() {
   const conceptos = [
     { k:'Mano de obra', v:c.costoManoObra, color:'#16a34a', icon:'👷' },
     { k:'Transporte', v:c.costoTransporte, color:'#f97316', icon:'🚚' },
-    { k:'Cambio de atrayente', v:c.costoAtrayente, color:'#2563eb', icon:'🧪' },
+    { k:'Cambio de cebo', v:c.costoCebo, color:'#2563eb', icon:'🧪' },
+    { k:'Cambio de feromona', v:c.costoFeromona, color:'#06b6d4', icon:'🦋' },
     { k:'Administrativos', v:c.costoAdministrativo, color:'#9333ea', icon:'📎' },
   ];
   destroyChart('chart-distribucion-costos');
@@ -1315,7 +1322,8 @@ function renderInforme() {
   const conceptosInforme = [
     { k:'Mano de obra', v:costos.costoManoObra, color:'#16a34a' },
     { k:'Transporte', v:costos.costoTransporte, color:'#f97316' },
-    { k:'Cambio de atrayente', v:costos.costoAtrayente, color:'#2563eb' },
+    { k:'Cambio de cebo', v:costos.costoCebo, color:'#2563eb' },
+    { k:'Cambio de feromona', v:costos.costoFeromona, color:'#06b6d4' },
     { k:'Administrativos', v:costos.costoAdministrativo, color:'#9333ea' },
   ];
   destroyChart('chart-informe-costos');
