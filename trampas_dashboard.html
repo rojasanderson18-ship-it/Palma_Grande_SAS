@@ -216,22 +216,38 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
         <div class="decision-box" id="decision-resumen"></div>
       </div>
 
-      <!-- VISTA: ANÁLISIS (biológico + informe fitosanitario) -->
+      <!-- VISTA: ANÁLISIS BIOLÓGICO -->
       <div id="view-analisis" class="view" style="display:none;">
-        <div id="informe-fitosanitario"></div>
-        <div class="grid3" style="margin-top:14px;">
+        <div class="kpi-grid" id="kpi-analisis"></div>
+        <div class="grid3">
           <div class="card">
-            <div class="card-title">⚖️ Capturas por sexo</div>
-            <div class="chart-wrap"><canvas id="chart-sexo"></canvas></div>
+            <div class="card-title">🧬 Composición por estado biológico</div>
+            <div class="chart-wrap" style="height:200px;"><canvas id="chart-composicion-bio"></canvas></div>
+            <div class="decision-box" id="insight-composicion-bio" style="margin-top:10px;padding:10px 12px;"></div>
           </div>
           <div class="card" style="grid-column:span 2;">
-            <div class="card-title">📈 Tendencia de capturas <span>Total / Hembras / Machos</span></div>
-            <div class="chart-wrap"><canvas id="chart-tendencia-sexo"></canvas></div>
+            <div class="card-title">📈 Evolución de capturas por estado biológico</div>
+            <div class="chart-wrap"><canvas id="chart-evolucion-bio"></canvas></div>
+            <div class="decision-box" id="insight-evolucion-bio" style="margin-top:10px;padding:10px 12px;"></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-title">📊 Proporción H/M por lote <span>Top 5</span></div>
-          <div class="chart-wrap"><canvas id="chart-prop-lote"></canvas></div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">🏆 Índices biológicos por lote <span id="titulo-tabla-bio">Top 5 por % de hembras</span></div>
+            <div style="overflow-x:auto;"><table class="tbl">
+              <thead><tr><th>Lote</th><th>Capturas totales</th><th>Hembras (n)</th><th>% Hembras</th><th>Machos (n)</th><th>Índice captura/trampa</th><th>Nivel de presión</th></tr></thead>
+              <tbody id="tbl-indices-bio"></tbody>
+            </table></div>
+            <div style="text-align:right;margin-top:8px;"><a href="javascript:void(0)" onclick="toggleVerTodosLotesBio()" id="link-ver-todos-bio" style="color:var(--primary);font-size:12.5px;font-weight:700;text-decoration:none;">Ver todos los lotes →</a></div>
+          </div>
+          <div class="card">
+            <div class="card-title">✅ Conclusiones biológicas</div>
+            <div id="conclusiones-bio"></div>
+          </div>
+        </div>
+        <div class="decision-box">
+          <div class="decision-icon">ℹ️</div>
+          <div><div class="decision-title">Nota</div><div class="decision-txt">El análisis biológico se basa en la identificación y clasificación de adultos de Rhynchophorus palmarum capturados en el sistema de trampeo.</div></div>
         </div>
       </div>
 
@@ -984,64 +1000,41 @@ function renderEconomico() {
 }
 
 // ── VISTA: ANÁLISIS (biológico + informe fitosanitario) ──
+let verTodosLotesBio = false;
+function toggleVerTodosLotesBio() {
+  verTodosLotesBio = !verTodosLotesBio;
+  renderAnalisis();
+}
+
 function renderAnalisis() {
   const datos = datosFiltrados();
-  renderAnalisisAgronomico(datos, 'informe-fitosanitario');
   if (datos.length === 0) {
-    ['chart-sexo','chart-tendencia-sexo','chart-prop-lote'].forEach(destroyChart);
+    ['chart-composicion-bio','chart-evolucion-bio'].forEach(destroyChart);
+    document.getElementById('kpi-analisis').innerHTML = '';
+    document.getElementById('tbl-indices-bio').innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Sin datos</td></tr>';
+    document.getElementById('conclusiones-bio').innerHTML = '';
     return;
   }
 
   const totalH = datos.reduce((s,r)=>s+(r.hembras||0),0);
   const totalM = datos.reduce((s,r)=>s+(r.machos||0),0);
-  destroyChart('chart-sexo');
-  charts['chart-sexo'] = new Chart(document.getElementById('chart-sexo'), {
-    type: 'doughnut',
-    data: { labels:[`Hembras ${totalH}`,`Machos ${totalM}`], datasets:[{ data:[totalH,totalM], backgroundColor:['#ef4444','#3b82f6'], borderWidth:2, borderColor:'#ffffff' }] },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}} }
-  });
+  // "total" puede venir registrado por separado de hembras+machos cuando hay individuos
+  // capturados sin clasificar por sexo en campo; la diferencia se trata como indeterminados.
+  const totalReg = datos.reduce((s,r)=>s+(r.total||0),0);
+  const totalCap = Math.max(totalH+totalM, totalReg);
+  const totalInd = Math.max(0, totalCap-totalH-totalM);
+  const trampasActivas = new Set(datos.map(r=>r.trampaId)).size;
+  const ic = trampasActivas>0 ? totalCap/trampasActivas : 0;
+  const pctH = totalCap>0 ? totalH/totalCap*100 : 0;
+  const pctM = totalCap>0 ? totalM/totalCap*100 : 0;
 
-  const porDia = {};
-  datos.forEach(r => { if(!porDia[r.fecha]) porDia[r.fecha]={h:0,m:0}; porDia[r.fecha].h+=r.hembras||0; porDia[r.fecha].m+=r.machos||0; });
-  const dias = Object.keys(porDia).sort();
-  destroyChart('chart-tendencia-sexo');
-  charts['chart-tendencia-sexo'] = new Chart(document.getElementById('chart-tendencia-sexo'), {
-    type: 'line',
-    data: { labels: dias.map(d=>d.slice(5)), datasets: [
-      { label:'Total', data: dias.map(d=>porDia[d].h+porDia[d].m), borderColor:'#22c55e', backgroundColor:'transparent', tension:.3, pointRadius:2 },
-      { label:'Hembras', data: dias.map(d=>porDia[d].h), borderColor:'#ef4444', backgroundColor:'transparent', tension:.3, pointRadius:2 },
-      { label:'Machos', data: dias.map(d=>porDia[d].m), borderColor:'#3b82f6', backgroundColor:'transparent', tension:.3, pointRadius:2 },
-    ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{boxWidth:12}}}, scales:{x:{grid:{color:CHART_GRID}},y:{beginAtZero:true,grid:{color:CHART_GRID}}} }
-  });
-
-  const porLote = {};
-  datos.forEach(r => {
-    const k = (r.finca||'?').replace('FINCA ','F')+' · L'+r.lote;
-    if(!porLote[k]) porLote[k]={h:0,m:0};
-    porLote[k].h += r.hembras||0; porLote[k].m += r.machos||0;
-  });
-  const lotesRatio = Object.entries(porLote).map(([k,v]) => ({k, ratio: v.m>0?v.h/v.m:v.h})).sort((a,b)=>b.ratio-a.ratio).slice(0,5);
-  destroyChart('chart-prop-lote');
-  charts['chart-prop-lote'] = new Chart(document.getElementById('chart-prop-lote'), {
-    type: 'bar',
-    data: { labels: lotesRatio.map(l=>l.k), datasets:[{ label:'Relación H/M', data: lotesRatio.map(l=>l.ratio), backgroundColor:'#ef4444', borderRadius:6 }] },
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,grid:{color:CHART_GRID}},y:{grid:{display:false}}} }
-  });
-}
-
-// ── INFORME TÉCNICO FITOSANITARIO ─────────
-function renderAnalisisAgronomico(datos, contId) {
-  const cont = document.getElementById(contId);
-  if (!datos || datos.length === 0) { cont.innerHTML = '<div class="soon-box"><div class="icon">🧬</div><h3>Sin datos para el periodo/finca seleccionados</h3></div>'; return; }
-
+  // Tendencia: compara la mitad reciente del periodo filtrado contra la mitad previa.
   const fechas = [...new Set(datos.map(r => r.fecha))].sort();
   const mitad = Math.ceil(fechas.length/2);
   const fechasPrevias = fechas.slice(0, mitad);
-  const fechasRecientes = fechas.slice(mitad);
-
-  function calcIC(listaFechas, fuente) {
-    const sub = (fuente||datos).filter(r => listaFechas.includes(r.fecha));
+  const fechasRecientes = fechas.length>1 ? fechas.slice(mitad) : fechas;
+  function calcIC(listaFechas) {
+    const sub = datos.filter(r => listaFechas.includes(r.fecha));
     const tot = sub.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
     const tr = new Set(sub.map(r => r.trampaId)).size;
     return tr>0 ? tot/tr : 0;
@@ -1049,120 +1042,77 @@ function renderAnalisisAgronomico(datos, contId) {
   const icReciente = calcIC(fechasRecientes.length ? fechasRecientes : fechas);
   const icPrevio = calcIC(fechasPrevias);
   const variacion = icPrevio>0 ? ((icReciente-icPrevio)/icPrevio*100) : 0;
-  const tendenciaTxt = variacion>10?'ascendente':variacion<-10?'descendente':'estable';
-  const tendenciaIcon = variacion>10?'⚠️':variacion<-10?'✅':'➖';
-  const proyeccion = Math.max(0, icReciente + (icReciente - icPrevio));
+  const tendenciaTxt = variacion>10?'Ascendente':variacion<-10?'Descendente':'Estable';
+  const tendenciaColor = variacion>10?'var(--red)':variacion<-10?'var(--green)':'var(--green)';
 
-  const porFinca = {};
-  datos.forEach(r => {
-    const f = r.finca || 'Sin finca';
-    if(!porFinca[f]) porFinca[f] = {tot:0, tr:new Set()};
-    porFinca[f].tot += (r.hembras||0)+(r.machos||0);
-    if(r.trampaId) porFinca[f].tr.add(r.trampaId);
+  document.getElementById('kpi-analisis').innerHTML = `
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">🐞</div><div><div class="kpi-val" style="color:var(--text);">${totalCap}</div><div class="kpi-lbl">Capturas totales</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--amber-bg);">🪲</div><div><div class="kpi-val" style="color:var(--text);">${ic.toFixed(1)}</div><div class="kpi-lbl">Promedio por trampa</div><div class="kpi-sub">En el periodo</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--green-bg);">📈</div><div><div class="kpi-val" style="color:${tendenciaColor};font-size:18px;">${tendenciaTxt}</div><div class="kpi-lbl">Tendencia biológica</div><div class="kpi-sub">vs. ciclo anterior</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:rgba(147,51,234,.10);">♀️</div><div><div class="kpi-val" style="color:var(--text);">${pctH.toFixed(1)}%</div><div class="kpi-lbl">% Hembras</div><div class="kpi-sub">${totalH} hembras</div></div></div>
+    <div class="kpi"><div class="kpi-icon" style="background:var(--blue-bg);">♂️</div><div><div class="kpi-val" style="color:var(--text);">${pctM.toFixed(1)}%</div><div class="kpi-lbl">% Machos</div><div class="kpi-sub">${totalM} machos</div></div></div>
+  `;
+
+  destroyChart('chart-composicion-bio');
+  charts['chart-composicion-bio'] = new Chart(document.getElementById('chart-composicion-bio'), {
+    type: 'doughnut',
+    data: { labels:[`Hembras ${totalH} (${pctH.toFixed(1)}%)`,`Machos ${totalM} (${pctM.toFixed(1)}%)`,`Indeterminados ${totalInd} (${totalCap>0?(totalInd/totalCap*100).toFixed(1):'0.0'}%)`],
+      datasets:[{ data:[totalH,totalM,totalInd], backgroundColor:['#22c55e','#3b82f6','#eab308'], borderWidth:2, borderColor:'#ffffff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:11}}}} }
   });
-  const fincasIC = Object.keys(porFinca)
-    .map(f => ({f, ic: porFinca[f].tr.size>0 ? porFinca[f].tot/porFinca[f].tr.size : 0}))
-    .sort((a,b) => b.ic-a.ic);
-  const fincaCritica = fincasIC[0];
+  const rangoOk = pctH >= 30 && pctH <= 50;
+  document.getElementById('insight-composicion-bio').innerHTML = `
+    <div class="decision-icon" style="background:${rangoOk?'var(--green)':'var(--amber)'};">${rangoOk?'✓':'!'}</div>
+    <div class="decision-txt" style="font-size:12.5px;">${rangoOk
+      ? `La proporción de hembras se encuentra dentro del rango esperado para Rhynchophorus palmarum (30% - 50%).`
+      : `La proporción de hembras (${pctH.toFixed(1)}%) está fuera del rango esperado para Rhynchophorus palmarum (30% - 50%); revisar el balance poblacional.`}</div>
+  `;
 
-  let icHistFinca = null;
-  if (fincaCritica && historico.length) {
-    const subHist = historico.filter(r => r.finca === fincaCritica.f);
-    const totHist = subHist.reduce((s,r) => s+(r.hembras||0)+(r.machos||0), 0);
-    const trHist = new Set(subHist.map(r => r.trampaId)).size;
-    icHistFinca = trHist>0 ? totHist/trHist : null;
-  }
+  const porDia = {};
+  datos.forEach(r => { if(!porDia[r.fecha]) porDia[r.fecha]={h:0,m:0}; porDia[r.fecha].h+=r.hembras||0; porDia[r.fecha].m+=r.machos||0; });
+  const dias = Object.keys(porDia).sort();
+  destroyChart('chart-evolucion-bio');
+  charts['chart-evolucion-bio'] = new Chart(document.getElementById('chart-evolucion-bio'), {
+    type: 'line',
+    data: { labels: dias.map(d=>d.slice(5)), datasets: [
+      { label:'Hembras', data: dias.map(d=>porDia[d].h), borderColor:'#22c55e', backgroundColor:'transparent', tension:.3, pointRadius:2 },
+      { label:'Machos', data: dias.map(d=>porDia[d].m), borderColor:'#3b82f6', backgroundColor:'transparent', tension:.3, pointRadius:2 },
+      { label:'Total', data: dias.map(d=>porDia[d].h+porDia[d].m), borderColor:'#1c2030', borderDash:[5,5], backgroundColor:'transparent', tension:.3, pointRadius:2 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{boxWidth:12}}}, scales:{x:{grid:{color:CHART_GRID}},y:{beginAtZero:true,grid:{color:CHART_GRID}}} }
+  });
+  document.getElementById('insight-evolucion-bio').innerHTML = `
+    <div class="decision-icon">📈</div>
+    <div class="decision-txt" style="font-size:12.5px;">La tendencia de capturas se mantiene ${tendenciaTxt.toLowerCase()} ${variacion>=0?'(+':'('}${variacion.toFixed(1)}%) respecto al ciclo anterior.</div>
+  `;
 
   const porLote = {};
   datos.forEach(r => {
-    const k = (r.finca||'?')+' · Lote '+(r.lote||'?');
-    if(!porLote[k]) porLote[k] = {tot:0, tr:new Set()};
-    porLote[k].tot += (r.hembras||0)+(r.machos||0);
-    if(r.trampaId) porLote[k].tr.add(r.trampaId);
+    const k = (r.finca||'?').replace('FINCA ','F')+' · L'+r.lote;
+    if(!porLote[k]) porLote[k]={h:0,m:0,tr:new Set()};
+    porLote[k].h += r.hembras||0; porLote[k].m += r.machos||0;
+    if (r.trampaId) porLote[k].tr.add(r.trampaId);
   });
-  const lotesIC = Object.entries(porLote)
-    .map(([k,v]) => ({k, ic: v.tr.size>0 ? v.tot/v.tr.size : 0}))
-    .sort((a,b) => b.ic-a.ic).slice(0,3);
+  let lotesBio = Object.entries(porLote).map(([k,v]) => {
+    const tot = v.h+v.m;
+    return { k, tot, h:v.h, m:v.m, pctH: tot>0?v.h/tot*100:0, ic: v.tr.size>0?tot/v.tr.size:0 };
+  }).sort((a,b) => b.pctH-a.pctH);
+  document.getElementById('titulo-tabla-bio').textContent = verTodosLotesBio ? `Todos los lotes (${lotesBio.length})` : 'Top 5 por % de hembras';
+  document.getElementById('link-ver-todos-bio').textContent = verTodosLotesBio ? '← Ver solo el top 5' : 'Ver todos los lotes →';
+  const lotesMostrar = verTodosLotesBio ? lotesBio : lotesBio.slice(0,5);
+  document.getElementById('tbl-indices-bio').innerHTML = lotesMostrar.map(l => `
+    <tr><td style="font-weight:700;">${l.k}</td><td>${l.tot}</td><td>${l.h}</td><td>${l.pctH.toFixed(1)}%</td><td>${l.m}</td><td>${l.ic.toFixed(1)}</td><td>${badgeIC(l.ic)}</td></tr>
+  `).join('') || '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Sin datos</td></tr>';
 
-  const nivelGeneral = icReciente>=UMBRAL_CRITICO?'CRÍTICO':icReciente>=UMBRAL_ALERTA?'EN ALERTA':'CONTROLADO';
-  const colorNivel = icReciente>=UMBRAL_CRITICO?'var(--red)':icReciente>=UMBRAL_ALERTA?'var(--amber)':'var(--green)';
-  const esCritico = icReciente>=UMBRAL_CRITICO;
-  const esAlerta = icReciente>=UMBRAL_ALERTA;
-
-  const comparativoHistTxt = (fincaCritica && icHistFinca!==null)
-    ? (fincaCritica.ic > icHistFinca
-        ? `, superando su promedio histórico (IC hist. ${icHistFinca.toFixed(2)})`
-        : `, dentro de su comportamiento histórico habitual (IC hist. ${icHistFinca.toFixed(2)})`)
-    : '';
-
-  const mip = [
-    { icono:'🪤', titulo:'Control etológico',
-      txt: esCritico ? 'Reducir el intervalo de revisión a 5–7 días en los lotes críticos; renovar feromona de agregación y cebo de inmediato en las trampas con mayor captura.'
-        : esAlerta ? 'Mantener revisión semanal y verificar vigencia de feromona y cebo en los puntos con índice de captura elevado.'
-        : 'Continuar con el cronograma de revisión cada 15 días según protocolo vigente.' },
-    { icono:'🌿', titulo:'Control cultural',
-      txt: esCritico ? 'Intensificar el saneamiento: eliminar y picar palmas afectadas, estípites caídos y cogollos en descomposición que sirven de criadero, en un radio prioritario alrededor de los focos detectados.'
-        : esAlerta ? 'Mantener el saneamiento rutinario de residuos de cosecha y palmas hospederas; inspeccionar lotes vecinos a los focos de alerta.'
-        : 'Mantener las labores rutinarias de saneamiento y manejo de residuos de cosecha.' },
-    { icono:'🦠', titulo:'Control biológico',
-      txt: (esCritico||esAlerta) ? 'Evaluar aplicación de hongos entomopatógenos (Metarhizium anisopliae / Beauveria bassiana) en cebos trampa de los focos activos y monitorear la presencia de enemigos naturales.'
-        : 'Conservar y favorecer la fauna benéfica presente; sin intervención adicional requerida en este nivel.' },
-    { icono:'⚗️', titulo:'Control químico',
-      txt: esCritico ? 'Considerar como última opción el uso de insecticida autorizado por el ICA en cebo-trampa, exclusivamente en los focos críticos y bajo supervisión del responsable de Sanidad Vegetal.'
-        : 'No se justifica intervención química en el nivel de riesgo actual; reservar como medida de último recurso.' },
-  ];
-
-  const recomendaciones = [];
-  if (esCritico) recomendaciones.push('Intensificar la frecuencia de revisión de trampas (cada 5-7 días) en los lotes críticos y activar el plan de manejo integrado descrito a continuación.');
-  else if (esAlerta) recomendaciones.push('Mantener monitoreo semanal estricto; reforzar el cambio de feromonas y cebo en los puntos con mayor índice de captura.');
-  else recomendaciones.push('Mantener el programa de monitoreo actual; el nivel de presión poblacional se encuentra dentro de parámetros aceptables.');
-  if (variacion>10) recomendaciones.push('La tendencia ascendente sugiere una posible fuente de reinfestación cercana; se recomienda inspección de campo en los lotes con mayor incremento.');
-  if (fincaCritica) recomendaciones.push(`Priorizar ${fincaCritica.f} por concentrar el mayor índice de captura promedio (IC ${fincaCritica.ic.toFixed(2)})${comparativoHistTxt}.`);
-
-  cont.innerHTML = `
-    <div class="card informe-card">
-      <div class="informe-head">
-        <div class="informe-tag">Informe Técnico Fitosanitario</div>
-        <div class="informe-titulo">Diagnóstico — Picudo de la palma (Rhynchophorus palmarum)</div>
-      </div>
-      <div class="informe-body">
-        <div class="informe-resumen">
-          <div class="ir-item"><div class="ir-lbl">Nivel de riesgo</div><div class="ir-val" style="color:${colorNivel};">${nivelGeneral}</div></div>
-          <div class="ir-item"><div class="ir-lbl">IC actual</div><div class="ir-val">${icReciente.toFixed(2)}</div></div>
-          <div class="ir-item"><div class="ir-lbl">IC periodo anterior</div><div class="ir-val" style="color:var(--muted);">${icPrevio.toFixed(2)}</div></div>
-          <div class="ir-item"><div class="ir-lbl">Tendencia</div><div class="ir-val" style="font-size:14px;">${tendenciaIcon} ${tendenciaTxt} (${variacion>=0?'+':''}${variacion.toFixed(1)}%)</div></div>
-          <div class="ir-item"><div class="ir-lbl">Proyección próx. periodo</div><div class="ir-val" style="color:var(--amber);">${proyeccion.toFixed(2)}</div></div>
-        </div>
-
-        <h3>1. Diagnóstico fitosanitario</h3>
-        <p>
-          Con base en el monitoreo registrado, el índice de captura (IC) promedio del periodo evaluado es de <b>${icReciente.toFixed(2)}</b> insectos/trampa,
-          lo que ubica la presión poblacional en un nivel <b style="color:${colorNivel};">${nivelGeneral}</b> según el umbral de referencia del boletín técnico ICA/Cenipalma
-          (alerta ≥ ${UMBRAL_ALERTA}, crítico ≥ ${UMBRAL_CRITICO} individuos/trampa/ciclo).
-          Respecto al período anterior (IC ${icPrevio.toFixed(2)}), la tendencia poblacional es <b>${tendenciaTxt}</b> ${tendenciaIcon}
-          (${variacion>=0?'+':''}${variacion.toFixed(1)}%); de mantenerse este comportamiento, se proyecta un IC cercano a <b>${proyeccion.toFixed(2)}</b> en el próximo ciclo de monitoreo.
-        </p>
-        <p>
-          ${fincaCritica ? `La finca con mayor presión fitosanitaria es <b>${fincaCritica.f}</b> (IC ${fincaCritica.ic.toFixed(2)})${comparativoHistTxt}.` : ''}
-          Los lotes que requieren mayor atención son: ${lotesIC.map(l => `<b>${l.k}</b> (IC ${l.ic.toFixed(2)})`).join(', ')}.
-        </p>
-
-        <h3>2. Recomendaciones técnicas</h3>
-        <ul style="margin:0 0 4px;padding-left:18px;line-height:1.65;font-size:13px;color:var(--text);">
-          ${recomendaciones.map(r => `<li>${r}</li>`).join('')}
-        </ul>
-
-        <h3>3. Plan de Manejo Integrado de Plagas (MIP)</h3>
-        <div class="mip-grid">
-          ${mip.map(m => `<div class="mip-item"><div class="mip-item-h">${m.icono} ${m.titulo}</div><p>${m.txt}</p></div>`).join('')}
-        </div>
-      </div>
-      <div class="informe-foot">
-        <span>Departamento de Sanidad Vegetal · Palma Grande S.A.S.</span>
-        <span>Umbrales de referencia: boletín técnico ICA/Cenipalma</span>
-      </div>
-    </div>
-  `;
+  const conclusiones = [];
+  conclusiones.push({ icon: variacion<=10?'✅':'⚠️', color: variacion<=10?'var(--green)':'var(--amber)', t:'Población '+(variacion<=10?'estable':'en aumento')+':', d:`La tendencia de capturas se ${variacion>10?'incrementa':'mantiene estable'} respecto al ciclo anterior.` });
+  conclusiones.push({ icon: rangoOk?'✅':'⚠️', color: rangoOk?'var(--green)':'var(--amber)', t:'Proporción sexual '+(rangoOk?'balanceada':'desbalanceada')+':', d:`La relación machos/hembras (${pctM.toFixed(1)}% / ${pctH.toFixed(1)}%) ${rangoOk?'se encuentra dentro del rango esperado':'está fuera del rango esperado'}.` });
+  if (totalCap>0 && totalInd/totalCap > 0.10) conclusiones.push({ icon:'⚠️', color:'var(--amber)', t:'Individuos sin clasificar:', d:`El ${(totalInd/totalCap*100).toFixed(1)}% de las capturas no fue clasificado por sexo en campo; reforzar el registro durante la revisión.` });
+  const lotesCriticos = lotesBio.filter(l => l.ic >= UMBRAL_CRITICO);
+  conclusiones.push({ icon:'💡', color:'var(--primary)', t:'Recomendación:', d: lotesCriticos.length ? `Continuar con el plan actual de trampeo y reforzar en lotes críticos (${lotesCriticos.map(l=>l.k).join(', ')}).` : 'Continuar con el plan actual de trampeo; el nivel de presión poblacional se encuentra dentro de parámetros aceptables.' });
+  document.getElementById('conclusiones-bio').innerHTML = conclusiones.map(c => `
+    <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);"><span style="font-size:15px;">${c.icon}</span><div><span style="font-weight:700;color:${c.color};">${c.t}</span> <span style="font-size:12.5px;color:var(--text2);">${c.d}</span></div></div>
+  `).join('');
 }
 
 // ── PDF EXPORT ────────────────────────────
