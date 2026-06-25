@@ -331,7 +331,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
           <div class="card">
             <div class="card-title">👷 2. Desempeño operativo</div>
             <div id="resumen-informe-operativo"></div>
-            <div class="chart-wrap" style="height:150px;margin-top:8px;"><canvas id="chart-informe-cumplimiento"></canvas></div>
+            <div class="chart-wrap" id="wrap-informe-cumplimiento" style="height:150px;margin-top:8px;"><canvas id="chart-informe-cumplimiento"></canvas></div>
           </div>
           <div class="card">
             <div class="card-title">💲 3. Análisis económico</div>
@@ -1256,11 +1256,12 @@ function renderInforme() {
     <div class="alert-row"><span class="alert-txt">Trampas pendientes</span><span style="font-weight:700;">${totalPendientes}</span></div>
     <div class="alert-row"><span class="alert-txt">Cumplimiento general</span><span style="font-weight:700;color:${cumplimientoGeneral>=95?'var(--green)':'var(--amber)'};">${cumplimientoGeneral}%</span></div>
   `;
+  document.getElementById('wrap-informe-cumplimiento').style.height = Math.max(150, filasOp.length*24) + 'px';
   destroyChart('chart-informe-cumplimiento');
   charts['chart-informe-cumplimiento'] = new Chart(document.getElementById('chart-informe-cumplimiento'), {
     type: 'bar',
     data: { labels: filasOp.map(f=>f.op), datasets: [{ label:'Cumplimiento (%)', data: filasOp.map(f=>f.cumplimiento), backgroundColor:'#22c55e', borderRadius:4 }] },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100,grid:{color:CHART_GRID}},x:{grid:{display:false},ticks:{font:{size:9}}}} }
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,max:100,grid:{color:CHART_GRID}},y:{grid:{display:false},ticks:{font:{size:9}}}} }
   });
 
   // 3. Análisis económico
