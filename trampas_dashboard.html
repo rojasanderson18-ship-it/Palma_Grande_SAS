@@ -1636,7 +1636,10 @@ async function exportarPDF() {
         const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
         const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
         const availableH = pageH - topMargin - bottomMargin;
-        if (hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER)) {
+        const espacioRestanteActual = pageH - bottomMargin - estado.y;
+        const cabeEnEspacioActual = hCombinado <= espacioRestanteActual;
+        const cabeEnPaginaFrescaSiendoPrimero = estado.esPrimerBloqueDePagina && hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER);
+        if (cabeEnEspacioActual || cabeEnPaginaFrescaSiendoPrimero) {
           await colocarBloque(c, canvasCombinado, imgW);
         } else {
           const hijos = Array.from(c.children).filter(h => h.offsetHeight > 0);
