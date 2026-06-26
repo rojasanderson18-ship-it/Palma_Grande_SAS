@@ -1486,10 +1486,10 @@ async function exportarPDF() {
   dibujarEncabezadoPDF(doc, nombreVista, pageW);
   const estado = { y: topMargin, esPrimerBloqueDePagina: true };
 
-  async function colocarBloque(bloqueEl, canvas, anchoMm) {
+  async function colocarBloque(bloqueEl, canvas, anchoMm, reservaExtra = 0) {
     const h = canvas.height * anchoMm / canvas.width;
     const xMm = sideMargin + (imgW - anchoMm) / 2;
-    const espacioRestante = pageH - bottomMargin - estado.y;
+    const espacioRestante = pageH - bottomMargin - estado.y - reservaExtra;
 
     if (h <= espacioRestante) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xMm, estado.y, anchoMm, h);
@@ -1547,7 +1547,7 @@ async function exportarPDF() {
     }
   }
 
-  function paginarConFilasColumna(bloqueEl, canvas, anchoMm, xMm, paginaInicio, startYmm) {
+  function paginarConFilasColumna(bloqueEl, canvas, anchoMm, xMm, paginaInicio, startYmm, reservaPrimera = 0) {
     let filas = Array.from(bloqueEl.querySelectorAll('table.tbl tbody tr'));
     if (!filas.length) filas = Array.from(bloqueEl.querySelectorAll('.lote-bar, .alert-row'));
     const bloqueRect = bloqueEl.getBoundingClientRect();
@@ -1562,7 +1562,7 @@ async function exportarPDF() {
     while (offsetPx < totalHpx - 0.5) {
       const startY = primera ? startYmm : topMargin;
       if (!primera) { pagina += 1; asegurarPagina(pagina); doc.setPage(pagina); }
-      const disponibleMm = pageH - startY - bottomMargin;
+      const disponibleMm = pageH - startY - bottomMargin - (primera ? reservaPrimera : 0);
       const limitePx = offsetPx + disponibleMm * pxPerMm;
       let sliceEnd = Math.min(limitePx, totalHpx);
       if (limitesPx.length) {
@@ -1582,10 +1582,10 @@ async function exportarPDF() {
     return { page: pagina, y: pageH, primera: false };
   }
 
-  function colocarColumna(hijoEl, canvas, colWidth, xCol, cursor) {
+  function colocarColumna(hijoEl, canvas, colWidth, xCol, cursor, reservaExtra = 0) {
     const h = canvas.height * colWidth / canvas.width;
     doc.setPage(cursor.page);
-    const espacioRestante = pageH - bottomMargin - cursor.y;
+    const espacioRestante = pageH - bottomMargin - cursor.y - reservaExtra;
 
     if (h <= espacioRestante) {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xCol, cursor.y, colWidth, h);
@@ -1598,15 +1598,22 @@ async function exportarPDF() {
       doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, cursor.y, wEnc, espacioRestante);
       return { page: cursor.page, y: cursor.y + espacioRestante + gap, primera: false };
     }
+    if (reservaExtra > 0 && espacioRestante / h >= 0.55) {
+      const factor = espacioRestante / h;
+      const wEnc = colWidth * factor;
+      const xEnc = xCol + (colWidth - wEnc) / 2;
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', xEnc, cursor.y, wEnc, espacioRestante);
+      return { page: cursor.page, y: cursor.y + espacioRestante + gap, primera: false };
+    }
     const tieneFilas = hijoEl.querySelector('table.tbl tbody tr, .lote-bar, .alert-row') !== null;
     if (tieneFilas) {
       const espacioMinUtil = 14;
       if (espacioRestante >= espacioMinUtil) {
-        return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, cursor.page, cursor.y);
+        return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, cursor.page, cursor.y, reservaExtra);
       }
       let pagina = cursor.page;
       if (!cursor.primera) { pagina += 1; asegurarPagina(pagina); doc.setPage(pagina); }
-      return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, pagina, topMargin);
+      return paginarConFilasColumna(hijoEl, canvas, colWidth, xCol, pagina, topMargin, reservaExtra);
     }
     let pagina = cursor.page, y = cursor.y, primera = cursor.primera;
     if (!primera) {
@@ -1629,18 +1636,29 @@ async function exportarPDF() {
   }
 
   try {
-    for (const c of Array.from(el.children)) {
-      if (c.offsetHeight === 0) continue;
+    const hijosVista = Array.from(el.children).filter(c => c.offsetHeight > 0);
+    for (let idxVista = 0; idxVista < hijosVista.length; idxVista++) {
+      const c = hijosVista[idxVista];
+
+      const siguiente = hijosVista[idxVista + 1];
+      const siguienteEsNotaSimple = siguiente
+        && !siguiente.classList.contains('grid2') && !siguiente.classList.contains('grid3')
+        && siguiente.querySelector('canvas, table.tbl, .lote-bar, .alert-row') === null;
+      let reservaExtra = 0;
+      if (siguienteEsNotaSimple) {
+        const canvasReservado = await html2canvas(siguiente, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+        reservaExtra = (canvasReservado.height * imgW / canvasReservado.width) + gap;
+      }
 
       if (c.classList.contains('grid2') || c.classList.contains('grid3')) {
         const canvasCombinado = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
         const hCombinado = canvasCombinado.height * imgW / canvasCombinado.width;
-        const availableH = pageH - topMargin - bottomMargin;
-        const espacioRestanteActual = pageH - bottomMargin - estado.y;
+        const availableH = pageH - topMargin - bottomMargin - reservaExtra;
+        const espacioRestanteActual = pageH - bottomMargin - estado.y - reservaExtra;
         const cabeEnEspacioActual = hCombinado <= espacioRestanteActual;
         const cabeEnPaginaFrescaSiendoPrimero = estado.esPrimerBloqueDePagina && hCombinado <= availableH * (1 + TOLERANCIA_ENCOGER);
         if (cabeEnEspacioActual || cabeEnPaginaFrescaSiendoPrimero) {
-          await colocarBloque(c, canvasCombinado, imgW);
+          await colocarBloque(c, canvasCombinado, imgW, reservaExtra);
         } else {
           const hijos = Array.from(c.children).filter(h => h.offsetHeight > 0);
           const numCols = hijos.length;
@@ -1650,7 +1668,7 @@ async function exportarPDF() {
           for (let i = 0; i < hijos.length; i++) {
             const xCol = sideMargin + i * (colWidth + gap);
             const canvasHijo = await html2canvas(hijos[i], { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
-            const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio);
+            const r = colocarColumna(hijos[i], canvasHijo, colWidth, xCol, cursorInicio, reservaExtra);
             if (r.page > cursorFinal.page || (r.page === cursorFinal.page && r.y > cursorFinal.y)) cursorFinal = r;
           }
           doc.setPage(cursorFinal.page);
@@ -1659,7 +1677,7 @@ async function exportarPDF() {
         }
       } else {
         const canvas = await html2canvas(c, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
-        await colocarBloque(c, canvas, imgW);
+        await colocarBloque(c, canvas, imgW, reservaExtra);
       }
     }
 
