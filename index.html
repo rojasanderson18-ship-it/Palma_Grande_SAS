@@ -33,9 +33,9 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .sb-link.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:#4ade80;font-weight:600;}
 .sb-link.active .ic-svg{color:#4ade80;}
 .sb-link.pronto{opacity:.45;cursor:not-allowed;}
-.sb-link-toggle{position:relative;}
-.sb-link-toggle .chev{position:absolute;right:18px;width:14px;height:14px;transition:transform .15s;}
-.sb-link-toggle.expanded .chev{transform:rotate(180deg);}
+.menu-toggle{position:relative;}
+.menu-toggle .chev{position:absolute;right:18px;width:14px;height:14px;transition:transform .15s;}
+.menu-toggle.expanded .chev{transform:rotate(180deg);}
 .sb-sublink{display:flex;align-items:center;gap:11px;padding:9px 20px;font-size:13px;color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;border-left:3px solid transparent;}
 .sb-sublink .ic-svg{width:16px;height:16px;color:rgba(255,255,255,.6);}
 .sb-sublink:hover{background:rgba(255,255,255,.06);color:#fff;}
@@ -588,10 +588,10 @@ a.mtab:hover{color:#16a34a;}
 
     <div class="sb-section" id="sb-section-main">Módulos principales</div>
     <a class="sb-link active" id="sb-link-inicio" href="javascript:void(0)" onclick="showSection('inicio')"><svg class="ic-svg"><use href="#i-home"/></svg> Inicio</a>
-    <a class="sb-link sb-link-toggle" id="sb-link-cosecha" href="javascript:void(0)" onclick="toggleCosechaMenu()"><svg class="ic-svg"><use href="#i-leaf"/></svg> Cosecha <svg class="ic-svg chev" id="sb-cosecha-chev"><use href="#i-chevron-down"/></svg></a>
+    <a class="sb-link menu-toggle" id="sb-link-cosecha" href="javascript:void(0)" onclick="toggleCosechaMenu()"><svg class="ic-svg"><use href="#i-leaf"/></svg> Cosecha <svg class="ic-svg chev" id="sb-cosecha-chev"><use href="#i-chevron-down"/></svg></a>
     <div id="sb-cosecha-sub" style="display:none;">
       <a class="sb-sublink active" id="sbc-resumen" href="javascript:void(0)" onclick="showCosechaTab('resumen')"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Resumen Ejecutivo</a>
-      <a class="sb-sublink" id="sbc-produccion" href="javascript:void(0)" onclick="showCosechaTab('produccion')"><svg class="ic-svg"><use href="#i-trending-up"/></svg> Producción</a>
+      <a class="sb-sublink menu-toggle" id="sbc-produccion" href="javascript:void(0)" onclick="toggleProduccionMenu()"><svg class="ic-svg"><use href="#i-trending-up"/></svg> Producción <svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></a>
       <div id="sb-prod-sub" style="display:none;">
         <a class="sb-sublink sb-sublink2 active" id="sbp-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
         <a class="sb-sublink sb-sublink2" id="sbp-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
@@ -1982,6 +1982,19 @@ function showSection(name){
   document.getElementById('sidebar').classList.remove('open');
 }
 
+function setProduccionMenuOpen(open){
+  document.getElementById('sb-prod-sub').style.display = open ? '' : 'none';
+  document.getElementById('sbc-produccion').classList.toggle('expanded', open);
+}
+
+function toggleProduccionMenu(){
+  const isOpen = document.getElementById('sb-prod-sub').style.display !== 'none';
+  setProduccionMenuOpen(!isOpen);
+  if (!isOpen && document.getElementById('cosecha-tab-produccion').style.display === 'none') {
+    showCosechaTab('produccion');
+  }
+}
+
 function showCosechaTab(name){
   showSection('cosecha');
   document.getElementById('cosecha-tab-resumen').style.display = name === 'resumen' ? '' : 'none';
@@ -1990,7 +2003,7 @@ function showCosechaTab(name){
   document.getElementById('sbc-resumen').classList.toggle('active', name === 'resumen');
   document.getElementById('sbc-produccion').classList.toggle('active', name === 'produccion');
   document.getElementById('sbc-lotes').classList.toggle('active', name === 'lotes');
-  document.getElementById('sb-prod-sub').style.display = name === 'produccion' ? '' : 'none';
+  if (name === 'produccion') setProduccionMenuOpen(true);
   const info = COSECHA_TAB_INFO[name];
   document.getElementById('topbar-greeting').textContent = info.title;
   document.getElementById('topbar-sub').textContent = info.sub;
