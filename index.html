@@ -164,6 +164,10 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .mtab.pronto{opacity:.5;cursor:not-allowed;}
 a.mtab{cursor:pointer;}
 a.mtab:hover{color:#16a34a;}
+.module-tabs-row{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #eef0f4;}
+.module-tabs-row .module-tabs{border-bottom:none;flex:1;}
+.dl-informe{flex:0 0 auto;white-space:nowrap;margin-top:0;padding-top:0;padding-bottom:10px;border-top:none;}
+.dl-informe .ic-svg{transform:none;}
 
 /* KPI ROW VARIANTS */
 .kpi-row.cols-8{grid-template-columns:repeat(8,1fr);}
@@ -380,6 +384,7 @@ a.mtab:hover{color:#16a34a;}
 <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
 <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M21 4v6h-6M3 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 13a8.5 8.5 0 0 0 14.6 4.9L21 14M20.5 11A8.5 8.5 0 0 0 5.9 6.1L3 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </defs>
 </svg>
 
@@ -474,7 +479,6 @@ a.mtab:hover{color:#16a34a;}
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-target"/></svg> Indicadores Gerenciales</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-info"/></svg> Inteligencia Artificial</span>
     </div>
-    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-package"/></svg> Producción</span>
     <a class="sb-link" href="sanidad_carpeta.html"><svg class="ic-svg"><use href="#i-flask"/></svg> Sanidad</a>
     <a class="sb-link" href="trampas_dashboard.html"><svg class="ic-svg"><use href="#i-bug"/></svg> Trampeo · Rhynchophorus</a>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Fertilización</span>
@@ -511,6 +515,7 @@ a.mtab:hover{color:#16a34a;}
       <div class="topbar-right">
         <span class="tb-pill" id="hdr-fecha-pill"><svg class="ic-svg"><use href="#i-calendar"/></svg> —<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></span>
         <span class="tb-pill"><svg class="ic-svg"><use href="#i-users"/></svg> Todas las fincas<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></span>
+        <span class="tb-bell" id="tb-refresh" title="Actualizar"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg></span>
         <span class="tb-bell"><svg class="ic-svg"><use href="#i-bell"/></svg><span class="dot">3</span></span>
         <div class="tb-user">
           <div class="tb-avatar">A</div>
@@ -815,14 +820,17 @@ a.mtab:hover{color:#16a34a;}
         <!-- /cosecha-tab-resumen -->
 
         <div id="cosecha-tab-produccion" class="cosecha-tabpanel" style="display:none;">
-          <div class="module-tabs" style="margin-top:18px;">
-            <span class="mtab pronto">Resumen</span>
-            <a class="mtab active" id="mtab-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
-            <a class="mtab" id="mtab-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
-            <span class="mtab pronto">Producción Mensual</span>
-            <span class="mtab pronto">Producción Anual</span>
-            <span class="mtab pronto">Comparativos</span>
-            <span class="mtab pronto">Histórico</span>
+          <div class="module-tabs-row" style="margin-top:18px;">
+            <div class="module-tabs">
+              <span class="mtab pronto">Resumen</span>
+              <a class="mtab active" id="mtab-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
+              <a class="mtab" id="mtab-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
+              <span class="mtab pronto">Producción Mensual</span>
+              <span class="mtab pronto">Producción Anual</span>
+              <span class="mtab pronto">Comparativos</span>
+              <span class="mtab pronto">Histórico</span>
+            </div>
+            <a class="panel-link dl-informe"><svg class="ic-svg"><use href="#i-download"/></svg> Descargar informe</a>
           </div>
 
           <div id="prod-sub-diaria">
