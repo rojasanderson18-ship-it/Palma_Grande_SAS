@@ -699,7 +699,7 @@ a.mtab:hover{color:#16a34a;}
 
       <div id="section-inicio">
       <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num" id="inicio-kpi-prod">N/D</div><div class="kpi-delta neutral" id="inicio-kpi-prod-delta">Últimos 15 días</div></div>
+        <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num" id="inicio-kpi-prod">N/D</div><div class="kpi-delta neutral" id="inicio-kpi-prod-delta">Mes en curso</div></div>
         <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Toneladas por día</div><div class="kpi-num" id="inicio-kpi-tonxdia">N/D</div><div class="kpi-delta neutral">Promedio del período</div></div>
         <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Área productiva</div><div class="kpi-num" id="inicio-kpi-area">N/D</div><div class="kpi-delta neutral" id="inicio-kpi-area-sub">de N/D ha totales</div></div>
         <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num" style="font-size:16px;color:#94a3b8;">N/D</div><div class="kpi-delta neutral">Sin datos de planta registrados</div></div>
@@ -709,7 +709,7 @@ a.mtab:hover{color:#16a34a;}
 
       <div class="grid-row cols-3">
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Producción diaria (período actual)</div><div class="panel-sub">Toneladas</div></div><span class="panel-select">Últimos 15 días</span></div>
+          <div class="panel-head"><div><div class="panel-title">Producción diaria (período actual)</div><div class="panel-sub">Toneladas</div></div><span class="panel-select">Mes en curso</span></div>
           <div class="barchart" id="inicio-barchart"></div>
           <div class="linechart-axis" id="inicio-bar-axis"></div>
         </div>
@@ -727,7 +727,7 @@ a.mtab:hover{color:#16a34a;}
 
       <div class="grid-row cols-3-eq">
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Producción por finca (período)</div><div class="panel-sub">Toneladas, últimos 15 días</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Producción por finca (período)</div><div class="panel-sub">Toneladas, mes en curso</div></div></div>
           <div id="inicio-finca-rows"><div class="empty-panel-msg">Sin datos de producción en el período.</div></div>
         </div>
 
@@ -2057,14 +2057,17 @@ async function inicioRender(){
     let rows = await impFetchProduccion();
     if (tbFincaFiltro) rows = rows.filter(r => String(r.finca||'').trim() === tbFincaFiltro);
     const hoy = new Date();
-    const isoHoy = d => d.toISOString().slice(0,10);
-    const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
-    const hoy0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    const limite = isoHoy(addDays(hoy0, -14));
-    const limite30 = isoHoy(addDays(hoy0, -29));
+    const anioActual = hoy.getFullYear();
+    const mesActual  = hoy.getMonth();
+    const mesPrevio  = mesActual === 0 ? 11 : mesActual - 1;
+    const anioPrevio = mesActual === 0 ? anioActual - 1 : anioActual;
+    const mesKey  = anioActual + '-' + String(mesActual + 1).padStart(2,'0');
+    const mesKeyP = anioPrevio + '-' + String(mesPrevio + 1).padStart(2,'0');
+    const isoD = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const diasEnMes = new Date(anioActual, mesActual + 1, 0).getDate();
 
-    const rowsPeriodo = rows.filter(r => r.fecha >= limite);
-    const rowsPrevio  = rows.filter(r => r.fecha >= limite30 && r.fecha < limite);
+    const rowsPeriodo = rows.filter(r => String(r.fecha||'').slice(0,7) === mesKey);
+    const rowsPrevio  = rows.filter(r => String(r.fecha||'').slice(0,7) === mesKeyP);
 
     const sumTon = rs => rs.reduce((s, r) => s + (parseFloat(r.toneladas)||0), 0);
     const totalPeriodo = sumTon(rowsPeriodo);
@@ -2076,9 +2079,9 @@ async function inicioRender(){
       const delta = ((totalPeriodo - totalPrevio) / totalPrevio * 100);
       const sign = delta >= 0 ? '▲ +' : '▼ ';
       const el = document.getElementById('inicio-kpi-prod-delta');
-      if (el) { el.textContent = sign + impNum(Math.abs(delta),1) + '% vs período anterior'; el.className = 'kpi-delta' + (delta < 0 ? ' down' : ''); }
+      if (el) { el.textContent = sign + impNum(Math.abs(delta),1) + '% vs mes anterior'; el.className = 'kpi-delta' + (delta < 0 ? ' down' : ''); }
     } else {
-      impSetText('inicio-kpi-prod-delta', 'Últimos 15 días');
+      impSetText('inicio-kpi-prod-delta', IMP_MES_ABR[mesActual] + ' ' + anioActual);
     }
 
     const diasConDatos = new Set(rowsPeriodo.map(r => r.fecha)).size;
@@ -2096,19 +2099,19 @@ async function inicioRender(){
       impSetText('inicio-kpi-area-sub', 'de ' + impNum(haTotales,1) + ' ha totales');
     } catch(e) {}
 
-    // Producción diaria — últimos 15 días naturales
-    const byDate15 = new Map();
-    rowsPeriodo.forEach(r => byDate15.set(r.fecha, (byDate15.get(r.fecha)||0) + (parseFloat(r.toneladas)||0)));
-    const fechas15 = [];
-    for (let i = 14; i >= 0; i--) fechas15.push(isoHoy(addDays(hoy0, -i)));
-    const values15 = fechas15.map(f => byDate15.get(f) || 0);
-    const maxVal = Math.max(...values15, 1);
+    // Producción diaria — todos los días del mes en curso
+    const byDateMes = new Map();
+    rowsPeriodo.forEach(r => byDateMes.set(r.fecha, (byDateMes.get(r.fecha)||0) + (parseFloat(r.toneladas)||0)));
+    const fechasMes = [];
+    for (let d = 1; d <= diasEnMes; d++) fechasMes.push(anioActual + '-' + String(mesActual+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'));
+    const valuesMes = fechasMes.map(f => byDateMes.get(f) || 0);
+    const maxVal = Math.max(...valuesMes, 1);
     const barchart = document.getElementById('inicio-barchart');
     const baraxis = document.getElementById('inicio-bar-axis');
     if (barchart) {
-      barchart.innerHTML = fechas15.map((f, i) => {
+      barchart.innerHTML = fechasMes.map((f, i) => {
         const d = impParseFechaLocal(f);
-        const ton = values15[i];
+        const ton = valuesMes[i];
         const h = Math.round(ton / maxVal * 90);
         return '<div class="bar-col">' +
           '<div class="bar-val">' + (ton > 0 ? impNum(ton,1) : '') + '</div>' +
@@ -2116,10 +2119,12 @@ async function inicioRender(){
           '</div>';
       }).join('');
       if (baraxis) {
-        const ejes = [0, 4, 9, 14].map(i => {
-          const d = impParseFechaLocal(fechas15[i]);
-          return '<span>' + d.getDate() + ' ' + IMP_MES_ABR[d.getMonth()] + '</span>';
-        });
+        const step = Math.max(1, Math.floor(diasEnMes / 5));
+        const ejes = [];
+        for (let i = 0; i < diasEnMes; i += step) {
+          const d = impParseFechaLocal(fechasMes[i]);
+          ejes.push('<span>' + d.getDate() + ' ' + IMP_MES_ABR[d.getMonth()] + '</span>');
+        }
         baraxis.innerHTML = ejes.join('');
       }
     }
