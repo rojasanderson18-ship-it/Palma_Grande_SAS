@@ -246,6 +246,53 @@ a.mtab:hover{color:#16a34a;}
 .hbar-track{flex:1;background:#f3f4f6;border-radius:5px;height:14px;position:relative;}
 .hbar-fill{background:#16a34a;height:14px;border-radius:5px;}
 .hbar-val{flex:0 0 50px;text-align:right;color:#16a34a;font-weight:700;}
+.imp-steps{display:flex;align-items:center;gap:6px;margin-bottom:18px;}
+.imp-step{display:flex;align-items:center;gap:8px;font-size:12px;color:#9ca3af;font-weight:600;}
+.imp-step .imp-step-num{width:24px;height:24px;border-radius:50%;background:#f3f4f6;color:#9ca3af;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;}
+.imp-step.active{color:#1a1f2e;}
+.imp-step.active .imp-step-num{background:#16a34a;color:#fff;}
+.imp-step.done .imp-step-num{background:#dcfce7;color:#16a34a;}
+.imp-step-sep{flex:0 0 28px;height:1px;background:#e5e7eb;}
+.imp-card{background:#fff;border:1px solid #eef0f4;border-radius:12px;padding:20px;margin-bottom:16px;}
+.imp-card h4{margin:0 0 4px;font-size:14px;color:#1a1f2e;}
+.imp-card .imp-card-sub{font-size:11.5px;color:#9ca3af;margin-bottom:14px;}
+.imp-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+.imp-select{font-size:12.5px;color:#1a1f2e;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;min-width:260px;}
+.btn-imp{font-size:12.5px;font-weight:700;border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid #e5e7eb;background:#fff;color:#1a1f2e;display:inline-flex;align-items:center;gap:6px;}
+.btn-imp.primary{background:#16a34a;border-color:#16a34a;color:#fff;}
+.btn-imp.danger{background:#fff;border-color:#fecaca;color:#dc2626;}
+.btn-imp:disabled{opacity:.45;cursor:not-allowed;}
+.btn-imp .ic-svg{width:14px;height:14px;}
+.imp-dropzone{border:2px dashed #d1d5db;border-radius:10px;padding:28px;text-align:center;color:#6b7280;font-size:12.5px;cursor:pointer;background:#fafbfc;}
+.imp-dropzone.drag{border-color:#16a34a;background:#f0fdf4;color:#16a34a;}
+.imp-dropzone .ic-svg{width:26px;height:26px;color:#9ca3af;margin-bottom:8px;}
+.imp-filename{margin-top:10px;font-size:12px;color:#1a1f2e;font-weight:700;}
+.imp-summary{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.imp-sum-pill{flex:1;min-width:120px;border-radius:10px;padding:12px 14px;font-size:11.5px;color:#6b7280;font-weight:600;}
+.imp-sum-pill b{display:block;font-size:18px;margin-top:2px;}
+.imp-sum-pill.total{background:#f3f4f6;color:#6b7280;}
+.imp-sum-pill.ok{background:#dcfce7;color:#16a34a;}
+.imp-sum-pill.dup{background:#fef9c3;color:#a16207;}
+.imp-sum-pill.err{background:#fee2e2;color:#dc2626;}
+.imp-preview-wrap{max-height:320px;overflow:auto;border:1px solid #eef0f4;border-radius:10px;}
+.imp-preview{width:100%;border-collapse:collapse;font-size:11.5px;}
+.imp-preview th{position:sticky;top:0;background:#fafbfc;text-align:left;padding:8px 10px;color:#9ca3af;font-weight:700;border-bottom:1px solid #eef0f4;}
+.imp-preview td{padding:7px 10px;border-bottom:1px solid #f4f5f7;white-space:nowrap;}
+.imp-preview tr.row-error{background:#fff5f5;}
+.imp-preview tr.row-dup{background:#fffbeb;}
+.imp-badge{font-size:10px;font-weight:700;border-radius:6px;padding:2px 7px;display:inline-block;}
+.imp-badge.ok{background:#dcfce7;color:#16a34a;}
+.imp-badge.dup{background:#fef9c3;color:#a16207;}
+.imp-badge.err{background:#fee2e2;color:#dc2626;}
+.imp-toast{position:fixed;bottom:24px;right:24px;background:#1a1f2e;color:#fff;padding:14px 18px;border-radius:10px;font-size:12.5px;box-shadow:0 8px 24px rgba(0,0,0,.2);display:none;z-index:999;max-width:320px;}
+.imp-toast.show{display:block;}
+.imp-live-panel{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:16px 18px;margin:18px 0;display:none;}
+.imp-live-panel.show{display:block;}
+.imp-live-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.imp-live-head .imp-badge.ok{font-size:10.5px;}
+.imp-live-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.imp-live-kpi .lbl{font-size:10.5px;color:#6b7280;font-weight:600;}
+.imp-live-kpi .val{font-size:17px;font-weight:700;color:#1a1f2e;margin-top:2px;}
 .donut.sm{width:96px;height:96px;}
 .donut.sm .num{font-size:16px;}
 .mini-compare{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;}
@@ -422,6 +469,7 @@ a.mtab:hover{color:#16a34a;}
 <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
 <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9m0 0l-4 4m4-4l4 4M4 5h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-trending-down" viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M15 17h6v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-percent" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="17.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 <symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M21 4v6h-6M3 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 13a8.5 8.5 0 0 0 14.6 4.9L21 14M20.5 11A8.5 8.5 0 0 0 5.9 6.1L3 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -530,6 +578,7 @@ a.mtab:hover{color:#16a34a;}
 
     <div class="sb-section">Reportes</div>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Informes</span>
+    <a class="sb-link" id="sb-link-importar" href="javascript:void(0)" onclick="showSection('importar')"><svg class="ic-svg"><use href="#i-upload"/></svg> Importar Datos</a>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-download"/></svg> Exportar Datos</span>
 
     <div class="sb-section">Configuración</div>
@@ -872,6 +921,15 @@ a.mtab:hover{color:#16a34a;}
           </div>
 
           <div id="prod-sub-diaria">
+          <div class="imp-live-panel" id="imp-live-diaria">
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-kpis">
+              <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Rango de fechas</div><div class="val" data-f="rango">-</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Fincas / lotes distintos</div><div class="val" data-f="fincaslotes">0 / 0</div></div>
+            </div>
+          </div>
           <div class="kpi-row cols-6w" style="margin-top:18px;">
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Promedio diario</div><div class="kpi-num">32,5 t</div><div class="kpi-delta">▲ +1,8 t vs período anterior</div></div>
@@ -1173,6 +1231,15 @@ a.mtab:hover{color:#16a34a;}
           <!-- /prod-sub-semanal -->
 
           <div id="prod-sub-mensual" style="display:none;">
+          <div class="imp-live-panel" id="imp-live-mensual">
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-kpis">
+              <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Rango de fechas</div><div class="val" data-f="rango">-</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Fincas / lotes distintos</div><div class="val" data-f="fincaslotes">0 / 0</div></div>
+            </div>
+          </div>
           <div class="kpi-row cols-7" style="margin-top:18px;">
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del mes</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs abril 2024</div></div>
             <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Producción acumulada (año)</div><div class="kpi-num">2.145,6 t</div><div class="kpi-delta">▲ +9,3% vs 2023</div></div>
@@ -1351,6 +1418,15 @@ a.mtab:hover{color:#16a34a;}
           <!-- /prod-sub-mensual -->
 
           <div id="prod-sub-anual" style="display:none;">
+          <div class="imp-live-panel" id="imp-live-anual">
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-kpis">
+              <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Rango de fechas</div><div class="val" data-f="rango">-</div></div>
+              <div class="imp-live-kpi"><div class="lbl">Fincas / lotes distintos</div><div class="val" data-f="fincaslotes">0 / 0</div></div>
+            </div>
+          </div>
           <div class="kpi-row cols-7" style="margin-top:18px;">
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del año</div><div class="kpi-num">2.145,6 t</div><div class="kpi-delta">▲ +9,3% vs 2023 (1.963,5 t)</div></div>
             <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Promedio mensual</div><div class="kpi-num">178,8 t</div><div class="kpi-delta neutral">12 meses</div></div>
@@ -1706,6 +1782,63 @@ a.mtab:hover{color:#16a34a;}
       </div>
       <!-- /section-cosecha -->
 
+      <div id="section-importar" style="display:none;">
+        <div class="imp-steps" id="imp-steps">
+          <div class="imp-step active" data-step="1"><div class="imp-step-num">1</div>Plantilla</div>
+          <div class="imp-step-sep"></div>
+          <div class="imp-step" data-step="2"><div class="imp-step-num">2</div>Subir archivo</div>
+          <div class="imp-step-sep"></div>
+          <div class="imp-step" data-step="3"><div class="imp-step-num">3</div>Validar y previsualizar</div>
+          <div class="imp-step-sep"></div>
+          <div class="imp-step" data-step="4"><div class="imp-step-num">4</div>Confirmar</div>
+        </div>
+
+        <div class="imp-card">
+          <h4>1. Descargar plantilla</h4>
+          <div class="imp-card-sub">Use esta plantilla estándar para cualquier finca o empresa. Columnas: fecha, finca, lote, tipo_palma, toneladas, racimos.</div>
+          <div class="imp-row">
+            <select class="imp-select" id="imp-template-select">
+              <option value="produccion_diaria">Producción por lote (diario)</option>
+            </select>
+            <button class="btn-imp primary" onclick="impDescargarPlantilla()"><svg class="ic-svg"><use href="#i-download"/></svg> Descargar plantilla</button>
+          </div>
+        </div>
+
+        <div class="imp-card">
+          <h4>2. Subir archivo</h4>
+          <div class="imp-card-sub">Formatos admitidos: .csv, .xlsx. Campos obligatorios: fecha, finca, lote, toneladas.</div>
+          <div class="imp-dropzone" id="imp-dropzone" onclick="document.getElementById('imp-file-input').click()">
+            <svg class="ic-svg"><use href="#i-upload"/></svg>
+            <div>Arrastre su archivo aquí o haga clic para seleccionarlo</div>
+            <div class="imp-filename" id="imp-filename"></div>
+          </div>
+          <input type="file" id="imp-file-input" accept=".csv,.xlsx" style="display:none;">
+        </div>
+
+        <div class="imp-card" id="imp-preview-card" style="display:none;">
+          <h4>3. Validar y previsualizar</h4>
+          <div class="imp-card-sub">Revise el resultado de la validación antes de confirmar la carga.</div>
+          <div class="imp-summary">
+            <div class="imp-sum-pill total">Total filas<b id="imp-sum-total">0</b></div>
+            <div class="imp-sum-pill ok">Válidas<b id="imp-sum-ok">0</b></div>
+            <div class="imp-sum-pill dup">Duplicadas<b id="imp-sum-dup">0</b></div>
+            <div class="imp-sum-pill err">Con errores<b id="imp-sum-err">0</b></div>
+          </div>
+          <div class="imp-preview-wrap">
+            <table class="imp-preview">
+              <thead><tr><th>Estado</th><th>Fecha</th><th>Finca</th><th>Lote</th><th>Tipo palma</th><th>Toneladas</th><th>Racimos</th><th>Detalle</th></tr></thead>
+              <tbody id="imp-preview-body"></tbody>
+            </table>
+          </div>
+          <div class="imp-row" style="margin-top:14px;">
+            <button class="btn-imp primary" id="imp-btn-confirm" onclick="impConfirmar()">Confirmar carga</button>
+            <button class="btn-imp danger" onclick="impCancelar()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+      <!-- /section-importar -->
+      <div class="imp-toast" id="imp-toast"></div>
+
     </div>
   </div>
 
@@ -1978,6 +2111,7 @@ function semanaNum(d){
 const SECTION_INFO = {
   inicio:  {title: nombre => `¡Buenos días, ${nombre}!`, sub: 'Bienvenido al Sistema de Gestión de Plantaciones de Palma de Aceite'},
   cosecha: {title: () => 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
+  importar: {title: () => 'Importación de Datos', sub: 'Cargue datos de producción desde Excel o CSV'},
 };
 const COSECHA_TAB_INFO = {
   resumen:     {title: 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
@@ -1987,8 +2121,10 @@ const COSECHA_TAB_INFO = {
 function showSection(name){
   document.getElementById('section-inicio').style.display = name === 'inicio' ? '' : 'none';
   document.getElementById('section-cosecha').style.display = name === 'cosecha' ? '' : 'none';
+  document.getElementById('section-importar').style.display = name === 'importar' ? '' : 'none';
   document.getElementById('sb-link-inicio').classList.toggle('active', name === 'inicio');
   document.getElementById('sb-link-cosecha').classList.toggle('active', name === 'cosecha');
+  document.getElementById('sb-link-importar').classList.toggle('active', name === 'importar');
   document.getElementById('sb-cosecha-sub').style.display = name === 'cosecha' ? '' : 'none';
   document.getElementById('sb-link-cosecha').style.display = name === 'cosecha' ? 'none' : '';
   document.getElementById('sb-section-main').textContent = name === 'cosecha' ? 'Cosecha' : 'Módulos principales';
@@ -2053,6 +2189,217 @@ document.addEventListener('DOMContentLoaded', () => {
     entrarApp();
   }
 });
+
+/* ===================== Importación de Datos ===================== */
+const IMP_STORAGE_KEY = 'av_import_produccion';
+const IMP_COLUMNS = ['fecha','finca','lote','tipo_palma','toneladas','racimos'];
+const IMP_REQUIRED = ['fecha','finca','lote','toneladas'];
+let impParsedRows = [];
+
+function impToast(msg){
+  const t = document.getElementById('imp-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__impToastTimer);
+  window.__impToastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function impGetStored(){
+  try { return JSON.parse(localStorage.getItem(IMP_STORAGE_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function impSaveStored(rows){
+  localStorage.setItem(IMP_STORAGE_KEY, JSON.stringify(rows));
+}
+function impDupKey(r){
+  return (r.fecha||'') + '|' + (r.finca||'').toLowerCase().trim() + '|' + (r.lote||'').toLowerCase().trim();
+}
+
+function impDescargarPlantilla(){
+  const headerLine = IMP_COLUMNS.join(',');
+  const sampleLine = ['2026-01-15','Finca 1','Lote A1','Africana','12.5','340'].join(',');
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.aoa_to_sheet([IMP_COLUMNS, ['2026-01-15','Finca 1','Lote A1','Africana',12.5,340]]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+    XLSX.writeFile(wb, 'plantilla_produccion_diaria.xlsx');
+  } else {
+    const blob = new Blob([headerLine + '\n' + sampleLine + '\n'], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'plantilla_produccion_diaria.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    impToast('SheetJS no está disponible: se descargó la plantilla en formato CSV.');
+  }
+}
+
+function impParseCSV(text){
+  const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++){
+    const cells = lines[i].split(',');
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (cells[idx] !== undefined ? cells[idx].trim() : ''); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function impValidateRows(rows){
+  const seenInFile = new Set();
+  const stored = impGetStored();
+  const storedKeys = new Set(stored.map(impDupKey));
+  return rows.map(row => {
+    const errors = [];
+    IMP_REQUIRED.forEach(f => {
+      if (!row[f] || String(row[f]).trim() === '') errors.push('Falta "' + f + '"');
+    });
+    if (row.toneladas && isNaN(parseFloat(String(row.toneladas).replace(',', '.')))) {
+      errors.push('Toneladas no numérico');
+    }
+    if (row.fecha && isNaN(new Date(row.fecha).getTime())) {
+      errors.push('Fecha inválida');
+    }
+    const key = impDupKey(row);
+    const isDup = errors.length === 0 && (storedKeys.has(key) || seenInFile.has(key));
+    if (errors.length === 0) seenInFile.add(key);
+    let status = 'ok';
+    if (errors.length > 0) status = 'err';
+    else if (isDup) status = 'dup';
+    return Object.assign({}, row, { _status: status, _errors: errors });
+  });
+}
+
+function impRenderPreview(rows){
+  document.getElementById('imp-preview-card').style.display = '';
+  const total = rows.length;
+  const ok = rows.filter(r => r._status === 'ok').length;
+  const dup = rows.filter(r => r._status === 'dup').length;
+  const err = rows.filter(r => r._status === 'err').length;
+  document.getElementById('imp-sum-total').textContent = total;
+  document.getElementById('imp-sum-ok').textContent = ok;
+  document.getElementById('imp-sum-dup').textContent = dup;
+  document.getElementById('imp-sum-err').textContent = err;
+
+  const body = document.getElementById('imp-preview-body');
+  body.innerHTML = rows.map(r => {
+    const rowCls = r._status === 'err' ? 'row-error' : (r._status === 'dup' ? 'row-dup' : '');
+    const badge = r._status === 'ok' ? '<span class="imp-badge ok">Válida</span>' :
+                  r._status === 'dup' ? '<span class="imp-badge dup">Duplicada</span>' :
+                  '<span class="imp-badge err">Error</span>';
+    const detalle = r._errors && r._errors.length ? r._errors.join('; ') : (r._status === 'dup' ? 'Ya existe un registro con esta fecha/finca/lote' : '-');
+    return '<tr class="' + rowCls + '">' +
+      '<td>' + badge + '</td>' +
+      '<td>' + (r.fecha||'') + '</td>' +
+      '<td>' + (r.finca||'') + '</td>' +
+      '<td>' + (r.lote||'') + '</td>' +
+      '<td>' + (r.tipo_palma||'') + '</td>' +
+      '<td>' + (r.toneladas||'') + '</td>' +
+      '<td>' + (r.racimos||'') + '</td>' +
+      '<td>' + detalle + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('imp-btn-confirm').disabled = (ok === 0);
+  const steps = document.querySelectorAll('#imp-steps .imp-step');
+  steps.forEach(s => s.classList.add('done'));
+  document.querySelector('#imp-steps .imp-step[data-step="3"]').classList.add('active');
+}
+
+function impHandleFile(file){
+  if (!file) return;
+  document.getElementById('imp-filename').textContent = file.name;
+  const isXlsx = /\.xlsx$/i.test(file.name);
+  const reader = new FileReader();
+  reader.onload = function(e){
+    let rows = [];
+    if (isXlsx) {
+      if (typeof XLSX === 'undefined') {
+        impToast('No se puede leer .xlsx en este entorno: por favor use un archivo .csv.');
+        return;
+      }
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, {defval:''});
+      rows = json.map(r => {
+        const norm = {};
+        Object.keys(r).forEach(k => { norm[k.toLowerCase().trim()] = String(r[k]); });
+        return norm;
+      });
+    } else {
+      rows = impParseCSV(e.target.result);
+    }
+    impParsedRows = impValidateRows(rows);
+    impRenderPreview(impParsedRows);
+  };
+  if (isXlsx) reader.readAsBinaryString(file);
+  else reader.readAsText(file);
+}
+
+function impConfirmar(){
+  const validRows = impParsedRows.filter(r => r._status === 'ok').map(r => ({
+    fecha: r.fecha, finca: r.finca, lote: r.lote,
+    tipo_palma: r.tipo_palma || '', toneladas: parseFloat(String(r.toneladas).replace(',', '.')) || 0,
+    racimos: parseInt(r.racimos, 10) || 0,
+  }));
+  if (!validRows.length) { impToast('No hay filas válidas para confirmar.'); return; }
+  const stored = impGetStored();
+  impSaveStored(stored.concat(validRows));
+  impToast(validRows.length + ' registro(s) importado(s) correctamente. El dashboard se actualizó automáticamente.');
+  impResetWizard();
+  impRefreshLivePanels();
+}
+
+function impCancelar(){
+  impResetWizard();
+  impToast('Carga cancelada. No se guardaron cambios.');
+}
+
+function impResetWizard(){
+  impParsedRows = [];
+  document.getElementById('imp-preview-card').style.display = 'none';
+  document.getElementById('imp-filename').textContent = '';
+  document.getElementById('imp-file-input').value = '';
+  document.querySelectorAll('#imp-steps .imp-step').forEach(s => { s.classList.remove('active','done'); });
+  document.querySelector('#imp-steps .imp-step[data-step="1"]').classList.add('active');
+}
+
+function impRefreshLivePanels(){
+  const rows = impGetStored();
+  ['diaria','mensual','anual'].forEach(view => {
+    const panel = document.getElementById('imp-live-' + view);
+    if (!panel) return;
+    if (!rows.length) { panel.classList.remove('show'); return; }
+    panel.classList.add('show');
+    const toneladas = rows.reduce((s, r) => s + (parseFloat(r.toneladas) || 0), 0);
+    const fechas = rows.map(r => r.fecha).filter(Boolean).sort();
+    const fincas = new Set(rows.map(r => r.finca));
+    const lotes = new Set(rows.map(r => r.finca + '|' + r.lote));
+    panel.querySelector('[data-f="registros"]').textContent = rows.length;
+    panel.querySelector('[data-f="toneladas"]').textContent = toneladas.toLocaleString('es-CO', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' t';
+    panel.querySelector('[data-f="rango"]').textContent = fechas.length ? (fechas[0] + ' a ' + fechas[fechas.length-1]) : '-';
+    panel.querySelector('[data-f="fincaslotes"]').textContent = fincas.size + ' / ' + lotes.size;
+  });
+}
+
+(function impInitDropzone(){
+  document.addEventListener('DOMContentLoaded', () => {
+    const dz = document.getElementById('imp-dropzone');
+    const input = document.getElementById('imp-file-input');
+    if (!dz || !input) return;
+    input.addEventListener('change', () => impHandleFile(input.files[0]));
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('drag');
+      if (e.dataTransfer.files.length) impHandleFile(e.dataTransfer.files[0]);
+    });
+    impRefreshLivePanels();
+  });
+})();
 </script>
 </body>
 </html>
