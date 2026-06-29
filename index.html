@@ -290,7 +290,13 @@ a.mtab:hover{color:#16a34a;}
 .imp-live-panel{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:16px 18px;margin:18px 0;display:none;}
 .imp-live-panel.show{display:block;}
 .imp-live-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.imp-live-head .imp-badge.ok{font-size:10.5px;}
+.imp-live-head .imp-badge.ok{font-size:10.5px;margin-right:auto;margin-left:8px;}
+.imp-refresh-btn{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;color:#1a1f2e;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;}
+.imp-refresh-btn .ic-svg{width:13px;height:13px;}
+.imp-refresh-btn:hover{background:#f3f4f6;}
+.imp-refresh-btn.loading .ic-svg{animation:imp-spin .7s linear infinite;}
+.imp-refresh-btn:disabled{opacity:.6;cursor:default;}
+@keyframes imp-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 .imp-live-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
 .imp-live-kpi .lbl{font-size:10.5px;color:#6b7280;font-weight:600;}
 .imp-live-kpi .val{font-size:17px;font-weight:700;color:#1a1f2e;margin-top:2px;}
@@ -467,6 +473,7 @@ a.mtab:hover{color:#16a34a;}
 <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 20l-6-2V4l6 2 6-2 6 2v14l-6-2-6 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 4v16M15 6v16" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
 <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8M21 3v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12a9 9 0 0 1-15.3 6.4L3 16M3 21v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
 <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -923,7 +930,7 @@ a.mtab:hover{color:#16a34a;}
 
           <div id="prod-sub-diaria">
           <div class="imp-live-panel" id="imp-live-diaria">
-            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span><button class="imp-refresh-btn" id="imp-refresh-diaria" onclick="impForceRefresh('diaria')"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Actualizar</button></div>
             <div class="imp-live-kpis">
               <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
               <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
@@ -1011,7 +1018,7 @@ a.mtab:hover{color:#16a34a;}
 
           <div id="prod-sub-semanal" style="display:none;">
           <div class="imp-live-panel" id="imp-live-semanal">
-            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span><button class="imp-refresh-btn" id="imp-refresh-semanal" onclick="impForceRefresh('semanal')"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Actualizar</button></div>
             <div class="imp-live-kpis">
               <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
               <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
@@ -1095,7 +1102,7 @@ a.mtab:hover{color:#16a34a;}
 
           <div id="prod-sub-mensual" style="display:none;">
           <div class="imp-live-panel" id="imp-live-mensual">
-            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span><button class="imp-refresh-btn" id="imp-refresh-mensual" onclick="impForceRefresh('mensual')"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Actualizar</button></div>
             <div class="imp-live-kpis">
               <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
               <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
@@ -1191,7 +1198,7 @@ a.mtab:hover{color:#16a34a;}
 
           <div id="prod-sub-anual" style="display:none;">
           <div class="imp-live-panel" id="imp-live-anual">
-            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span><button class="imp-refresh-btn" id="imp-refresh-anual" onclick="impForceRefresh('anual')"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Actualizar</button></div>
             <div class="imp-live-kpis">
               <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
               <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
@@ -1287,7 +1294,7 @@ a.mtab:hover{color:#16a34a;}
 
           <div id="prod-sub-comparativo" style="display:none;">
           <div class="imp-live-panel" id="imp-live-comparativo">
-            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span></div>
+            <div class="imp-live-head"><b>Datos importados</b> <span class="imp-badge ok">en vivo</span><button class="imp-refresh-btn" id="imp-refresh-comparativo" onclick="impForceRefresh('comparativo')"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Actualizar</button></div>
             <div class="imp-live-kpis">
               <div class="imp-live-kpi"><div class="lbl">Registros importados</div><div class="val" data-f="registros">0</div></div>
               <div class="imp-live-kpi"><div class="lbl">Toneladas (total)</div><div class="val" data-f="toneladas">0</div></div>
@@ -2068,6 +2075,18 @@ async function impRefreshLivePanels(force){
     panel.querySelector('[data-f="rango"]').textContent = fechas.length ? (fechas[0] + ' a ' + fechas[fechas.length-1]) : '-';
     panel.querySelector('[data-f="fincaslotes"]').textContent = fincas.size + ' / ' + lotes.size;
   });
+}
+
+async function impForceRefresh(view){
+  const btn = document.getElementById('imp-refresh-' + view);
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+  try {
+    await impRefreshLivePanels(true);
+    if (typeof impRenderProduccionTab === 'function') await impRenderProduccionTab(view);
+    impToast('Datos actualizados desde Google Sheets.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+  }
 }
 
 /* ===================== Dashboard de Producción (datos reales) ===================== */
