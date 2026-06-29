@@ -35,17 +35,18 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .main{flex:1;min-width:0;display:flex;flex-direction:column;}
 
 /* TOPBAR */
-.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.topbar-left{display:flex;align-items:center;gap:14px;}
-.hamburger{font-size:20px;color:#6b7280;cursor:pointer;display:none;}
-.topbar-title{font-size:19px;font-weight:800;color:#1a1f2e;}
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.hamburger{font-size:19px;color:#6b7280;cursor:pointer;background:#f5f6f8;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
+.topbar-title{font-size:18px;font-weight:800;color:#1a1f2e;}
 .topbar-sub{font-size:12px;color:#9ca3af;margin-top:2px;}
-.topbar-right{display:flex;align-items:center;gap:12px;}
-.tb-pill{display:flex;align-items:center;gap:8px;background:#f5f6f8;border:1px solid #e5e7eb;border-radius:10px;padding:8px 14px;font-size:12.5px;color:#374151;font-weight:500;cursor:pointer;white-space:nowrap;}
-.tb-bell{position:relative;font-size:18px;color:#6b7280;cursor:pointer;}
-.tb-bell .dot{position:absolute;top:-4px;right:-6px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.tb-pill{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:8px 12px;font-size:12.5px;color:#374151;font-weight:500;cursor:pointer;white-space:nowrap;}
+.tb-pill .chev{font-size:9px;color:#9ca3af;}
+.tb-bell{position:relative;font-size:17px;color:#6b7280;cursor:pointer;width:34px;height:34px;border-radius:50%;background:#f5f6f8;display:flex;align-items:center;justify-content:center;}
+.tb-bell .dot{position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center;}
 .tb-user{display:flex;align-items:center;gap:9px;cursor:pointer;}
-.tb-avatar{width:34px;height:34px;border-radius:50%;background:#0f3520;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.tb-avatar{width:34px;height:34px;border-radius:50%;background:#7c5cf0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;}
 .tb-user-name{font-size:12.5px;font-weight:700;color:#1a1f2e;line-height:1.2;}
 .tb-user-sub{font-size:10.5px;color:#9ca3af;}
 
@@ -54,75 +55,86 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 
 /* KPI ROW */
 .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
-.kpi-card{background:#fff;border-radius:14px;padding:16px;border:1px solid #eef0f4;}
-.kpi-icon{width:36px;height:36px;border-radius:9px;background:#e7f8ed;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+.kpi-card{background:#fff;border-radius:14px;padding:16px;border:1px solid #eef0f4;display:flex;flex-direction:column;gap:10px;}
+.kpi-icon{width:38px;height:38px;border-radius:50%;background:#e7f8ed;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto;}
+.kpi-icon.blue{background:#e7f1fc;}
+.kpi-icon.violet{background:#f0ecfc;}
 .kpi-lbl{font-size:11.5px;color:#6b7280;font-weight:500;}
-.kpi-num{font-family:'Bebas Neue',sans-serif;font-size:23px;color:#1a1f2e;margin-top:2px;}
-.kpi-delta{font-size:10.5px;color:#16a34a;font-weight:600;margin-top:4px;}
+.kpi-num{font-family:'Bebas Neue',sans-serif;font-size:21px;color:#1a1f2e;margin-top:2px;}
+.kpi-delta{font-size:10.5px;color:#16a34a;font-weight:600;margin-top:2px;}
 .kpi-delta.neutral{color:#9ca3af;}
 
 /* GRID ROWS */
 .grid-row{display:grid;gap:16px;}
 .grid-row.cols-3{grid-template-columns:1.3fr 1fr 1fr;}
-.panel{background:#fff;border-radius:14px;padding:20px;border:1px solid #eef0f4;}
+.grid-row.cols-3-eq{grid-template-columns:1fr 1fr 1fr;}
+.panel{background:#fff;border-radius:14px;padding:20px;border:1px solid #eef0f4;display:flex;flex-direction:column;}
 .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .panel-title{font-size:14.5px;font-weight:800;color:#1a1f2e;}
 .panel-sub{font-size:11px;color:#9ca3af;margin-top:1px;}
-.panel-link{font-size:11.5px;color:#16a34a;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;}
+.panel-link{font-size:11.5px;color:#16a34a;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;margin-top:14px;padding-top:14px;border-top:1px solid #f1f3f6;}
 .panel-select{font-size:11.5px;color:#6b7280;background:#f5f6f8;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;}
 
 /* BAR CHART */
-.barchart{display:flex;align-items:flex-end;gap:8px;height:160px;padding-top:10px;}
+.barchart{display:flex;align-items:flex-end;gap:8px;height:160px;padding-top:10px;border-bottom:1px dashed #eef0f4;}
 .barchart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;}
-.barchart .bar{width:100%;max-width:26px;background:linear-gradient(180deg,#16a34a,#0f3520);border-radius:4px 4px 0 0;}
+.barchart .bar{width:100%;max-width:24px;background:linear-gradient(180deg,#1ea34d,#0f3520);border-radius:3px 3px 0 0;}
 .barchart .bar-val{font-size:9px;color:#9ca3af;}
-.barchart .bar-lbl{font-size:9.5px;color:#9ca3af;margin-top:6px;}
+.barchart .bar-lbl{font-size:9.5px;color:#9ca3af;margin-top:8px;}
 
 /* DONUT */
-.donut-wrap{display:flex;align-items:center;gap:20px;}
+.donut-wrap{display:flex;align-items:center;gap:24px;flex:1;}
 .donut{width:130px;height:130px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;position:relative;}
+.donut::before{content:'';position:absolute;width:78px;height:78px;border-radius:50%;background:#fff;}
 .donut-center{position:absolute;text-align:center;}
 .donut-center .num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#1a1f2e;line-height:1;}
 .donut-center .lbl{font-size:9px;color:#9ca3af;}
-.donut-legend{display:flex;flex-direction:column;gap:8px;font-size:12px;}
-.donut-legend .dl-item{display:flex;align-items:center;gap:8px;}
-.donut-legend .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
-.donut-legend .dl-lbl{color:#374151;flex:1;}
-.donut-legend .dl-val{color:#9ca3af;font-weight:600;}
+.donut-legend{display:flex;flex-direction:column;gap:14px;font-size:12px;flex:1;}
+.donut-legend .dl-item{display:flex;flex-direction:column;gap:2px;}
+.donut-legend .dl-top{display:flex;align-items:center;gap:8px;}
+.donut-legend .dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto;}
+.donut-legend .dl-lbl{color:#1a1f2e;font-weight:700;flex:1;}
+.donut-legend .dl-val{color:#1a1f2e;font-weight:700;}
+.donut-legend .dl-sub{font-size:10.5px;color:#9ca3af;padding-left:17px;}
 
 /* ALERTS */
-.alert-list{display:flex;flex-direction:column;gap:12px;}
+.alert-list{display:flex;flex-direction:column;gap:14px;flex:1;}
 .alert-item{display:flex;gap:10px;align-items:flex-start;}
-.alert-ic{font-size:15px;flex:0 0 auto;margin-top:1px;}
+.alert-ic{font-size:13px;flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.alert-ic.danger{background:#fde8e8;color:#dc2626;}
+.alert-ic.warn{background:#fef3d6;color:#d97706;}
+.alert-ic.info{background:#e1ecfb;color:#2563eb;}
 .alert-title{font-size:12.5px;font-weight:700;color:#1a1f2e;}
 .alert-sub{font-size:11.5px;color:#9ca3af;}
-.alert-time{font-size:10px;color:#c1c6d0;margin-top:2px;}
+.alert-time{font-size:10px;color:#c1c6d0;margin-top:2px;white-space:nowrap;}
 
 /* PRODUCCIÓN POR FINCA (lista de barras horizontales) */
-.hbar-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.hbar-lbl{font-size:12px;color:#374151;width:54px;flex:0 0 auto;}
+.hbar-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.hbar-lbl{font-size:12px;color:#374151;width:46px;flex:0 0 auto;}
 .hbar-track{flex:1;height:9px;background:#eef0f4;border-radius:6px;overflow:hidden;}
-.hbar-fill{height:100%;background:linear-gradient(90deg,#16a34a,#0f3520);border-radius:6px;}
-.hbar-val{font-size:12px;color:#1a1f2e;font-weight:700;width:90px;text-align:right;flex:0 0 auto;}
+.hbar-fill{height:100%;background:linear-gradient(90deg,#1ea34d,#0f3520);border-radius:6px;}
+.hbar-val{font-size:12px;color:#1a1f2e;font-weight:700;width:78px;text-align:right;flex:0 0 auto;}
+.hbar-pct{font-size:11px;color:#9ca3af;width:38px;text-align:right;flex:0 0 auto;}
 
 /* LINE CHART */
-.linechart-wrap{display:flex;flex-direction:column;}
+.linechart-wrap{display:flex;flex-direction:column;flex:1;}
 .linechart-kpi{font-size:11px;color:#9ca3af;}
 .linechart-num{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#1a1f2e;}
 .linechart-delta{font-size:11px;color:#16a34a;font-weight:700;margin-bottom:8px;}
+.linechart-axis{display:flex;justify-content:space-between;font-size:9.5px;color:#9ca3af;margin-top:6px;}
 
 /* ACTIVIDADES / ACCESOS */
-.act-list{display:flex;flex-direction:column;gap:13px;}
+.act-list{display:flex;flex-direction:column;gap:14px;}
 .act-item{display:flex;align-items:center;gap:10px;}
-.act-check{color:#16a34a;font-size:14px;}
+.act-check{color:#16a34a;font-size:15px;width:22px;height:22px;border-radius:50%;background:#e7f8ed;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 .act-text{font-size:12.5px;color:#1a1f2e;flex:1;}
 .act-text b{font-weight:700;}
 .act-time{font-size:11px;color:#9ca3af;white-space:nowrap;}
 
 .quick-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-.quick-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px;border-radius:12px;background:#f8faf9;cursor:pointer;text-align:center;}
-.quick-item:hover{background:#eef8f1;}
-.quick-ic{font-size:20px;}
+.quick-item{display:flex;flex-direction:column;align-items:center;gap:9px;padding:16px 6px;border-radius:12px;border:1px solid #eef0f4;cursor:pointer;text-align:center;}
+.quick-item:hover{background:#f8faf9;}
+.quick-ic{width:38px;height:38px;border-radius:10px;background:#e7f8ed;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:17px;}
 .quick-lbl{font-size:10.5px;color:#374151;font-weight:600;}
 
 @media(max-width:1100px){
@@ -323,9 +335,9 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
     <a class="sb-link" id="sb-link-usuarios" href="javascript:void(0)" onclick="abrirAdminUsuarios()" style="display:none;"><span class="ic">👤</span> Usuarios</a>
 
     <div class="sb-weather">
-      <div class="sb-weather-temp">☀️ 29°C</div>
-      <div class="sb-weather-desc">Soleado · Finca Central</div>
-      <div class="sb-weather-time" id="hdr-fecha">—</div>
+      <div class="sb-weather-temp">⛅ 28°C</div>
+      <div class="sb-weather-desc">Parcialmente nublado</div>
+      <div class="sb-weather-time">Última actualización: <span id="hdr-fecha">—</span></div>
     </div>
   </div>
 
@@ -335,18 +347,18 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
         <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
         <div>
           <div class="topbar-title" id="topbar-greeting">¡Buenos días, Administrador!</div>
-          <div class="topbar-sub">Resumen general de la operación</div>
+          <div class="topbar-sub">Bienvenido al Sistema de Gestión de Plantaciones de Palma de Aceite</div>
         </div>
       </div>
       <div class="topbar-right">
-        <span class="tb-pill" id="hdr-fecha-pill">—</span>
-        <span class="tb-pill">📍 Todas las fincas</span>
-        <span class="tb-bell">🔔<span class="dot"></span></span>
+        <span class="tb-pill" id="hdr-fecha-pill">📅 —<span class="chev">▾</span></span>
+        <span class="tb-pill">👥 Todas las fincas<span class="chev">▾</span></span>
+        <span class="tb-bell">🔔<span class="dot">3</span></span>
         <div class="tb-user">
           <div class="tb-avatar">A</div>
           <div>
             <div class="tb-user-name" id="tb-user-name">Administrador</div>
-            <div class="tb-user-sub">Admin</div>
+            <div class="tb-user-sub">Palma Grande S.A.S.</div>
           </div>
         </div>
       </div>
@@ -355,105 +367,129 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
     <div class="content">
 
       <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-icon">🌴</div><div class="kpi-lbl">Lotes</div><div class="kpi-num">62</div><div class="kpi-delta neutral">3 fincas</div></div>
-        <div class="kpi-card"><div class="kpi-icon">📐</div><div class="kpi-lbl">Hectáreas</div><div class="kpi-num">1.056</div><div class="kpi-delta neutral">Total cultivado</div></div>
-        <div class="kpi-card"><div class="kpi-icon">📦</div><div class="kpi-lbl">Producción mes</div><div class="kpi-num">184 t</div><div class="kpi-delta">▲ 6.2%</div></div>
-        <div class="kpi-card"><div class="kpi-icon">🪲</div><div class="kpi-lbl">Trampas activas</div><div class="kpi-num">48</div><div class="kpi-delta neutral">15 días ciclo</div></div>
-        <div class="kpi-card"><div class="kpi-icon">🔧</div><div class="kpi-lbl">Labores activas</div><div class="kpi-num">7</div><div class="kpi-delta neutral">En curso</div></div>
-        <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-lbl">Alertas abiertas</div><div class="kpi-num">3</div><div class="kpi-delta down">Requieren atención</div></div>
+        <div class="kpi-card"><div class="kpi-icon">🌴</div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
+        <div class="kpi-card"><div class="kpi-icon blue">📅</div><div class="kpi-lbl">Toneladas por día</div><div class="kpi-num">32,5 t</div><div class="kpi-delta neutral">Promedio del período</div></div>
+        <div class="kpi-card"><div class="kpi-icon">📐</div><div class="kpi-lbl">Área productiva</div><div class="kpi-num">1.820 ha</div><div class="kpi-delta neutral">de 1.950 ha totales</div></div>
+        <div class="kpi-card"><div class="kpi-icon blue">💧</div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num">22,1%</div><div class="kpi-delta">▲ +0,6% vs período anterior</div></div>
+        <div class="kpi-card"><div class="kpi-icon">🛡️</div><div class="kpi-lbl">Estado general</div><div class="kpi-num" style="font-size:16px;color:#16a34a;">Bueno</div><div class="kpi-delta neutral">Índice general 85/100</div></div>
+        <div class="kpi-card"><div class="kpi-icon violet">🎯</div><div class="kpi-lbl">Cumplimiento del plan</div><div class="kpi-num">96%</div><div class="kpi-delta neutral">Meta: 90%</div></div>
       </div>
 
       <div class="grid-row cols-3">
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Cosecha por día</div><div class="panel-sub">Últimos 7 días · toneladas</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Producción diaria (período actual)</div><div class="panel-sub">Toneladas</div></div><span class="panel-select">Últimos 15 días ▾</span></div>
           <div class="barchart">
-            <div class="bar-col"><div class="bar-val">5.2</div><div class="bar" style="height:52%;"></div><div class="bar-lbl">Lun</div></div>
-            <div class="bar-col"><div class="bar-val">6.8</div><div class="bar" style="height:68%;"></div><div class="bar-lbl">Mar</div></div>
-            <div class="bar-col"><div class="bar-val">7.4</div><div class="bar" style="height:74%;"></div><div class="bar-lbl">Mié</div></div>
-            <div class="bar-col"><div class="bar-val">6.1</div><div class="bar" style="height:61%;"></div><div class="bar-lbl">Jue</div></div>
-            <div class="bar-col"><div class="bar-val">8.9</div><div class="bar" style="height:89%;"></div><div class="bar-lbl">Vie</div></div>
-            <div class="bar-col"><div class="bar-val">9.6</div><div class="bar" style="height:96%;"></div><div class="bar-lbl">Sáb</div></div>
-            <div class="bar-col"><div class="bar-val">3.0</div><div class="bar" style="height:30%;"></div><div class="bar-lbl">Dom</div></div>
+            <div class="bar-col"><div class="bar-val">28,4</div><div class="bar" style="height:57%;"></div></div>
+            <div class="bar-col"><div class="bar-val">31,2</div><div class="bar" style="height:62%;"></div></div>
+            <div class="bar-col"><div class="bar-val">27,6</div><div class="bar" style="height:55%;"></div></div>
+            <div class="bar-col"><div class="bar-val">30,8</div><div class="bar" style="height:62%;"></div></div>
+            <div class="bar-col"><div class="bar-val">26,9</div><div class="bar" style="height:54%;"></div></div>
+            <div class="bar-col"><div class="bar-val">35,7</div><div class="bar" style="height:71%;"></div></div>
+            <div class="bar-col"><div class="bar-val">33,4</div><div class="bar" style="height:67%;"></div></div>
+            <div class="bar-col"><div class="bar-val">36,1</div><div class="bar" style="height:72%;"></div></div>
+            <div class="bar-col"><div class="bar-val">34,8</div><div class="bar" style="height:70%;"></div></div>
+            <div class="bar-col"><div class="bar-val">31,9</div><div class="bar" style="height:64%;"></div></div>
+            <div class="bar-col"><div class="bar-val">22,7</div><div class="bar" style="height:45%;"></div></div>
+            <div class="bar-col"><div class="bar-val">30,6</div><div class="bar" style="height:61%;"></div></div>
+            <div class="bar-col"><div class="bar-val">33,1</div><div class="bar" style="height:66%;"></div></div>
+            <div class="bar-col"><div class="bar-val">32,5</div><div class="bar" style="height:65%;"></div></div>
+            <div class="bar-col"><div class="bar-val">18,6</div><div class="bar" style="height:37%;"></div></div>
           </div>
+          <div class="linechart-axis"><span>01 May</span><span>04 May</span><span>07 May</span><span>10 May</span><span>13 May</span><span>15 May</span></div>
         </div>
 
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Estado de los ciclos</div><div class="panel-sub">Lotes por etapa</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Estado de los ciclos</div></div></div>
           <div class="donut-wrap">
-            <div class="donut" style="background:conic-gradient(#16a34a 0% 55%, #f59e0b 55% 80%, #d6dbe3 80% 100%);">
-              <div class="donut-center"><span class="num">62</span><span class="lbl">Lotes</span></div>
+            <div class="donut" style="background:conic-gradient(#16a34a 0% 55%, #f5b942 55% 79%, #dc2626 79% 100%);">
+              <div class="donut-center"><span class="num">76</span><span class="lbl">lotes totales</span></div>
+            </div>
+            <div class="donut-legend">
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">42 lotes (55%)</span></div><span class="dl-sub">Verdes (0 - 13 días)</span></div>
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">18 lotes (24%)</span></div><span class="dl-sub">Amarillos (14 - 15 días)</span></div>
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#dc2626;"></span><span class="dl-lbl">16 lotes (21%)</span></div><span class="dl-sub">Rojos (&gt; 15 días)</span></div>
             </div>
           </div>
-          <div class="donut-legend">
-            <div class="dl-item"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">En producción</span><span class="dl-val">34</span></div>
-            <div class="dl-item"><span class="dot" style="background:#f59e0b;"></span><span class="dl-lbl">En desarrollo</span><span class="dl-val">16</span></div>
-            <div class="dl-item"><span class="dot" style="background:#d6dbe3;"></span><span class="dl-lbl">Recién sembrado</span><span class="dl-val">12</span></div>
-          </div>
+          <a class="panel-link">Ver mapa de ciclos ›</a>
         </div>
 
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Alertas</div><div class="panel-sub">Pendientes por revisar</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Alertas y novedades</div></div></div>
           <div class="alert-list">
-            <div class="alert-item"><span class="alert-ic">🪲</span><div><div class="alert-title">Trampa #14 sin revisar</div><div class="alert-sub">Lote 7 · Finca Central</div></div><span class="alert-time">2h</span></div>
-            <div class="alert-item"><span class="alert-ic">🧪</span><div><div class="alert-title">Foco de Pudrición de Cogollo</div><div class="alert-sub">Lote 22 · Finca Norte</div></div><span class="alert-time">5h</span></div>
-            <div class="alert-item"><span class="alert-ic">🔧</span><div><div class="alert-title">Poda atrasada</div><div class="alert-sub">Lote 9 · Finca Sur</div></div><span class="alert-time">1d</span></div>
+            <div class="alert-item"><span class="alert-ic danger">⚠️</span><div><div class="alert-title">16 lotes con ciclo mayor a 15 días</div><div class="alert-sub">Atención inmediata requerida</div></div><span class="alert-time">Hoy 08:30 a. m.</span></div>
+            <div class="alert-item"><span class="alert-ic warn">⚠️</span><div><div class="alert-title">Calidad por debajo del 95% en Finca 2</div><div class="alert-sub">Revisar procesos de recolección</div></div><span class="alert-time">Hoy 07:45 a. m.</span></div>
+            <div class="alert-item"><span class="alert-ic info">ℹ️</span><div><div class="alert-title">Clima: Lluvias intensas en próximas 48 horas</div><div class="alert-sub">Puede afectar la producción</div></div><span class="alert-time">Hoy 06:15 a. m.</span></div>
           </div>
+          <a class="panel-link">Ver todas las alertas ›</a>
         </div>
       </div>
 
-      <div class="grid-row cols-3">
+      <div class="grid-row cols-3-eq">
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Producción por finca</div><div class="panel-sub">Toneladas · mes actual</div></div></div>
-          <div class="hbar-row"><span class="hbar-lbl">Finca Central</span><div class="hbar-track"><div class="hbar-fill" style="width:88%;"></div></div><span class="hbar-val">81 t</span></div>
-          <div class="hbar-row"><span class="hbar-lbl">Finca Norte</span><div class="hbar-track"><div class="hbar-fill" style="width:64%;"></div></div><span class="hbar-val">59 t</span></div>
-          <div class="hbar-row"><span class="hbar-lbl">Finca Sur</span><div class="hbar-track"><div class="hbar-fill" style="width:48%;"></div></div><span class="hbar-val">44 t</span></div>
+          <div class="panel-head"><div><div class="panel-title">Producción por finca (período)</div><div class="panel-sub">Toneladas</div></div></div>
+          <div class="hbar-row"><span class="hbar-lbl">Finca 1</span><div class="hbar-track"><div class="hbar-fill" style="width:88%;"></div></div><span class="hbar-val">258,5 t</span><span class="hbar-pct">53,0%</span></div>
+          <div class="hbar-row"><span class="hbar-lbl">Finca 2</span><div class="hbar-track"><div class="hbar-fill" style="width:60%;"></div></div><span class="hbar-val">176,4 t</span><span class="hbar-pct">36,2%</span></div>
+          <div class="hbar-row"><span class="hbar-lbl">Finca 3</span><div class="hbar-track"><div class="hbar-fill" style="width:18%;"></div></div><span class="hbar-val">52,3 t</span><span class="hbar-pct">10,8%</span></div>
+          <a class="panel-link">Ver detalle por finca ›</a>
         </div>
 
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Estado de madurez del fruto</div><div class="panel-sub">Racimos muestreados</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Estado de madurez del fruto</div></div></div>
           <div class="donut-wrap">
-            <div class="donut" style="background:conic-gradient(#16a34a 0% 62%, #f59e0b 62% 86%, #ef4444 86% 100%);">
-              <div class="donut-center"><span class="num">86%</span><span class="lbl">Óptimo</span></div>
+            <div class="donut" style="background:conic-gradient(#16a34a 0% 62%, #f5b942 62% 86%, #2563eb 86% 96%, #dc2626 96% 100%);">
+              <div class="donut-center"></div>
+            </div>
+            <div class="donut-legend">
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Óptimo (Maduros)</span><span class="dl-val">62%</span></div></div>
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Sobre Maduro</span><span class="dl-val">24%</span></div></div>
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-lbl">Inmaduro (Verdes)</span><span class="dl-val">10%</span></div></div>
+              <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#dc2626;"></span><span class="dl-lbl">Podrido</span><span class="dl-val">4%</span></div></div>
             </div>
           </div>
-          <div class="donut-legend">
-            <div class="dl-item"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Maduro</span><span class="dl-val">62%</span></div>
-            <div class="dl-item"><span class="dot" style="background:#f59e0b;"></span><span class="dl-lbl">Pintón</span><span class="dl-val">24%</span></div>
-            <div class="dl-item"><span class="dot" style="background:#ef4444;"></span><span class="dl-lbl">Verde</span><span class="dl-val">14%</span></div>
-          </div>
+          <a class="panel-link">Ver detalle de calidad ›</a>
         </div>
 
         <div class="panel">
-          <div class="panel-head"><div><div class="panel-title">Rendimiento promedio</div><div class="panel-sub">Toneladas / hectárea</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Rendimiento promedio</div><div class="panel-sub">Ton/Jornal</div></div></div>
           <div class="linechart-wrap">
-            <div class="linechart-kpi"><span class="linechart-num">1.74</span><span class="linechart-delta">▲ 4.1%</span></div>
+            <div class="linechart-kpi">Histórico</div>
+            <div class="linechart-kpi"><span class="linechart-num">1,61</span><span class="linechart-delta">▲ +5,1% vs período anterior</span></div>
             <svg viewBox="0 0 240 80" width="100%" height="80" preserveAspectRatio="none">
-              <polyline points="0,60 40,52 80,48 120,38 160,30 200,22 240,16" fill="none" stroke="#16a34a" stroke-width="3"/>
-              <polygon points="0,60 40,52 80,48 120,38 160,30 200,22 240,16 240,80 0,80" fill="rgba(22,163,74,.12)"/>
+              <polyline points="0,52 30,46 60,50 90,40 120,34 150,38 180,24 210,20 240,28" fill="none" stroke="#16a34a" stroke-width="3"/>
+              <polygon points="0,52 30,46 60,50 90,40 120,34 150,38 180,24 210,20 240,28 240,80 0,80" fill="rgba(22,163,74,.12)"/>
+              <circle cx="0" cy="52" r="3" fill="#16a34a"/><circle cx="30" cy="46" r="3" fill="#16a34a"/><circle cx="60" cy="50" r="3" fill="#16a34a"/><circle cx="90" cy="40" r="3" fill="#16a34a"/><circle cx="120" cy="34" r="3" fill="#16a34a"/><circle cx="150" cy="38" r="3" fill="#16a34a"/><circle cx="180" cy="24" r="3" fill="#16a34a"/><circle cx="210" cy="20" r="3" fill="#16a34a"/><circle cx="240" cy="28" r="3" fill="#16a34a"/>
             </svg>
+            <div class="linechart-axis"><span>01 May</span><span>05 May</span><span>09 May</span><span>13 May</span><span>15 May</span></div>
           </div>
+          <a class="panel-link">Ver rendimiento por cosechero ›</a>
         </div>
       </div>
 
       <div class="grid-row cols-3">
         <div class="panel" style="grid-column:span 2;">
-          <div class="panel-head"><div><div class="panel-title">Actividades recientes</div><div class="panel-sub">Últimos registros del equipo</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">Actividades recientes</div></div></div>
           <div class="act-list">
-            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>Juan Cosecha</b> registró cosecha en Lote 14</div><span class="act-time">Hace 30 min</span></div>
-            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>María Sanidad</b> revisó 6 trampas en Finca Norte</div><span class="act-time">Hace 1 h</span></div>
-            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>Pedro Mantto</b> completó poda en Lote 9</div><span class="act-time">Hace 3 h</span></div>
-            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>Administrador</b> creó un nuevo usuario</div><span class="act-time">Ayer</span></div>
+            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Evaluación de calidad - Lote 26 - Supervisor Felipe</div><span class="act-time">Hoy 08:20 a. m.</span></div>
+            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Corte completado - Lote 11A - Cuadrilla 2</div><span class="act-time">Hoy 07:30 a. m.</span></div>
+            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Registro de producción - Finca 2</div><span class="act-time">Hoy 07:15 a. m.</span></div>
+            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Nueva evaluación de calidad - Lote 45B</div><span class="act-time">Ayer 05:40 p. m.</span></div>
           </div>
+          <a class="panel-link">Ver historial completo ›</a>
         </div>
 
         <div class="panel">
           <div class="panel-head"><div><div class="panel-title">Accesos rápidos</div></div></div>
           <div class="quick-grid">
-            <a class="quick-item" href="cosecha.html"><span class="quick-ic">🌴</span><span class="quick-lbl">Cosecha</span></a>
-            <a class="quick-item" href="mantenimiento.html"><span class="quick-ic">🔧</span><span class="quick-lbl">Mantto</span></a>
-            <a class="quick-item" href="sanidad_carpeta.html"><span class="quick-ic">🧪</span><span class="quick-lbl">Sanidad</span></a>
+            <a class="quick-item" href="cosecha.html"><span class="quick-ic">📈</span><span class="quick-lbl">Registrar producción</span></a>
+            <span class="quick-item"><span class="quick-ic">⭐</span><span class="quick-lbl">Evaluar calidad</span></span>
+            <span class="quick-item"><span class="quick-ic">🗺️</span><span class="quick-lbl">Mapa de lotes</span></span>
+            <span class="quick-item"><span class="quick-ic">📋</span><span class="quick-lbl">Registrar novedad</span></span>
+            <span class="quick-item"><span class="quick-ic">📄</span><span class="quick-lbl">Informe ejecutivo</span></span>
+            <span class="quick-item"><span class="quick-ic">⏱️</span><span class="quick-lbl">Ciclos de cosecha</span></span>
+            <span class="quick-item"><span class="quick-ic">📊</span><span class="quick-lbl">Rendimiento</span></span>
             <a class="quick-item" href="trampas_dashboard.html"><span class="quick-ic">🪲</span><span class="quick-lbl">Trampeo</span></a>
-            <span class="quick-item" onclick="abrirAdminUsuarios()" style="cursor:pointer;"><span class="quick-ic">👤</span><span class="quick-lbl">Usuarios</span></span>
+            <span class="quick-item"><span class="quick-ic">☁️</span><span class="quick-lbl">Clima</span></span>
+            <span class="quick-item"><span class="quick-ic">📦</span><span class="quick-lbl">Inventarios</span></span>
           </div>
         </div>
       </div>
@@ -730,8 +766,8 @@ function semanaNum(d){
 function initHeaderFecha(){
   const hoy=hoyLocal();
   const texto=hoy.getDate()+' de '+MESES[hoy.getMonth()]+' de '+hoy.getFullYear();
-  document.getElementById('hdr-fecha').textContent='Semana '+semanaNum(hoy);
-  document.getElementById('hdr-fecha-pill').textContent='📅 '+texto;
+  document.getElementById('hdr-fecha').textContent=hoy.getHours()+':'+String(hoy.getMinutes()).padStart(2,'0');
+  document.getElementById('hdr-fecha-pill').innerHTML='📅 '+texto+'<span class="chev">▾</span>';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
