@@ -597,8 +597,8 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 
       <div id="section-cosecha" style="display:none;">
         <div class="module-tabs">
-          <span class="mtab active">Resumen Ejecutivo</span>
-          <span class="mtab pronto">Producción</span>
+          <span class="mtab active" id="ctab-resumen" onclick="showCosechaTab('resumen')">Resumen Ejecutivo</span>
+          <span class="mtab" id="ctab-produccion" onclick="showCosechaTab('produccion')">Producción</span>
           <span class="mtab pronto">Producción por Finca</span>
           <span class="mtab pronto">Ciclos</span>
           <span class="mtab pronto">Calidad</span>
@@ -607,6 +607,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
           <span class="mtab pronto">Inteligencia Artificial</span>
         </div>
 
+        <div id="cosecha-tab-resumen" class="cosecha-tabpanel">
         <div class="kpi-row cols-8" style="margin-top:18px;">
           <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
           <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Producción acumulada (año)</div><div class="kpi-num">2.145,6 t</div><div class="kpi-delta">▲ +9,3% vs año anterior</div></div>
@@ -761,6 +762,160 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
             </div>
           </div>
         </div>
+        </div>
+        <!-- /cosecha-tab-resumen -->
+
+        <div id="cosecha-tab-produccion" class="cosecha-tabpanel" style="display:none;">
+          <div class="kpi-row cols-8" style="margin-top:18px;">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción total (período)</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Promedio diario</div><div class="kpi-num">32,5 t</div><div class="kpi-delta">▲ +2,1% vs período anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Mejor día</div><div class="kpi-num">36,1 t</div><div class="kpi-delta neutral">08 de mayo</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Racimos cortados</div><div class="kpi-num">21.480</div><div class="kpi-delta">▲ +5,4% vs período anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-clock"/></svg></div><div class="kpi-lbl">Peso promedio racimo</div><div class="kpi-num">22,7 kg</div><div class="kpi-delta neutral">Meta: 22 - 25 kg</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Merma / pérdida</div><div class="kpi-num">2,8%</div><div class="kpi-delta down" style="color:#dc2626;">▲ +0,3% vs período anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-users"/></svg></div><div class="kpi-lbl">Eficiencia de corte</div><div class="kpi-num">1,68 t/jornal</div><div class="kpi-delta">▲ +0,9% vs período anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento del plan</div><div class="kpi-num">96%</div><div class="kpi-delta neutral">Meta: 90%</div></div>
+          </div>
+
+          <div class="kpi-row cols-6">
+            <div class="kpi-card sm"><div class="kpi-lbl">Turno Mañana</div><div class="kpi-body"><div><div class="kpi-num">312,5 t</div><div class="kpi-delta">▲ 64,1% del total</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,15 20,16 30,11 40,12 50,6 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+            <div class="kpi-card sm"><div class="kpi-lbl">Turno Tarde</div><div class="kpi-body"><div><div class="kpi-num">174,7 t</div><div class="kpi-delta">▲ 35,9% del total</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,17 10,16 20,12 30,13 40,9 50,8 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+            <div class="kpi-card sm"><div class="kpi-lbl">Fruto Tipo A</div><div class="kpi-body"><div><div class="kpi-num">71%</div><div class="kpi-delta">▲ +2,4% vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,19 10,14 20,15 30,10 40,11 50,7 60,5" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+            <div class="kpi-card sm"><div class="kpi-lbl">Fruto Tipo B</div><div class="kpi-body"><div><div class="kpi-num">22%</div><div class="kpi-delta">▼ -1,2% vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,16 10,17 20,12 30,13 40,9 50,10 60,5" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+            <div class="kpi-card sm"><div class="kpi-lbl">Tiempo corte-planta</div><div class="kpi-body"><div><div class="kpi-num">5,4 h</div><div class="kpi-delta">▼ -0,3 h vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,16 20,17 30,12 40,13 50,8 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+            <div class="kpi-card sm"><div class="kpi-lbl">Eficiencia transporte</div><div class="kpi-body"><div><div class="kpi-num">94%</div><div class="kpi-delta">▲ +1,1% vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,16 20,17 30,12 40,13 50,8 60,6" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción diaria detallada</div><div class="panel-sub">Toneladas</div></div></div>
+              <div class="barchart">
+                <div class="bar-col"><div class="bar-val">28,4</div><div class="bar" style="height:57%;"></div></div>
+                <div class="bar-col"><div class="bar-val">31,2</div><div class="bar" style="height:62%;"></div></div>
+                <div class="bar-col"><div class="bar-val">27,6</div><div class="bar" style="height:55%;"></div></div>
+                <div class="bar-col"><div class="bar-val">30,8</div><div class="bar" style="height:62%;"></div></div>
+                <div class="bar-col"><div class="bar-val">26,9</div><div class="bar" style="height:54%;"></div></div>
+                <div class="bar-col"><div class="bar-val">35,7</div><div class="bar" style="height:71%;"></div></div>
+                <div class="bar-col"><div class="bar-val">33,4</div><div class="bar" style="height:67%;"></div></div>
+                <div class="bar-col"><div class="bar-val">36,1</div><div class="bar" style="height:72%;"></div></div>
+                <div class="bar-col"><div class="bar-val">34,8</div><div class="bar" style="height:70%;"></div></div>
+                <div class="bar-col"><div class="bar-val">31,9</div><div class="bar" style="height:64%;"></div></div>
+                <div class="bar-col"><div class="bar-val">22,7</div><div class="bar" style="height:45%;"></div></div>
+                <div class="bar-col"><div class="bar-val">30,6</div><div class="bar" style="height:61%;"></div></div>
+                <div class="bar-col"><div class="bar-val">33,1</div><div class="bar" style="height:66%;"></div></div>
+                <div class="bar-col"><div class="bar-val">32,5</div><div class="bar" style="height:65%;"></div></div>
+                <div class="bar-col"><div class="bar-val">18,6</div><div class="bar" style="height:37%;"></div></div>
+              </div>
+              <div class="linechart-axis"><span>01 May</span><span>04 May</span><span>07 May</span><span>10 May</span><span>13 May</span><span>15 May</span></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por turno</div><div class="panel-sub">Toneladas</div></div></div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#16a34a 0% 64.1%, #2563eb 64.1% 100%);">
+                  <div class="donut-center"><span class="num">487,2</span><span class="lbl">ton totales</span></div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Mañana</span><span class="dl-val">312,5 t</span></div><span class="dl-sub">(64,1%)</span></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-lbl">Tarde</span><span class="dl-val">174,7 t</span></div><span class="dl-sub">(35,9%)</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por tipo de fruto</div></div></div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#16a34a 0% 71%, #f5b942 71% 93%, #2563eb 93% 100%);">
+                  <div class="donut-center"></div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Tipo A</span><span class="dl-val">71%</span></div></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Tipo B</span><span class="dl-val">22%</span></div></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-lbl">Tipo C</span><span class="dl-val">7%</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción detallada por lote</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>#</th><th>Lote</th><th>Finca</th><th>Fecha</th><th>Racimos</th><th>Peso (t)</th><th>Cosechero</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>45B</td><td>Finca 1</td><td>15 May</td><td>820</td><td>18,6</td><td>Carlos Pérez</td></tr>
+                  <tr><td>2</td><td>11A</td><td>Finca 1</td><td>15 May</td><td>765</td><td>17,2</td><td>Luis Gómez</td></tr>
+                  <tr><td>3</td><td>26</td><td>Finca 2</td><td>15 May</td><td>702</td><td>16,8</td><td>María Quintero</td></tr>
+                  <tr><td>4</td><td>31</td><td>Finca 2</td><td>15 May</td><td>668</td><td>15,1</td><td>José Ramírez</td></tr>
+                  <tr><td>5</td><td>15</td><td>Finca 1</td><td>15 May</td><td>631</td><td>14,3</td><td>Andrés Díaz</td></tr>
+                </tbody>
+              </table>
+              <a class="panel-link">Ver registro completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Eficiencia de corte por cuadrilla</div></div></div>
+              <div class="stat-box-row">
+                <div class="stat-box green"><div class="sb-num">5</div><div class="sb-lbl">Cuadrillas</div><div class="sb-sub">≥ 1,7 t/jornal</div></div>
+                <div class="stat-box yellow"><div class="sb-num">2</div><div class="sb-lbl">Cuadrillas</div><div class="sb-sub">1,4 - 1,7 t/jornal</div></div>
+                <div class="stat-box red"><div class="sb-num">1</div><div class="sb-lbl">Cuadrilla</div><div class="sb-sub">&lt; 1,4 t/jornal</div></div>
+              </div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#16a34a 0% 62.5%, #f5b942 62.5% 87.5%, #dc2626 87.5% 100%);">
+                  <div class="donut-center"><span class="num">8</span><span class="lbl">cuadrillas</span></div>
+                </div>
+              </div>
+              <a class="panel-link">Ver detalle por cuadrilla <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Comparativo semanal</div><div class="panel-sub">Toneladas</div></div></div>
+              <div class="barchart">
+                <div class="bar-col"><div class="bar-val">98,4</div><div class="bar" style="height:60%;"></div></div>
+                <div class="bar-col"><div class="bar-val">112,1</div><div class="bar" style="height:68%;"></div></div>
+                <div class="bar-col"><div class="bar-val">105,3</div><div class="bar" style="height:64%;"></div></div>
+                <div class="bar-col"><div class="bar-val">116,4</div><div class="bar" style="height:71%;"></div></div>
+              </div>
+              <div class="linechart-axis"><span>Sem 1</span><span>Sem 2</span><span>Sem 3</span><span>Sem 4</span></div>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Alertas de Producción</div></div></div>
+              <div class="alert-list">
+                <div class="alert-item"><span class="alert-ic danger"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg></span><div><div class="alert-title">Merma por encima del 2,5% en Finca 2</div><div class="alert-sub">Revisar proceso de transporte</div></div><span class="alert-time">Hoy 09:10 a. m.</span></div>
+                <div class="alert-item"><span class="alert-ic warn"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg></span><div><div class="alert-title">Cuadrilla 6 por debajo de la meta de corte</div><div class="alert-sub">1,3 t/jornal vs meta 1,7 t/jornal</div></div><span class="alert-time">Hoy 08:00 a. m.</span></div>
+                <div class="alert-item"><span class="alert-ic info"><svg class="ic-svg"><use href="#i-info"/></svg></span><div><div class="alert-title">Tiempo corte-planta mejoró a 5,4 h</div><div class="alert-sub">Reducción de 0,3 h vs período anterior</div></div><span class="alert-time">Hoy 07:00 a. m.</span></div>
+              </div>
+              <a class="panel-link">Ver todas las alertas <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Actividades Recientes</div></div></div>
+              <div class="act-list">
+                <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Registro de producción - Lote 45B - 820 racimos</div><span class="act-time">Hoy 08:20 a. m.</span></div>
+                <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Transporte despachado - Finca 1 a planta</div><span class="act-time">Hoy 07:30 a. m.</span></div>
+                <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Cierre de turno mañana - 312,5 t acumuladas</div><span class="act-time">Hoy 07:15 a. m.</span></div>
+                <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Clasificación de fruto - Lote 11A</div><span class="act-time">Ayer 05:40 p. m.</span></div>
+              </div>
+              <a class="panel-link">Ver historial completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Proyección de Producción</div></div><span class="panel-sub">Próximos 7 días: 268 t estimados</span></div>
+              <div class="linechart-wrap">
+                <svg viewBox="0 0 240 80" width="100%" height="80" preserveAspectRatio="none">
+                  <polyline points="0,48 30,38 60,42 90,30 120,24 150,16 180,10" fill="none" stroke="#16a34a" stroke-width="3"/>
+                  <polygon points="0,48 30,38 60,42 90,30 120,24 150,16 180,10 180,80 0,80" fill="rgba(22,163,74,.12)"/>
+                  <circle cx="0" cy="48" r="3" fill="#16a34a"/><circle cx="30" cy="38" r="3" fill="#16a34a"/><circle cx="60" cy="42" r="3" fill="#16a34a"/><circle cx="90" cy="30" r="3" fill="#16a34a"/><circle cx="120" cy="24" r="3" fill="#16a34a"/><circle cx="150" cy="16" r="3" fill="#16a34a"/><circle cx="180" cy="10" r="3" fill="#16a34a"/>
+                </svg>
+                <div class="linechart-axis"><span>Día 1</span><span>Día 2</span><span>Día 3</span><span>Día 4</span><span>Día 5</span><span>Día 6</span><span>Día 7</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /cosecha-tab-produccion -->
       </div>
       <!-- /section-cosecha -->
 
@@ -1048,6 +1203,13 @@ function showSection(name){
   document.getElementById('topbar-greeting').textContent = info.title(nombre);
   document.getElementById('topbar-sub').textContent = info.sub;
   document.getElementById('sidebar').classList.remove('open');
+}
+
+function showCosechaTab(name){
+  document.getElementById('cosecha-tab-resumen').style.display = name === 'resumen' ? '' : 'none';
+  document.getElementById('cosecha-tab-produccion').style.display = name === 'produccion' ? '' : 'none';
+  document.getElementById('ctab-resumen').classList.toggle('active', name === 'resumen');
+  document.getElementById('ctab-produccion').classList.toggle('active', name === 'produccion');
 }
 
 function initHeaderFecha(){
