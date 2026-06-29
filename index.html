@@ -2402,7 +2402,7 @@ function impHandleFile(file){
   else reader.readAsText(file);
 }
 
-const IMP_BATCH_SIZE = 30; // limita el largo de la URL en cada llamada JSONP al backend
+const IMP_BATCH_SIZE = 15; // limita el largo de la URL en cada llamada JSONP al backend
 
 async function impConfirmar(){
   const validRows = impParsedRows.filter(r => r._status === 'ok').map(r => ({
@@ -2417,18 +2417,22 @@ async function impConfirmar(){
   const batches = [];
   for (let i = 0; i < validRows.length; i += IMP_BATCH_SIZE) batches.push(validRows.slice(i, i + IMP_BATCH_SIZE));
 
-  let insertados = 0, duplicados = 0, fallidas = 0;
+  let insertados = 0, duplicados = 0, fallidas = 0, lastError = '';
   for (let i = 0; i < batches.length; i++){
     impToast('Guardando en Google Sheets... lote ' + (i+1) + ' de ' + batches.length);
     const resp = await gasJSONP(GAS_URL + '?accion=importarProduccion&data=' + encodeURIComponent(JSON.stringify(batches[i])));
-    if (!resp || !resp.ok) { fallidas += batches[i].length; continue; }
+    if (!resp || !resp.ok) {
+      fallidas += batches[i].length;
+      if (resp && resp.error) lastError = resp.error;
+      continue;
+    }
     insertados += resp.insertados || 0;
     duplicados += resp.duplicados || 0;
   }
 
   btn.disabled = false;
   if (insertados === 0 && fallidas > 0) {
-    impToast('Error al guardar en el servidor. Intente nuevamente.');
+    impToast('Error al guardar en el servidor' + (lastError ? ': ' + lastError : '') + '. Intente nuevamente.');
     return;
   }
   let msg = insertados + ' registro(s) importado(s) correctamente';

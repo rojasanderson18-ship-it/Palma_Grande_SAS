@@ -307,15 +307,27 @@ function doGet(e) {
       return jsonResponse(result);
     }
     if(accion === 'importarProduccion'){
-      var filas = params.data ? JSON.parse(decodeURIComponent(params.data)) : [];
-      var result = importarProduccion(filas);
-      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
-      return jsonResponse(result);
+      try {
+        var filas = params.data ? JSON.parse(decodeURIComponent(params.data)) : [];
+        var result = importarProduccion(filas);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(result);
+      } catch(errImp) {
+        var errResult = {ok:false, error: errImp.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResult)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResult);
+      }
     }
     if(accion === 'obtenerProduccion'){
-      var result = obtenerProduccion();
-      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
-      return jsonResponse(result);
+      try {
+        var result = obtenerProduccion();
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(result);
+      } catch(errObt) {
+        var errResult2 = {ok:false, error: errObt.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResult2)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResult2);
+      }
     }
 
     return jsonResponse({ok:true, msg:'API Palma Grande activa'});
