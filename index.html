@@ -13,21 +13,26 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 
 /* ── LAYOUT ───────────────────── */
 .dash{display:flex;min-height:100vh;}
+.ic-svg{width:18px;height:18px;flex:0 0 auto;display:block;}
 
 /* SIDEBAR */
 .sidebar{width:248px;flex:0 0 auto;background:linear-gradient(180deg,#0f3520,#0a2818);color:#fff;display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
 .sb-brand{display:flex;align-items:center;gap:10px;padding:0 20px 22px;}
-.sb-brand-icon{width:38px;height:38px;background:rgba(255,255,255,.12);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto;}
+.sb-brand-icon{width:38px;height:38px;background:rgba(255,255,255,.12);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto;color:#4ade80;}
+.sb-brand-icon .ic-svg{width:20px;height:20px;}
 .sb-brand-name{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;line-height:1.15;}
 .sb-brand-sub{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.5px;}
 .sb-section{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.35);padding:14px 20px 6px;}
 .sb-link{display:flex;align-items:center;gap:11px;padding:9px 20px;font-size:13px;color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;border-left:3px solid transparent;}
-.sb-link .ic{width:18px;text-align:center;font-size:14px;}
+.sb-link .ic-svg{width:16px;height:16px;color:rgba(255,255,255,.6);}
 .sb-link:hover{background:rgba(255,255,255,.06);color:#fff;}
+.sb-link:hover .ic-svg{color:#fff;}
 .sb-link.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:#4ade80;font-weight:600;}
+.sb-link.active .ic-svg{color:#4ade80;}
 .sb-link.pronto{opacity:.45;cursor:not-allowed;}
 .sb-weather{margin:auto 16px 0;background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;font-size:12px;}
-.sb-weather-temp{font-family:'Bebas Neue',sans-serif;font-size:22px;}
+.sb-weather-temp{font-family:'Bebas Neue',sans-serif;font-size:22px;display:flex;align-items:center;gap:8px;color:#fde68a;}
+.sb-weather-temp .ic-svg{width:20px;height:20px;}
 .sb-weather-desc{color:rgba(255,255,255,.55);font-size:11px;margin-top:2px;}
 .sb-weather-time{color:rgba(255,255,255,.35);font-size:10px;margin-top:6px;}
 
@@ -37,12 +42,13 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 /* TOPBAR */
 .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .topbar-left{display:flex;align-items:center;gap:16px;}
-.hamburger{font-size:19px;color:#6b7280;cursor:pointer;background:#f5f6f8;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
+.hamburger{font-size:19px;color:#6b7280;cursor:pointer;background:#f5f6f8;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;}
 .topbar-title{font-size:18px;font-weight:800;color:#1a1f2e;}
 .topbar-sub{font-size:12px;color:#9ca3af;margin-top:2px;}
 .topbar-right{display:flex;align-items:center;gap:10px;}
 .tb-pill{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:8px 12px;font-size:12.5px;color:#374151;font-weight:500;cursor:pointer;white-space:nowrap;}
-.tb-pill .chev{font-size:9px;color:#9ca3af;}
+.tb-pill .ic-svg{width:15px;height:15px;color:#6b7280;}
+.tb-pill .chev{width:11px;height:11px;color:#9ca3af;}
 .tb-bell{position:relative;font-size:17px;color:#6b7280;cursor:pointer;width:34px;height:34px;border-radius:50%;background:#f5f6f8;display:flex;align-items:center;justify-content:center;}
 .tb-bell .dot{position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center;}
 .tb-user{display:flex;align-items:center;gap:9px;cursor:pointer;}
@@ -56,9 +62,10 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 /* KPI ROW */
 .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
 .kpi-card{background:#fff;border-radius:14px;padding:16px;border:1px solid #eef0f4;display:flex;flex-direction:column;gap:10px;}
-.kpi-icon{width:38px;height:38px;border-radius:50%;background:#e7f8ed;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto;}
-.kpi-icon.blue{background:#e7f1fc;}
-.kpi-icon.violet{background:#f0ecfc;}
+.kpi-icon{width:38px;height:38px;border-radius:50%;background:#e7f8ed;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto;color:#16a34a;}
+.kpi-icon .ic-svg{width:19px;height:19px;}
+.kpi-icon.blue{background:#e7f1fc;color:#2563eb;}
+.kpi-icon.violet{background:#f0ecfc;color:#7c3aed;}
 .kpi-lbl{font-size:11.5px;color:#6b7280;font-weight:500;}
 .kpi-num{font-family:'Bebas Neue',sans-serif;font-size:21px;color:#1a1f2e;margin-top:2px;}
 .kpi-delta{font-size:10.5px;color:#16a34a;font-weight:600;margin-top:2px;}
@@ -73,6 +80,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .panel-title{font-size:14.5px;font-weight:800;color:#1a1f2e;}
 .panel-sub{font-size:11px;color:#9ca3af;margin-top:1px;}
 .panel-link{font-size:11.5px;color:#16a34a;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;margin-top:14px;padding-top:14px;border-top:1px solid #f1f3f6;}
+.panel-link .ic-svg{width:13px;height:13px;transform:rotate(-90deg);}
 .panel-select{font-size:11.5px;color:#6b7280;background:#f5f6f8;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;}
 
 /* BAR CHART */
@@ -101,6 +109,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .alert-list{display:flex;flex-direction:column;gap:14px;flex:1;}
 .alert-item{display:flex;gap:10px;align-items:flex-start;}
 .alert-ic{font-size:13px;flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.alert-ic .ic-svg{width:14px;height:14px;}
 .alert-ic.danger{background:#fde8e8;color:#dc2626;}
 .alert-ic.warn{background:#fef3d6;color:#d97706;}
 .alert-ic.info{background:#e1ecfb;color:#2563eb;}
@@ -127,6 +136,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .act-list{display:flex;flex-direction:column;gap:14px;}
 .act-item{display:flex;align-items:center;gap:10px;}
 .act-check{color:#16a34a;font-size:15px;width:22px;height:22px;border-radius:50%;background:#e7f8ed;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.act-check .ic-svg{width:12px;height:12px;}
 .act-text{font-size:12.5px;color:#1a1f2e;flex:1;}
 .act-text b{font-weight:700;}
 .act-time{font-size:11px;color:#9ca3af;white-space:nowrap;}
@@ -135,6 +145,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .quick-item{display:flex;flex-direction:column;align-items:center;gap:9px;padding:16px 6px;border-radius:12px;border:1px solid #eef0f4;cursor:pointer;text-align:center;}
 .quick-item:hover{background:#f8faf9;}
 .quick-ic{width:38px;height:38px;border-radius:10px;background:#e7f8ed;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.quick-ic .ic-svg{width:18px;height:18px;}
 .quick-lbl{font-size:10.5px;color:#374151;font-weight:600;}
 
 @media(max-width:1100px){
@@ -243,6 +254,44 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 </head>
 <body>
 
+<svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 13c0-6 5-9 14-9 0 9-3 14-9 14H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 19c0-3.5 1.5-6 5-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-package" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.5A1 1 0 0 0 5.4 20h13.2a1 1 0 0 0 .9-1.5L14 9V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-bug" viewBox="0 0 24 24"><circle cx="12" cy="13" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7V4M9 4h6M5 11l-2-2M19 11l2-2M5 16l-2 2M19 16l2 2M9 13h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 3s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 1 0-5.6 5.6L3 18l3 3 6.1-6.1a4 4 0 0 0 5.6-5.6l-2.8 2.8-2-2 2.8-2.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-truck" viewBox="0 0 24 24"><path d="M1 8h13v8H1zM14 11h4l4 3v2h-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 1 1 .6-7.96A5 5 0 0 1 17 11a3.5 3.5 0 0 1 0 7H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-bar-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-sun-cloud" viewBox="0 0 24 24"><circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 1.5v1.3M3 3.3l.9.9M1.3 7h1.3M12 13.8a3.6 3.6 0 1 0 .4-7.18A4.4 4.4 0 0 0 4 8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5a3.2 3.2 0 1 1 .5-6.36A4.4 4.4 0 0 1 17 13.5a3 3 0 0 1 0 6H8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 5.3a3.2 3.2 0 0 1 0 6.2M19.5 19c0-2.8-1.8-4.5-4-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 14.5 6 13 6 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
+<symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M12 4l9.5 16H2.5L12 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="0.9" fill="currentColor"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.7" r="0.9" fill="currentColor"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.5l2.5 2.5L16 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 18.3l-6.2 3.3 1.2-6.9-5-4.9 6.9-1L12 2.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M9 20l-6-2V4l6 2 6-2 6 2v14l-6-2-6 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 4v16M15 6v16" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs>
+</svg>
+
 <div id="login-screen">
   <div class="login-wrap">
     <div class="login-brand">
@@ -306,7 +355,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 
   <div class="sidebar" id="sidebar">
     <div class="sb-brand">
-      <div class="sb-brand-icon">🌴</div>
+      <div class="sb-brand-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div>
       <div>
         <div class="sb-brand-name">Palma Grande</div>
         <div class="sb-brand-sub">S.A.S.</div>
@@ -314,28 +363,28 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
     </div>
 
     <div class="sb-section">Módulos principales</div>
-    <a class="sb-link active" href="index.html"><span class="ic">🏠</span> Inicio</a>
-    <a class="sb-link" href="cosecha.html"><span class="ic">🌴</span> Cosecha</a>
-    <span class="sb-link pronto"><span class="ic">📦</span> Producción</span>
-    <a class="sb-link" href="sanidad_carpeta.html"><span class="ic">🧪</span> Sanidad</a>
-    <a class="sb-link" href="trampas_dashboard.html"><span class="ic">🪲</span> Trampeo · Rhynchophorus</a>
-    <span class="sb-link pronto"><span class="ic">🌿</span> Fertilización</span>
-    <span class="sb-link pronto"><span class="ic">🌼</span> Polinización</span>
-    <a class="sb-link" href="mantenimiento.html"><span class="ic">🔧</span> Mantenimiento</a>
-    <span class="sb-link pronto"><span class="ic">🚜</span> Flota y Combustible</span>
-    <span class="sb-link pronto"><span class="ic">📋</span> Inventarios</span>
-    <span class="sb-link pronto"><span class="ic">☁️</span> Clima</span>
+    <a class="sb-link active" href="index.html"><svg class="ic-svg"><use href="#i-home"/></svg> Inicio</a>
+    <a class="sb-link" href="cosecha.html"><svg class="ic-svg"><use href="#i-leaf"/></svg> Cosecha</a>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-package"/></svg> Producción</span>
+    <a class="sb-link" href="sanidad_carpeta.html"><svg class="ic-svg"><use href="#i-flask"/></svg> Sanidad</a>
+    <a class="sb-link" href="trampas_dashboard.html"><svg class="ic-svg"><use href="#i-bug"/></svg> Trampeo · Rhynchophorus</a>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Fertilización</span>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-flower"/></svg> Polinización</span>
+    <a class="sb-link" href="mantenimiento.html"><svg class="ic-svg"><use href="#i-wrench"/></svg> Mantenimiento</a>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-truck"/></svg> Flota y Combustible</span>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-clipboard"/></svg> Inventarios</span>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-cloud"/></svg> Clima</span>
 
     <div class="sb-section">Reportes</div>
-    <span class="sb-link pronto"><span class="ic">📊</span> Informes</span>
-    <span class="sb-link pronto"><span class="ic">⬇️</span> Exportar Datos</span>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Informes</span>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-download"/></svg> Exportar Datos</span>
 
     <div class="sb-section">Configuración</div>
-    <span class="sb-link pronto"><span class="ic">⚙️</span> Parámetros</span>
-    <a class="sb-link" id="sb-link-usuarios" href="javascript:void(0)" onclick="abrirAdminUsuarios()" style="display:none;"><span class="ic">👤</span> Usuarios</a>
+    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-settings"/></svg> Parámetros</span>
+    <a class="sb-link" id="sb-link-usuarios" href="javascript:void(0)" onclick="abrirAdminUsuarios()" style="display:none;"><svg class="ic-svg"><use href="#i-user"/></svg> Usuarios</a>
 
     <div class="sb-weather">
-      <div class="sb-weather-temp">⛅ 28°C</div>
+      <div class="sb-weather-temp"><svg class="ic-svg"><use href="#i-sun-cloud"/></svg> 28°C</div>
       <div class="sb-weather-desc">Parcialmente nublado</div>
       <div class="sb-weather-time">Última actualización: <span id="hdr-fecha">—</span></div>
     </div>
@@ -344,16 +393,16 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
-        <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')"><svg class="ic-svg"><use href="#i-menu"/></svg></button>
         <div>
           <div class="topbar-title" id="topbar-greeting">¡Buenos días, Administrador!</div>
           <div class="topbar-sub">Bienvenido al Sistema de Gestión de Plantaciones de Palma de Aceite</div>
         </div>
       </div>
       <div class="topbar-right">
-        <span class="tb-pill" id="hdr-fecha-pill">📅 —<span class="chev">▾</span></span>
-        <span class="tb-pill">👥 Todas las fincas<span class="chev">▾</span></span>
-        <span class="tb-bell">🔔<span class="dot">3</span></span>
+        <span class="tb-pill" id="hdr-fecha-pill"><svg class="ic-svg"><use href="#i-calendar"/></svg> —<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></span>
+        <span class="tb-pill"><svg class="ic-svg"><use href="#i-users"/></svg> Todas las fincas<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></span>
+        <span class="tb-bell"><svg class="ic-svg"><use href="#i-bell"/></svg><span class="dot">3</span></span>
         <div class="tb-user">
           <div class="tb-avatar">A</div>
           <div>
@@ -367,12 +416,12 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
     <div class="content">
 
       <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-icon">🌴</div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
-        <div class="kpi-card"><div class="kpi-icon blue">📅</div><div class="kpi-lbl">Toneladas por día</div><div class="kpi-num">32,5 t</div><div class="kpi-delta neutral">Promedio del período</div></div>
-        <div class="kpi-card"><div class="kpi-icon">📐</div><div class="kpi-lbl">Área productiva</div><div class="kpi-num">1.820 ha</div><div class="kpi-delta neutral">de 1.950 ha totales</div></div>
-        <div class="kpi-card"><div class="kpi-icon blue">💧</div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num">22,1%</div><div class="kpi-delta">▲ +0,6% vs período anterior</div></div>
-        <div class="kpi-card"><div class="kpi-icon">🛡️</div><div class="kpi-lbl">Estado general</div><div class="kpi-num" style="font-size:16px;color:#16a34a;">Bueno</div><div class="kpi-delta neutral">Índice general 85/100</div></div>
-        <div class="kpi-card"><div class="kpi-icon violet">🎯</div><div class="kpi-lbl">Cumplimiento del plan</div><div class="kpi-num">96%</div><div class="kpi-delta neutral">Meta: 90%</div></div>
+        <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
+        <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Toneladas por día</div><div class="kpi-num">32,5 t</div><div class="kpi-delta neutral">Promedio del período</div></div>
+        <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Área productiva</div><div class="kpi-num">1.820 ha</div><div class="kpi-delta neutral">de 1.950 ha totales</div></div>
+        <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num">22,1%</div><div class="kpi-delta">▲ +0,6% vs período anterior</div></div>
+        <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-shield"/></svg></div><div class="kpi-lbl">Estado general</div><div class="kpi-num" style="font-size:16px;color:#16a34a;">Bueno</div><div class="kpi-delta neutral">Índice general 85/100</div></div>
+        <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento del plan</div><div class="kpi-num">96%</div><div class="kpi-delta neutral">Meta: 90%</div></div>
       </div>
 
       <div class="grid-row cols-3">
@@ -410,17 +459,17 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
               <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#dc2626;"></span><span class="dl-lbl">16 lotes (21%)</span></div><span class="dl-sub">Rojos (&gt; 15 días)</span></div>
             </div>
           </div>
-          <a class="panel-link">Ver mapa de ciclos ›</a>
+          <a class="panel-link">Ver mapa de ciclos <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
         </div>
 
         <div class="panel">
           <div class="panel-head"><div><div class="panel-title">Alertas y novedades</div></div></div>
           <div class="alert-list">
-            <div class="alert-item"><span class="alert-ic danger">⚠️</span><div><div class="alert-title">16 lotes con ciclo mayor a 15 días</div><div class="alert-sub">Atención inmediata requerida</div></div><span class="alert-time">Hoy 08:30 a. m.</span></div>
-            <div class="alert-item"><span class="alert-ic warn">⚠️</span><div><div class="alert-title">Calidad por debajo del 95% en Finca 2</div><div class="alert-sub">Revisar procesos de recolección</div></div><span class="alert-time">Hoy 07:45 a. m.</span></div>
-            <div class="alert-item"><span class="alert-ic info">ℹ️</span><div><div class="alert-title">Clima: Lluvias intensas en próximas 48 horas</div><div class="alert-sub">Puede afectar la producción</div></div><span class="alert-time">Hoy 06:15 a. m.</span></div>
+            <div class="alert-item"><span class="alert-ic danger"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg></span><div><div class="alert-title">16 lotes con ciclo mayor a 15 días</div><div class="alert-sub">Atención inmediata requerida</div></div><span class="alert-time">Hoy 08:30 a. m.</span></div>
+            <div class="alert-item"><span class="alert-ic warn"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg></span><div><div class="alert-title">Calidad por debajo del 95% en Finca 2</div><div class="alert-sub">Revisar procesos de recolección</div></div><span class="alert-time">Hoy 07:45 a. m.</span></div>
+            <div class="alert-item"><span class="alert-ic info"><svg class="ic-svg"><use href="#i-info"/></svg></span><div><div class="alert-title">Clima: Lluvias intensas en próximas 48 horas</div><div class="alert-sub">Puede afectar la producción</div></div><span class="alert-time">Hoy 06:15 a. m.</span></div>
           </div>
-          <a class="panel-link">Ver todas las alertas ›</a>
+          <a class="panel-link">Ver todas las alertas <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
         </div>
       </div>
 
@@ -430,7 +479,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
           <div class="hbar-row"><span class="hbar-lbl">Finca 1</span><div class="hbar-track"><div class="hbar-fill" style="width:88%;"></div></div><span class="hbar-val">258,5 t</span><span class="hbar-pct">53,0%</span></div>
           <div class="hbar-row"><span class="hbar-lbl">Finca 2</span><div class="hbar-track"><div class="hbar-fill" style="width:60%;"></div></div><span class="hbar-val">176,4 t</span><span class="hbar-pct">36,2%</span></div>
           <div class="hbar-row"><span class="hbar-lbl">Finca 3</span><div class="hbar-track"><div class="hbar-fill" style="width:18%;"></div></div><span class="hbar-val">52,3 t</span><span class="hbar-pct">10,8%</span></div>
-          <a class="panel-link">Ver detalle por finca ›</a>
+          <a class="panel-link">Ver detalle por finca <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
         </div>
 
         <div class="panel">
@@ -446,7 +495,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
               <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#dc2626;"></span><span class="dl-lbl">Podrido</span><span class="dl-val">4%</span></div></div>
             </div>
           </div>
-          <a class="panel-link">Ver detalle de calidad ›</a>
+          <a class="panel-link">Ver detalle de calidad <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
         </div>
 
         <div class="panel">
@@ -461,7 +510,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
             </svg>
             <div class="linechart-axis"><span>01 May</span><span>05 May</span><span>09 May</span><span>13 May</span><span>15 May</span></div>
           </div>
-          <a class="panel-link">Ver rendimiento por cosechero ›</a>
+          <a class="panel-link">Ver rendimiento por cosechero <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
         </div>
       </div>
 
@@ -469,27 +518,27 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
         <div class="panel" style="grid-column:span 2;">
           <div class="panel-head"><div><div class="panel-title">Actividades recientes</div></div></div>
           <div class="act-list">
-            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Evaluación de calidad - Lote 26 - Supervisor Felipe</div><span class="act-time">Hoy 08:20 a. m.</span></div>
-            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Corte completado - Lote 11A - Cuadrilla 2</div><span class="act-time">Hoy 07:30 a. m.</span></div>
-            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Registro de producción - Finca 2</div><span class="act-time">Hoy 07:15 a. m.</span></div>
-            <div class="act-item"><span class="act-check">✓</span><div class="act-text">Nueva evaluación de calidad - Lote 45B</div><span class="act-time">Ayer 05:40 p. m.</span></div>
+            <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Evaluación de calidad - Lote 26 - Supervisor Felipe</div><span class="act-time">Hoy 08:20 a. m.</span></div>
+            <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Corte completado - Lote 11A - Cuadrilla 2</div><span class="act-time">Hoy 07:30 a. m.</span></div>
+            <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Registro de producción - Finca 2</div><span class="act-time">Hoy 07:15 a. m.</span></div>
+            <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Nueva evaluación de calidad - Lote 45B</div><span class="act-time">Ayer 05:40 p. m.</span></div>
           </div>
-          <a class="panel-link">Ver historial completo ›</a>
+          <a class="panel-link">Ver historial completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
         </div>
 
         <div class="panel">
           <div class="panel-head"><div><div class="panel-title">Accesos rápidos</div></div></div>
           <div class="quick-grid">
-            <a class="quick-item" href="cosecha.html"><span class="quick-ic">📈</span><span class="quick-lbl">Registrar producción</span></a>
-            <span class="quick-item"><span class="quick-ic">⭐</span><span class="quick-lbl">Evaluar calidad</span></span>
-            <span class="quick-item"><span class="quick-ic">🗺️</span><span class="quick-lbl">Mapa de lotes</span></span>
-            <span class="quick-item"><span class="quick-ic">📋</span><span class="quick-lbl">Registrar novedad</span></span>
-            <span class="quick-item"><span class="quick-ic">📄</span><span class="quick-lbl">Informe ejecutivo</span></span>
-            <span class="quick-item"><span class="quick-ic">⏱️</span><span class="quick-lbl">Ciclos de cosecha</span></span>
-            <span class="quick-item"><span class="quick-ic">📊</span><span class="quick-lbl">Rendimiento</span></span>
-            <a class="quick-item" href="trampas_dashboard.html"><span class="quick-ic">🪲</span><span class="quick-lbl">Trampeo</span></a>
-            <span class="quick-item"><span class="quick-ic">☁️</span><span class="quick-lbl">Clima</span></span>
-            <span class="quick-item"><span class="quick-ic">📦</span><span class="quick-lbl">Inventarios</span></span>
+            <a class="quick-item" href="cosecha.html"><span class="quick-ic"><svg class="ic-svg"><use href="#i-trending-up"/></svg></span><span class="quick-lbl">Registrar producción</span></a>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-star"/></svg></span><span class="quick-lbl">Evaluar calidad</span></span>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-map"/></svg></span><span class="quick-lbl">Mapa de lotes</span></span>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-clipboard"/></svg></span><span class="quick-lbl">Registrar novedad</span></span>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-file-text"/></svg></span><span class="quick-lbl">Informe ejecutivo</span></span>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-clock"/></svg></span><span class="quick-lbl">Ciclos de cosecha</span></span>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-bar-chart"/></svg></span><span class="quick-lbl">Rendimiento</span></span>
+            <a class="quick-item" href="trampas_dashboard.html"><span class="quick-ic"><svg class="ic-svg"><use href="#i-bug"/></svg></span><span class="quick-lbl">Trampeo</span></a>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-cloud"/></svg></span><span class="quick-lbl">Clima</span></span>
+            <span class="quick-item"><span class="quick-ic"><svg class="ic-svg"><use href="#i-box"/></svg></span><span class="quick-lbl">Inventarios</span></span>
           </div>
         </div>
       </div>
@@ -767,7 +816,7 @@ function initHeaderFecha(){
   const hoy=hoyLocal();
   const texto=hoy.getDate()+' de '+MESES[hoy.getMonth()]+' de '+hoy.getFullYear();
   document.getElementById('hdr-fecha').textContent=hoy.getHours()+':'+String(hoy.getMinutes()).padStart(2,'0');
-  document.getElementById('hdr-fecha-pill').innerHTML='📅 '+texto+'<span class="chev">▾</span>';
+  document.getElementById('hdr-fecha-pill').innerHTML='<svg class="ic-svg"><use href="#i-calendar"/></svg> '+texto+'<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg>';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
