@@ -16,6 +16,8 @@ const SHEETS = {
   anilloRojo:     'Anillo Rojo',
   usuarios:       'Usuarios',
   produccion:     'Producción Importada',
+  lotes:          'Lotes',
+  historialLotes: 'Historial Lotes',
 };
 
 const LOTES = [
@@ -327,6 +329,64 @@ function doGet(e) {
         var errResult2 = {ok:false, error: errObt.toString()};
         if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResult2)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
         return jsonResponse(errResult2);
+      }
+    }
+    if(accion === 'listarLotes'){
+      try {
+        var result = listarLotes();
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(result);
+      } catch(errLot) {
+        var errResultLot = {ok:false, error: errLot.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultLot)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultLot);
+      }
+    }
+    if(accion === 'crearLote'){
+      try {
+        var dCrear = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+        var resultCrear = crearLote(dCrear);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultCrear)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultCrear);
+      } catch(errCrear) {
+        var errResultCrear = {ok:false, error: errCrear.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultCrear)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultCrear);
+      }
+    }
+    if(accion === 'actualizarLote'){
+      try {
+        var dAct = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+        var resultAct = actualizarLote(dAct);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultAct)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultAct);
+      } catch(errAct) {
+        var errResultAct = {ok:false, error: errAct.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultAct)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultAct);
+      }
+    }
+    if(accion === 'eliminarLote'){
+      try {
+        var dElim = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+        var resultElim = eliminarLote(dElim);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultElim)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultElim);
+      } catch(errElim) {
+        var errResultElim = {ok:false, error: errElim.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultElim)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultElim);
+      }
+    }
+    if(accion === 'listarHistorialLotes'){
+      try {
+        var resultHist = listarHistorialLotes();
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultHist)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultHist);
+      } catch(errHist) {
+        var errResultHist = {ok:false, error: errHist.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultHist)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultHist);
       }
     }
 
@@ -1525,4 +1585,225 @@ function obtenerProduccion() {
     };
   });
   return {ok:true, filas:filas};
+}
+
+// =============================================
+// LOTES - GESTIÓN DE LOTES (ficha técnica, mapa, historial)
+// =============================================
+
+var LOTES_HEADERS = ['finca','lote','tipo','ha','anio_siembra','palmas_sembradas','palmas_productivas','ciclo_objetivo_dias','estado','material_genetico','supervisor','observaciones','poligono','fecha_actualizacion'];
+var HISTORIAL_LOTES_HEADERS = ['timestamp','finca','lote','campo','valor_anterior','valor_nuevo','usuario'];
+
+function loteKey(finca, lote) {
+  return String(finca||'').trim().toLowerCase() + '|' + String(lote||'').trim().toLowerCase();
+}
+
+function loteRowToObj(r) {
+  var poligono = [];
+  try {
+    if(r[12]) poligono = JSON.parse(r[12]);
+    if(!Array.isArray(poligono)) poligono = [];
+  } catch(eParse) { poligono = []; }
+  return {
+    finca: String(r[0]||''),
+    lote: String(r[1]||''),
+    tipo: String(r[2]||''),
+    ha: parseFloat(r[3])||0,
+    anio_siembra: r[4] ? parseInt(r[4],10)||'' : '',
+    palmas_sembradas: parseInt(r[5],10)||0,
+    palmas_productivas: parseInt(r[6],10)||0,
+    ciclo_objetivo_dias: parseInt(r[7],10)||0,
+    estado: String(r[8]||'activo') || 'activo',
+    material_genetico: String(r[9]||''),
+    supervisor: String(r[10]||''),
+    observaciones: String(r[11]||''),
+    poligono: poligono,
+    fecha_actualizacion: formatFecha(r[13]),
+  };
+}
+
+function seedLotesSheetIfEmpty_(sheet) {
+  if(sheet.getLastRow() > 1) return;
+  var hoy = formatFecha(new Date());
+  var filas = LOTES.map(function(l){
+    return [
+      l.finca, l.lote, l.tipo, l.ha,
+      '', 0, 0, 0,
+      'activo', '', '', '',
+      JSON.stringify([]),
+      hoy,
+    ];
+  });
+  if(filas.length > 0) {
+    sheet.getRange(2, 1, filas.length, LOTES_HEADERS.length).setValues(filas);
+  }
+}
+
+function listarLotes() {
+  var sheet = getOrCreateSheet(SHEETS.lotes, LOTES_HEADERS);
+  seedLotesSheetIfEmpty_(sheet);
+  var lastRow = sheet.getLastRow();
+  if(lastRow <= 1) return {ok:true, lotes:[]};
+  var data = sheet.getRange(2, 1, lastRow - 1, LOTES_HEADERS.length).getValues();
+  var lotes = data.filter(function(r){ return r[0] || r[1]; }).map(loteRowToObj);
+  return {ok:true, lotes:lotes};
+}
+
+function findLoteRow_(sheet, finca, lote) {
+  var lastRow = sheet.getLastRow();
+  if(lastRow <= 1) return -1;
+  var data = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+  var key = loteKey(finca, lote);
+  for(var i = 0; i < data.length; i++) {
+    if(loteKey(data[i][0], data[i][1]) === key) return i + 2;
+  }
+  return -1;
+}
+
+function crearLote(d) {
+  var finca = String(d.finca||'').trim();
+  var lote = String(d.lote||'').trim();
+  if(!finca || !lote) return {ok:false, error:'Finca y lote son requeridos'};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.lotes, LOTES_HEADERS);
+    seedLotesSheetIfEmpty_(sheet);
+    if(findLoteRow_(sheet, finca, lote) !== -1) {
+      return {ok:false, error:'Ya existe un lote con esa finca y número de lote'};
+    }
+    var fila = [
+      finca, lote,
+      String(d.tipo||'').trim(),
+      parseFloat(d.ha)||0,
+      d.anio_siembra ? parseInt(d.anio_siembra,10)||'' : '',
+      parseInt(d.palmas_sembradas,10)||0,
+      parseInt(d.palmas_productivas,10)||0,
+      parseInt(d.ciclo_objetivo_dias,10)||0,
+      String(d.estado||'activo').trim() || 'activo',
+      String(d.material_genetico||'').trim(),
+      String(d.supervisor||'').trim(),
+      String(d.observaciones||'').trim(),
+      JSON.stringify(Array.isArray(d.poligono) ? d.poligono : []),
+      formatFecha(new Date()),
+    ];
+    sheet.appendRow(fila);
+    return {ok:true};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function actualizarLote(d) {
+  var finca = String(d.finca||'').trim();
+  var lote = String(d.lote||'').trim();
+  if(!finca || !lote) return {ok:false, error:'Finca y lote son requeridos'};
+  var usuario = String(d.usuario||'').trim() || 'sistema';
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.lotes, LOTES_HEADERS);
+    seedLotesSheetIfEmpty_(sheet);
+    var fila = findLoteRow_(sheet, finca, lote);
+    if(fila === -1) return {ok:false, error:'Lote no encontrado'};
+
+    var actual = sheet.getRange(fila, 1, 1, LOTES_HEADERS.length).getValues()[0];
+    var actualObj = loteRowToObj(actual);
+
+    var editable = ['tipo','ha','anio_siembra','palmas_sembradas','palmas_productivas','ciclo_objetivo_dias','estado','material_genetico','supervisor','observaciones','poligono'];
+    var cambios = [];
+    var nuevo = actual.slice();
+
+    editable.forEach(function(campo){
+      if(d[campo] === undefined) return;
+      var idx = LOTES_HEADERS.indexOf(campo);
+      var valorAnterior, valorNuevo, valorParaGuardar;
+      if(campo === 'poligono') {
+        valorAnterior = JSON.stringify(actualObj.poligono);
+        var poligonoNuevo = Array.isArray(d.poligono) ? d.poligono : [];
+        valorNuevo = JSON.stringify(poligonoNuevo);
+        valorParaGuardar = valorNuevo;
+      } else if(campo === 'ha' ) {
+        valorAnterior = actualObj[campo];
+        valorParaGuardar = parseFloat(d[campo])||0;
+        valorNuevo = valorParaGuardar;
+      } else if(['palmas_sembradas','palmas_productivas','ciclo_objetivo_dias','anio_siembra'].indexOf(campo) >= 0) {
+        valorAnterior = actualObj[campo];
+        valorParaGuardar = parseInt(d[campo],10)||0;
+        valorNuevo = valorParaGuardar;
+      } else {
+        valorAnterior = actualObj[campo];
+        valorParaGuardar = String(d[campo]).trim();
+        valorNuevo = valorParaGuardar;
+      }
+      if(String(valorAnterior) !== String(valorNuevo)) {
+        cambios.push({campo:campo, anterior:valorAnterior, nuevo:valorNuevo});
+        nuevo[idx] = valorParaGuardar;
+      }
+    });
+
+    if(cambios.length > 0) {
+      nuevo[LOTES_HEADERS.indexOf('fecha_actualizacion')] = formatFecha(new Date());
+      sheet.getRange(fila, 1, 1, LOTES_HEADERS.length).setValues([nuevo]);
+
+      var histSheet = getOrCreateSheet(SHEETS.historialLotes, HISTORIAL_LOTES_HEADERS);
+      var histFilas = cambios.map(function(c){
+        return [new Date(), finca, lote, c.campo, String(c.anterior), String(c.nuevo), usuario];
+      });
+      histSheet.getRange(histSheet.getLastRow()+1, 1, histFilas.length, HISTORIAL_LOTES_HEADERS.length).setValues(histFilas);
+    }
+
+    return {ok:true, cambios:cambios.length};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function eliminarLote(d) {
+  var finca = String(d.finca||'').trim();
+  var lote = String(d.lote||'').trim();
+  if(!finca || !lote) return {ok:false, error:'Finca y lote son requeridos'};
+  var usuario = String(d.usuario||'').trim() || 'sistema';
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.lotes, LOTES_HEADERS);
+    seedLotesSheetIfEmpty_(sheet);
+    var fila = findLoteRow_(sheet, finca, lote);
+    if(fila === -1) return {ok:false, error:'Lote no encontrado'};
+
+    var idxEstado = LOTES_HEADERS.indexOf('estado');
+    var estadoAnterior = String(sheet.getRange(fila, idxEstado+1).getValue()||'activo');
+    if(estadoAnterior === 'inactivo') return {ok:true, yaInactivo:true};
+
+    sheet.getRange(fila, idxEstado+1).setValue('inactivo');
+    sheet.getRange(fila, LOTES_HEADERS.indexOf('fecha_actualizacion')+1).setValue(formatFecha(new Date()));
+
+    var histSheet = getOrCreateSheet(SHEETS.historialLotes, HISTORIAL_LOTES_HEADERS);
+    histSheet.appendRow([new Date(), finca, lote, 'estado', estadoAnterior, 'inactivo', usuario]);
+
+    return {ok:true};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function listarHistorialLotes() {
+  var sheet = getOrCreateSheet(SHEETS.historialLotes, HISTORIAL_LOTES_HEADERS);
+  var lastRow = sheet.getLastRow();
+  if(lastRow <= 1) return {ok:true, historial:[]};
+  var data = sheet.getRange(2, 1, lastRow - 1, HISTORIAL_LOTES_HEADERS.length).getValues();
+  var historial = data.filter(function(r){ return r[0]; }).map(function(r){
+    return {
+      timestamp: (r[0] instanceof Date) ? Utilities.formatDate(r[0], 'America/Bogota', 'yyyy-MM-dd HH:mm:ss') : String(r[0]),
+      finca: String(r[1]||''),
+      lote: String(r[2]||''),
+      campo: String(r[3]||''),
+      valor_anterior: String(r[4]||''),
+      valor_nuevo: String(r[5]||''),
+      usuario: String(r[6]||''),
+    };
+  });
+  historial.reverse();
+  return {ok:true, historial:historial};
 }

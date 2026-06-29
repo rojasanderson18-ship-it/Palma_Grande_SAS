@@ -7,6 +7,8 @@
 <!-- panel v2.1 -->
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&family=Poppins:wght@800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;}
@@ -287,6 +289,28 @@ a.mtab:hover{color:#16a34a;}
 .imp-badge.err{background:#fee2e2;color:#dc2626;}
 .imp-toast{position:fixed;bottom:24px;right:24px;background:#1a1f2e;color:#fff;padding:14px 18px;border-radius:10px;font-size:12.5px;box-shadow:0 8px 24px rgba(0,0,0,.2);display:none;z-index:999;max-width:320px;}
 .imp-toast.show{display:block;}
+.lot-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.lot-tabs{display:flex;gap:6px;border-bottom:1px solid #eef0f4;margin-bottom:14px;}
+.lot-badge{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;margin-top:4px;background:#dbeafe;color:#1e3a8a;}
+.lot-badge.guineensis{background:#dcfce7;color:#065f46;}
+.lot-icon-btn{background:none;border:none;cursor:pointer;padding:4px;border-radius:6px;color:#475467;}
+.lot-icon-btn:hover{background:#f1f3f8;}
+.lot-icon-btn.danger{color:#dc2626;}
+.lot-paginacion{display:flex;gap:6px;justify-content:flex-end;align-items:center;margin-top:14px;font-size:12.5px;}
+.lot-paginacion button{border:1px solid #eef0f4;background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;}
+.lot-paginacion button.active{background:#0f3520;color:#fff;}
+.lot-paginacion button:disabled{opacity:.4;cursor:not-allowed;}
+.lot-detalle-overlay{position:fixed;inset:0;background:rgba(15,30,20,.45);display:none;align-items:center;justify-content:flex-end;z-index:9997;}
+.lot-detalle-overlay.active{display:flex;}
+.lot-detalle-panel{width:420px;max-width:92vw;height:100%;background:#fff;overflow-y:auto;box-shadow:-8px 0 30px rgba(0,0,0,.2);}
+.lot-detalle-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef0f4;}
+.lot-detalle-title{font-size:16px;font-weight:700;color:#1a1f2e;}
+.lot-detalle-body{padding:18px 20px;}
+.lot-detalle-body h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:#667085;margin:18px 0 8px;}
+.lot-detalle-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lot-detalle-item{background:#f8fafc;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;font-size:11px;color:#667085;}
+.lot-detalle-item b{font-size:14px;color:#1a1f2e;}
+#lot-modal-overlay .admin-panel{max-height:90vh;overflow-y:auto;}
 .imp-live-panel{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:12px;padding:16px 18px;margin:18px 0;display:none;}
 .imp-live-panel.show{display:block;}
 .imp-live-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
@@ -481,6 +505,11 @@ a.mtab:hover{color:#16a34a;}
 <symbol id="i-trending-down" viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M15 17h6v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-percent" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="17.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 <symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M21 4v6h-6M3 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 13a8.5 8.5 0 0 0 14.6 4.9L21 14M20.5 11A8.5 8.5 0 0 0 5.9 6.1L3 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0-1 14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 6h12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 </defs>
 </svg>
 
@@ -567,6 +596,7 @@ a.mtab:hover{color:#16a34a;}
         <a class="sb-sublink sb-sublink2" id="sbp-anual" href="javascript:void(0)" onclick="showProduccionSub('anual')">Producción Anual</a>
         <a class="sb-sublink sb-sublink2" id="sbp-comparativo" href="javascript:void(0)" onclick="showProduccionSub('comparativo')">Comparativo</a>
       </div>
+      <a class="sb-sublink" id="sbc-lotes" href="javascript:void(0)" onclick="showCosechaTab('lotes')"><svg class="ic-svg"><use href="#i-map"/></svg> Lotes</a>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-map"/></svg> Producción por Finca</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-clock"/></svg> Ciclos</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-check"/></svg> Calidad</span>
@@ -1381,6 +1411,61 @@ a.mtab:hover{color:#16a34a;}
           <!-- /prod-sub-comparativo -->
         </div>
         <!-- /cosecha-tab-produccion -->
+
+        <div id="cosecha-tab-lotes" class="cosecha-tabpanel" style="display:none;">
+          <div class="kpi-row" id="lot-kpi-row">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Total lotes</div><div class="kpi-num" id="lot-kpi-total">—</div><div class="kpi-delta neutral" id="lot-kpi-total-sub"></div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Área total (ha)</div><div class="kpi-num" id="lot-kpi-ha">—</div><div class="kpi-delta neutral" id="lot-kpi-ha-sub"></div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-flower"/></svg></div><div class="kpi-lbl">Lotes híbridos</div><div class="kpi-num" id="lot-kpi-hibrido">—</div><div class="kpi-delta neutral" id="lot-kpi-hibrido-sub"></div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-flower"/></svg></div><div class="kpi-lbl">Lotes guineensis</div><div class="kpi-num" id="lot-kpi-guineensis">—</div><div class="kpi-delta neutral" id="lot-kpi-guineensis-sub"></div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl" title="Calculado solo si existen datos reales de Producción para el mismo finca/lote en el año en curso">Promedio ton/ha</div><div class="kpi-num" id="lot-kpi-tonha">N/D</div><div class="kpi-delta neutral" id="lot-kpi-tonha-sub">Requiere cruce con Producción</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-clock"/></svg></div><div class="kpi-lbl">Última actualización</div><div class="kpi-num" id="lot-kpi-fecha" style="font-size:15px;">—</div><div class="kpi-delta neutral"></div></div>
+          </div>
+
+          <div class="panel" style="margin-top:16px;">
+            <div class="lot-filters">
+              <select class="imp-select" id="lot-filtro-finca" onchange="lotAplicarFiltros()"><option value="">Todas las fincas</option></select>
+              <select class="imp-select" id="lot-filtro-tipo" onchange="lotAplicarFiltros()">
+                <option value="">Todos los tipos</option>
+                <option value="hibrido">Híbrido</option>
+                <option value="guineensis">Guineensis</option>
+              </select>
+              <input type="text" class="imp-select" id="lot-filtro-busqueda" placeholder="Buscar por número de lote..." oninput="lotAplicarFiltros()" style="flex:1;min-width:160px;">
+              <button class="btn-imp primary" onclick="lotAbrirModal()"><svg class="ic-svg"><use href="#i-plus"/></svg> Nuevo lote</button>
+            </div>
+
+            <div class="lot-tabs">
+              <a class="mtab active" id="lot-tab-lista" href="javascript:void(0)" onclick="lotShowTab('lista')">Lista de lotes</a>
+              <a class="mtab" id="lot-tab-mapa" href="javascript:void(0)" onclick="lotShowTab('mapa')">Mapa de lotes</a>
+              <a class="mtab" id="lot-tab-historial" href="javascript:void(0)" onclick="lotShowTab('historial')">Historial de cambios</a>
+            </div>
+
+            <div id="lot-panel-lista">
+              <div class="imp-preview-wrap">
+                <table class="imp-preview">
+                  <thead><tr><th>Finca</th><th>Lote</th><th>Tipo</th><th>Área (ha)</th><th>Año siembra</th><th>Palmas sembradas</th><th>Palmas productivas</th><th>Ciclo objetivo (días)</th><th>Estado</th><th>Acciones</th></tr></thead>
+                  <tbody id="lot-tabla-body"></tbody>
+                </table>
+              </div>
+              <div class="lot-paginacion" id="lot-paginacion"></div>
+            </div>
+
+            <div id="lot-panel-mapa" style="display:none;">
+              <div id="lot-mapa-contenedor" style="height:480px;border-radius:10px;overflow:hidden;border:1px solid #eef0f4;"></div>
+              <div class="foot-note" style="margin-top:10px;">Solo se muestran lotes con polígono registrado. Haga clic en un polígono para ver el detalle del lote.</div>
+            </div>
+
+            <div id="lot-panel-historial" style="display:none;">
+              <div class="imp-preview-wrap">
+                <table class="imp-preview">
+                  <thead><tr><th>Fecha</th><th>Finca</th><th>Lote</th><th>Campo</th><th>Valor anterior</th><th>Valor nuevo</th><th>Usuario</th></tr></thead>
+                  <tbody id="lot-historial-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /cosecha-tab-lotes -->
       </div>
       <!-- /section-cosecha -->
 
@@ -1445,6 +1530,96 @@ a.mtab:hover{color:#16a34a;}
   </div>
 
 </div>
+</div>
+
+<div id="lot-detalle-overlay" class="lot-detalle-overlay" onclick="if(event.target===this) lotCerrarDetalle()">
+  <div class="lot-detalle-panel">
+    <div class="lot-detalle-head">
+      <div>
+        <div class="lot-detalle-title" id="lot-det-titulo">—</div>
+        <span class="lot-badge" id="lot-det-tipo-badge">—</span>
+      </div>
+      <button class="admin-close" onclick="lotCerrarDetalle()"><svg class="ic-svg"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="lot-detalle-body">
+      <div class="lot-detalle-grid">
+        <div class="lot-detalle-item"><span>Área</span><b id="lot-det-ha">—</b></div>
+        <div class="lot-detalle-item"><span>Año siembra</span><b id="lot-det-anio">—</b></div>
+        <div class="lot-detalle-item"><span>Palmas sembradas</span><b id="lot-det-sembradas">—</b></div>
+        <div class="lot-detalle-item"><span>Palmas productivas</span><b id="lot-det-productivas">—</b></div>
+        <div class="lot-detalle-item"><span>Material genético</span><b id="lot-det-material">—</b></div>
+        <div class="lot-detalle-item"><span>Densidad (palmas/ha)</span><b id="lot-det-densidad">—</b></div>
+      </div>
+
+      <h4>Indicadores</h4>
+      <div class="lot-detalle-grid">
+        <div class="lot-detalle-item" title="Calculado solo si existen registros reales de Producción para este finca/lote en el año en curso"><span>Producción (t) año actual</span><b id="lot-det-prod-t">N/D</b></div>
+        <div class="lot-detalle-item" title="Calculado solo si existen registros reales de Producción para este finca/lote en el año en curso"><span>Ton/ha año actual</span><b id="lot-det-tonha">N/D</b></div>
+        <div class="lot-detalle-item" title="No se puede derivar de forma confiable con los datos disponibles en esta versión"><span>Racimos/ha</span><b>N/D</b></div>
+        <div class="lot-detalle-item" title="No se puede derivar de forma confiable con los datos disponibles en esta versión"><span>OER estimado</span><b>N/D</b></div>
+      </div>
+
+      <h4>Ubicación</h4>
+      <div id="lot-det-mapa" style="height:220px;border-radius:10px;overflow:hidden;border:1px solid #eef0f4;"></div>
+      <div class="foot-note" id="lot-det-sinpoligono" style="display:none;margin-top:8px;">Sin polígono registrado.</div>
+
+      <h4>Supervisor y observaciones</h4>
+      <div class="login-field">
+        <label>SUPERVISOR ASIGNADO</label>
+        <input type="text" id="lot-det-supervisor" class="imp-select" style="width:100%;">
+      </div>
+      <div class="login-field" style="margin-top:10px;">
+        <label>OBSERVACIONES</label>
+        <textarea id="lot-det-observaciones" class="imp-select" style="width:100%;min-height:80px;resize:vertical;"></textarea>
+      </div>
+      <button class="btn-imp primary" style="margin-top:10px;" onclick="lotGuardarDetalle()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div id="lot-modal-overlay" class="lot-detalle-overlay" onclick="if(event.target===this) lotCerrarModal()">
+  <div class="admin-panel" style="max-width:560px;">
+    <div class="admin-panel-head">
+      <h3 id="lot-modal-titulo">Nuevo lote</h3>
+      <button class="admin-close" onclick="lotCerrarModal()"><svg class="ic-svg"><use href="#i-x"/></svg></button>
+    </div>
+    <form id="lot-modal-form" onsubmit="lotGuardarModal(event)">
+      <input type="hidden" id="lot-f-original-finca" value="">
+      <input type="hidden" id="lot-f-original-lote" value="">
+      <div class="admin-form-grid">
+        <div class="login-field"><label>FINCA</label><input type="text" id="lot-f-finca" class="imp-select" required></div>
+        <div class="login-field"><label>LOTE</label><input type="text" id="lot-f-lote" class="imp-select" required></div>
+        <div class="login-field"><label>TIPO DE PALMA</label>
+          <select id="lot-f-tipo" class="imp-select">
+            <option value="hibrido">Híbrido</option>
+            <option value="guineensis">Guineensis</option>
+          </select>
+        </div>
+        <div class="login-field"><label>ÁREA (ha)</label><input type="number" step="0.01" id="lot-f-ha" class="imp-select"></div>
+        <div class="login-field"><label>AÑO DE SIEMBRA</label><input type="number" id="lot-f-anio" class="imp-select"></div>
+        <div class="login-field"><label>PALMAS SEMBRADAS</label><input type="number" id="lot-f-sembradas" class="imp-select"></div>
+        <div class="login-field"><label>PALMAS PRODUCTIVAS</label><input type="number" id="lot-f-productivas" class="imp-select"></div>
+        <div class="login-field"><label>CICLO OBJETIVO (días)</label><input type="number" id="lot-f-ciclo" class="imp-select"></div>
+        <div class="login-field"><label>ESTADO</label>
+          <select id="lot-f-estado" class="imp-select">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="login-field"><label>MATERIAL GENÉTICO</label><input type="text" id="lot-f-material" class="imp-select"></div>
+        <div class="login-field"><label>SUPERVISOR</label><input type="text" id="lot-f-supervisor" class="imp-select"></div>
+      </div>
+      <div class="login-field" style="margin-top:10px;">
+        <label>OBSERVACIONES</label>
+        <textarea id="lot-f-observaciones" class="imp-select" style="width:100%;min-height:60px;resize:vertical;"></textarea>
+      </div>
+      <div class="foot-note" style="margin-top:8px;">El polígono del lote se dibuja próximamente; por ahora se gestiona en la pestaña "Mapa de lotes" solo en modo lectura.</div>
+      <div class="admin-form-actions">
+        <button type="submit" class="btn-login" id="lot-modal-submit">Crear lote</button>
+        <button type="button" class="admin-cancel-edit" style="display:inline-block;" onclick="lotCerrarModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div id="admin-screen">
@@ -1718,6 +1893,7 @@ const SECTION_INFO = {
 const COSECHA_TAB_INFO = {
   resumen:     {title: 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
   produccion:  {title: 'Producción', sub: 'Análisis detallado de la producción de fruta'},
+  lotes:       {title: 'Lotes', sub: 'Gestión técnica de lotes de cultivo'},
 };
 
 function showSection(name){
@@ -1741,13 +1917,16 @@ function showCosechaTab(name){
   showSection('cosecha');
   document.getElementById('cosecha-tab-resumen').style.display = name === 'resumen' ? '' : 'none';
   document.getElementById('cosecha-tab-produccion').style.display = name === 'produccion' ? '' : 'none';
+  document.getElementById('cosecha-tab-lotes').style.display = name === 'lotes' ? '' : 'none';
   document.getElementById('sbc-resumen').classList.toggle('active', name === 'resumen');
   document.getElementById('sbc-produccion').classList.toggle('active', name === 'produccion');
+  document.getElementById('sbc-lotes').classList.toggle('active', name === 'lotes');
   document.getElementById('sb-prod-sub').style.display = name === 'produccion' ? '' : 'none';
   const info = COSECHA_TAB_INFO[name];
   document.getElementById('topbar-greeting').textContent = info.title;
   document.getElementById('topbar-sub').textContent = info.sub;
   if(name === 'produccion') showProduccionSub('diaria');
+  if(name === 'lotes' && typeof lotInit === 'function') lotInit();
 }
 
 const PRODUCCION_SUB_INFO = {
@@ -2874,6 +3053,373 @@ async function impRenderProduccionTab(name){
     impRefreshLivePanels();
   });
 })();
+
+/* ===================== LOTES ===================== */
+let lotData = [];
+let lotHistorial = [];
+let lotLoaded = false;
+let lotPage = 1;
+const LOT_PAGE_SIZE = 10;
+let lotMapaInstance = null;
+let lotMapaLayers = [];
+let lotDetalleMapaInstance = null;
+let lotDetalleActual = null;
+
+function lotToast(msg){
+  if (typeof impToast === 'function') { impToast(msg); return; }
+  if (typeof showToast === 'function') { showToast(msg); return; }
+}
+
+async function lotFetchLotes(force){
+  if (lotLoaded && !force) return lotData;
+  const resp = await gasJSONP(GAS_URL + '?accion=listarLotes');
+  lotData = (resp && resp.ok && Array.isArray(resp.lotes)) ? resp.lotes : [];
+  lotLoaded = true;
+  return lotData;
+}
+
+async function lotFetchHistorial(force){
+  const resp = await gasJSONP(GAS_URL + '?accion=listarHistorialLotes');
+  lotHistorial = (resp && resp.ok && Array.isArray(resp.historial)) ? resp.historial : [];
+  return lotHistorial;
+}
+
+async function lotInit(){
+  await lotFetchLotes();
+  lotPopularFiltroFinca();
+  lotRenderKPIs();
+  lotPage = 1;
+  lotRenderTabla();
+  lotShowTab(document.getElementById('lot-tab-mapa').classList.contains('active') ? 'mapa' : (document.getElementById('lot-tab-historial').classList.contains('active') ? 'historial' : 'lista'));
+}
+
+function lotPopularFiltroFinca(){
+  const sel = document.getElementById('lot-filtro-finca');
+  const actual = sel.value;
+  const fincas = Array.from(new Set(lotData.map(l => l.finca))).sort();
+  sel.innerHTML = '<option value="">Todas las fincas</option>' + fincas.map(f => '<option value="' + f + '">' + f + '</option>').join('');
+  sel.value = actual;
+}
+
+function lotRenderKPIs(){
+  const activos = lotData.filter(l => l.estado !== 'inactivo');
+  const total = activos.length;
+  const ha = activos.reduce((s,l) => s + (parseFloat(l.ha)||0), 0);
+  const hibridos = activos.filter(l => l.tipo === 'hibrido').length;
+  const guineensis = activos.filter(l => l.tipo === 'guineensis').length;
+  impSetText('lot-kpi-total', String(total));
+  impSetText('lot-kpi-total-sub', total + ' lote(s) activos');
+  impSetText('lot-kpi-ha', impNum(ha,1));
+  impSetText('lot-kpi-ha-sub', 'Suma de área de lotes activos');
+  impSetText('lot-kpi-hibrido', String(hibridos) + (total ? ' (' + impNum(hibridos/total*100,1) + '%)' : ''));
+  impSetText('lot-kpi-guineensis', String(guineensis) + (total ? ' (' + impNum(guineensis/total*100,1) + '%)' : ''));
+  const fechas = lotData.map(l => l.fecha_actualizacion).filter(Boolean).sort();
+  impSetText('lot-kpi-fecha', fechas.length ? fechas[fechas.length-1] : '—');
+}
+
+function lotFiltrados(){
+  const finca = document.getElementById('lot-filtro-finca').value;
+  const tipo = document.getElementById('lot-filtro-tipo').value;
+  const q = (document.getElementById('lot-filtro-busqueda').value || '').trim().toLowerCase();
+  return lotData.filter(l => {
+    if (finca && l.finca !== finca) return false;
+    if (tipo && l.tipo !== tipo) return false;
+    if (q && !String(l.lote).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function lotAplicarFiltros(){
+  lotPage = 1;
+  lotRenderTabla();
+}
+
+function lotRenderTabla(){
+  const filtrados = lotFiltrados();
+  const totalPages = Math.max(1, Math.ceil(filtrados.length / LOT_PAGE_SIZE));
+  if (lotPage > totalPages) lotPage = totalPages;
+  const start = (lotPage-1)*LOT_PAGE_SIZE;
+  const pageRows = filtrados.slice(start, start+LOT_PAGE_SIZE);
+
+  if (!pageRows.length){
+    impSetHTML('lot-tabla-body', impEmptyRow ? impEmptyRow(10) : '<tr><td colspan="10">Sin datos</td></tr>');
+  } else {
+    impSetHTML('lot-tabla-body', pageRows.map(l => {
+      const estadoBadge = l.estado === 'inactivo'
+        ? '<span class="imp-badge err">Inactivo</span>'
+        : '<span class="imp-badge ok">Activo</span>';
+      return '<tr>' +
+        '<td>' + (l.finca||'') + '</td>' +
+        '<td>' + (l.lote||'') + '</td>' +
+        '<td>' + (l.tipo||'') + '</td>' +
+        '<td>' + impNum(l.ha,1) + '</td>' +
+        '<td>' + (l.anio_siembra || '—') + '</td>' +
+        '<td>' + (l.palmas_sembradas || 0) + '</td>' +
+        '<td>' + (l.palmas_productivas || 0) + '</td>' +
+        '<td>' + (l.ciclo_objetivo_dias || 0) + '</td>' +
+        '<td>' + estadoBadge + '</td>' +
+        '<td>' +
+          '<button class="lot-icon-btn" title="Editar" onclick="lotAbrirModal(\'' + lotEsc(l.finca) + '\',\'' + lotEsc(l.lote) + '\')"><svg class="ic-svg"><use href="#i-edit"/></svg></button>' +
+          '<button class="lot-icon-btn" title="Ver detalle" onclick="lotAbrirDetalle(\'' + lotEsc(l.finca) + '\',\'' + lotEsc(l.lote) + '\')"><svg class="ic-svg"><use href="#i-eye"/></svg></button>' +
+          '<button class="lot-icon-btn danger" title="Eliminar" onclick="lotEliminar(\'' + lotEsc(l.finca) + '\',\'' + lotEsc(l.lote) + '\')"><svg class="ic-svg"><use href="#i-trash"/></svg></button>' +
+        '</td>' +
+      '</tr>';
+    }).join(''));
+  }
+
+  const pagWrap = document.getElementById('lot-paginacion');
+  if (totalPages <= 1){ pagWrap.innerHTML = ''; return; }
+  let html = '<button ' + (lotPage<=1?'disabled':'') + ' onclick="lotIrPagina(' + (lotPage-1) + ')">‹</button>';
+  for (let p=1; p<=totalPages; p++){
+    html += '<button class="' + (p===lotPage?'active':'') + '" onclick="lotIrPagina(' + p + ')">' + p + '</button>';
+  }
+  html += '<button ' + (lotPage>=totalPages?'disabled':'') + ' onclick="lotIrPagina(' + (lotPage+1) + ')">›</button>';
+  pagWrap.innerHTML = html;
+}
+
+function lotIrPagina(p){ lotPage = p; lotRenderTabla(); }
+
+function lotEsc(s){ return String(s||'').replace(/'/g, "\\'"); }
+
+function lotShowTab(name){
+  document.getElementById('lot-tab-lista').classList.toggle('active', name==='lista');
+  document.getElementById('lot-tab-mapa').classList.toggle('active', name==='mapa');
+  document.getElementById('lot-tab-historial').classList.toggle('active', name==='historial');
+  document.getElementById('lot-panel-lista').style.display = name==='lista' ? '' : 'none';
+  document.getElementById('lot-panel-mapa').style.display = name==='mapa' ? '' : 'none';
+  document.getElementById('lot-panel-historial').style.display = name==='historial' ? '' : 'none';
+  if (name === 'mapa') lotRenderMapa();
+  if (name === 'historial') lotRenderHistorial();
+}
+
+function lotRenderMapa(){
+  if (typeof L === 'undefined') return;
+  const cont = document.getElementById('lot-mapa-contenedor');
+  if (!lotMapaInstance){
+    lotMapaInstance = L.map(cont).setView([4.0, -74.0], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(lotMapaInstance);
+  }
+  lotMapaLayers.forEach(layer => lotMapaInstance.removeLayer(layer));
+  lotMapaLayers = [];
+
+  const bounds = [];
+  lotData.forEach(l => {
+    if (!Array.isArray(l.poligono) || l.poligono.length < 3) return;
+    const latlngs = l.poligono.map(p => [p.lat, p.lng]);
+    const color = l.tipo === 'guineensis' ? '#16a34a' : '#1e3a8a';
+    const poly = L.polygon(latlngs, {color: color, weight:2, fillOpacity:0.35}).addTo(lotMapaInstance);
+    poly.bindTooltip((l.finca||'') + ' - Lote ' + (l.lote||''));
+    poly.on('click', () => lotAbrirDetalle(l.finca, l.lote));
+    lotMapaLayers.push(poly);
+    latlngs.forEach(ll => bounds.push(ll));
+  });
+
+  setTimeout(() => { lotMapaInstance && lotMapaInstance.invalidateSize(); }, 50);
+  if (bounds.length) lotMapaInstance.fitBounds(bounds, {padding:[20,20]});
+}
+
+async function lotRenderHistorial(){
+  await lotFetchHistorial();
+  if (!lotHistorial.length){
+    impSetHTML('lot-historial-body', impEmptyRow ? impEmptyRow(7) : '<tr><td colspan="7">Sin historial</td></tr>');
+    return;
+  }
+  impSetHTML('lot-historial-body', lotHistorial.map(h => {
+    return '<tr><td>' + h.timestamp + '</td><td>' + h.finca + '</td><td>' + h.lote + '</td><td>' + h.campo + '</td><td>' + h.valor_anterior + '</td><td>' + h.valor_nuevo + '</td><td>' + h.usuario + '</td></tr>';
+  }).join(''));
+}
+
+function lotFindByKey(finca, lote){
+  return lotData.find(l => String(l.finca).trim().toLowerCase() === String(finca).trim().toLowerCase() && String(l.lote).trim().toLowerCase() === String(lote).trim().toLowerCase());
+}
+
+/* --- Modal Nuevo / Editar --- */
+function lotAbrirModal(finca, lote){
+  const editando = finca !== undefined && lote !== undefined;
+  document.getElementById('lot-modal-titulo').textContent = editando ? 'Editar lote' : 'Nuevo lote';
+  document.getElementById('lot-modal-submit').textContent = editando ? 'Guardar cambios' : 'Crear lote';
+  document.getElementById('lot-f-original-finca').value = editando ? finca : '';
+  document.getElementById('lot-f-original-lote').value = editando ? lote : '';
+
+  const l = editando ? lotFindByKey(finca, lote) : null;
+  document.getElementById('lot-f-finca').value = l ? l.finca : '';
+  document.getElementById('lot-f-finca').disabled = !!editando;
+  document.getElementById('lot-f-lote').value = l ? l.lote : '';
+  document.getElementById('lot-f-lote').disabled = !!editando;
+  document.getElementById('lot-f-tipo').value = l ? l.tipo : 'hibrido';
+  document.getElementById('lot-f-ha').value = l ? l.ha : '';
+  document.getElementById('lot-f-anio').value = l ? l.anio_siembra : '';
+  document.getElementById('lot-f-sembradas').value = l ? l.palmas_sembradas : '';
+  document.getElementById('lot-f-productivas').value = l ? l.palmas_productivas : '';
+  document.getElementById('lot-f-ciclo').value = l ? l.ciclo_objetivo_dias : '';
+  document.getElementById('lot-f-estado').value = l ? l.estado : 'activo';
+  document.getElementById('lot-f-material').value = l ? l.material_genetico : '';
+  document.getElementById('lot-f-supervisor').value = l ? l.supervisor : '';
+  document.getElementById('lot-f-observaciones').value = l ? l.observaciones : '';
+
+  document.getElementById('lot-modal-overlay').classList.add('active');
+}
+
+function lotCerrarModal(){
+  document.getElementById('lot-modal-overlay').classList.remove('active');
+  document.getElementById('lot-f-finca').disabled = false;
+  document.getElementById('lot-f-lote').disabled = false;
+}
+
+async function lotGuardarModal(ev){
+  ev.preventDefault();
+  const origFinca = document.getElementById('lot-f-original-finca').value;
+  const origLote = document.getElementById('lot-f-original-lote').value;
+  const editando = !!(origFinca && origLote);
+
+  const payload = {
+    finca: editando ? origFinca : document.getElementById('lot-f-finca').value.trim(),
+    lote: editando ? origLote : document.getElementById('lot-f-lote').value.trim(),
+    tipo: document.getElementById('lot-f-tipo').value,
+    ha: parseFloat(document.getElementById('lot-f-ha').value) || 0,
+    anio_siembra: document.getElementById('lot-f-anio').value || '',
+    palmas_sembradas: parseInt(document.getElementById('lot-f-sembradas').value,10) || 0,
+    palmas_productivas: parseInt(document.getElementById('lot-f-productivas').value,10) || 0,
+    ciclo_objetivo_dias: parseInt(document.getElementById('lot-f-ciclo').value,10) || 0,
+    estado: document.getElementById('lot-f-estado').value,
+    material_genetico: document.getElementById('lot-f-material').value.trim(),
+    supervisor: document.getElementById('lot-f-supervisor').value.trim(),
+    observaciones: document.getElementById('lot-f-observaciones').value.trim(),
+  };
+
+  if (!payload.finca || !payload.lote){
+    lotToast('Finca y lote son requeridos.');
+    return;
+  }
+
+  const accion = editando ? 'actualizarLote' : 'crearLote';
+  const resp = await gasJSONP(GAS_URL + '?accion=' + accion + '&data=' + encodeURIComponent(JSON.stringify(payload)));
+  if (resp && resp.ok){
+    lotToast(editando ? 'Lote actualizado correctamente.' : 'Lote creado correctamente.');
+    lotCerrarModal();
+    await lotFetchLotes(true);
+    lotPopularFiltroFinca();
+    lotRenderKPIs();
+    lotRenderTabla();
+  } else {
+    lotToast('Error al guardar el lote' + (resp && resp.error ? ': ' + resp.error : '') + '.');
+  }
+}
+
+async function lotEliminar(finca, lote){
+  if (!confirm('¿Eliminar (marcar como inactivo) el lote ' + lote + ' de ' + finca + '?')) return;
+  const resp = await gasJSONP(GAS_URL + '?accion=eliminarLote&data=' + encodeURIComponent(JSON.stringify({finca, lote})));
+  if (resp && resp.ok){
+    lotToast('Lote marcado como inactivo.');
+    await lotFetchLotes(true);
+    lotRenderKPIs();
+    lotRenderTabla();
+  } else {
+    lotToast('Error al eliminar el lote' + (resp && resp.error ? ': ' + resp.error : '') + '.');
+  }
+}
+
+/* --- Detalle del lote --- */
+async function lotAbrirDetalle(finca, lote){
+  const l = lotFindByKey(finca, lote);
+  if (!l){ lotToast('No se encontró el lote.'); return; }
+  lotDetalleActual = l;
+
+  document.getElementById('lot-det-titulo').textContent = l.finca + ' · Lote ' + l.lote;
+  const badge = document.getElementById('lot-det-tipo-badge');
+  badge.textContent = l.tipo === 'guineensis' ? 'Guineensis' : 'Híbrido';
+  badge.className = 'lot-badge' + (l.tipo === 'guineensis' ? ' guineensis' : '');
+
+  impSetText('lot-det-ha', impNum(l.ha,1) + ' ha');
+  impSetText('lot-det-anio', l.anio_siembra || 'N/D');
+  impSetText('lot-det-sembradas', l.palmas_sembradas || 0);
+  impSetText('lot-det-productivas', l.palmas_productivas || 0);
+  impSetText('lot-det-material', l.material_genetico || 'N/D');
+  const densidad = (l.palmas_sembradas > 0 && l.ha > 0) ? impNum(l.palmas_sembradas / l.ha, 1) : 'N/D';
+  impSetText('lot-det-densidad', densidad);
+
+  document.getElementById('lot-det-supervisor').value = l.supervisor || '';
+  document.getElementById('lot-det-observaciones').value = l.observaciones || '';
+
+  await lotCalcularIndicadores(l);
+  lotRenderDetalleMapa(l);
+
+  document.getElementById('lot-detalle-overlay').classList.add('active');
+}
+
+function lotCerrarDetalle(){
+  document.getElementById('lot-detalle-overlay').classList.remove('active');
+}
+
+async function lotCalcularIndicadores(l){
+  impSetText('lot-det-prod-t', 'N/D');
+  impSetText('lot-det-tonha', 'N/D');
+  try {
+    if (typeof impFetchProduccion !== 'function') return;
+    const filas = await impFetchProduccion();
+    if (!Array.isArray(filas) || !filas.length) return;
+    const anioActual = new Date().getFullYear();
+    const norm = s => String(s||'').trim().toLowerCase();
+    const matching = filas.filter(f => {
+      if (norm(f.finca) !== norm(l.finca) || norm(f.lote) !== norm(l.lote)) return false;
+      const anio = f.fecha ? parseInt(String(f.fecha).slice(0,4),10) : null;
+      return anio === anioActual;
+    });
+    if (!matching.length) return;
+    const totalT = matching.reduce((s,f) => s + (parseFloat(f.toneladas)||0), 0);
+    impSetText('lot-det-prod-t', impNum(totalT,1) + ' t');
+    if (l.ha > 0) impSetText('lot-det-tonha', impNum(totalT / l.ha, 2));
+  } catch(e){ /* keep N/D on any failure */ }
+}
+
+function lotRenderDetalleMapa(l){
+  const cont = document.getElementById('lot-det-mapa');
+  const sinPoligono = document.getElementById('lot-det-sinpoligono');
+  const tienePoligono = Array.isArray(l.poligono) && l.poligono.length >= 3;
+  cont.style.display = tienePoligono ? '' : 'none';
+  sinPoligono.style.display = tienePoligono ? 'none' : '';
+  if (!tienePoligono || typeof L === 'undefined') return;
+
+  if (!lotDetalleMapaInstance){
+    lotDetalleMapaInstance = L.map(cont);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(lotDetalleMapaInstance);
+  }
+  lotDetalleMapaInstance.eachLayer(layer => {
+    if (layer instanceof L.Polygon) lotDetalleMapaInstance.removeLayer(layer);
+  });
+  const latlngs = l.poligono.map(p => [p.lat, p.lng]);
+  const color = l.tipo === 'guineensis' ? '#16a34a' : '#1e3a8a';
+  const poly = L.polygon(latlngs, {color, weight:2, fillOpacity:0.35}).addTo(lotDetalleMapaInstance);
+  setTimeout(() => {
+    lotDetalleMapaInstance.invalidateSize();
+    lotDetalleMapaInstance.fitBounds(poly.getBounds(), {padding:[10,10]});
+  }, 50);
+}
+
+async function lotGuardarDetalle(){
+  if (!lotDetalleActual) return;
+  const payload = {
+    finca: lotDetalleActual.finca,
+    lote: lotDetalleActual.lote,
+    supervisor: document.getElementById('lot-det-supervisor').value.trim(),
+    observaciones: document.getElementById('lot-det-observaciones').value.trim(),
+  };
+  const resp = await gasJSONP(GAS_URL + '?accion=actualizarLote&data=' + encodeURIComponent(JSON.stringify(payload)));
+  if (resp && resp.ok){
+    lotToast('Cambios guardados correctamente.');
+    await lotFetchLotes(true);
+    lotRenderKPIs();
+    lotRenderTabla();
+  } else {
+    lotToast('Error al guardar los cambios' + (resp && resp.error ? ': ' + resp.error : '') + '.');
+  }
+}
 </script>
 </body>
 </html>
