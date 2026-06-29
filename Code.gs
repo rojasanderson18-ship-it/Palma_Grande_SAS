@@ -400,6 +400,18 @@ function doGet(e) {
         return jsonResponse(errResultPoly);
       }
     }
+    if(accion === 'importarLotesBulk'){
+      try {
+        var dBulkLot = params.data ? JSON.parse(decodeURIComponent(params.data)) : [];
+        var resultBulkLot = importarLotesBulk(dBulkLot);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultBulkLot)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultBulkLot);
+      } catch(errBulkLot) {
+        var errResultBulkLot = {ok:false, error: errBulkLot.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultBulkLot)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultBulkLot);
+      }
+    }
 
     return jsonResponse({ok:true, msg:'API Palma Grande activa'});
   } catch(err) {
@@ -1847,6 +1859,93 @@ function cargarPoligonosLotes() {
       actualizados.push(item.finca + '/' + item.lote);
     });
     return {ok: true, actualizados: actualizados.length, noEncontrados: noEncontrados};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function importarLotesBulk(filas) {
+  if (!Array.isArray(filas)) return {ok:false, error:'Formato inválido'};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.lotes, LOTES_HEADERS);
+    seedLotesSheetIfEmpty_(sheet);
+    var lastRow = sheet.getLastRow();
+    var existingData = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, LOTES_HEADERS.length).getValues() : [];
+    var keyToIdx = {};
+    existingData.forEach(function(r, idx){ keyToIdx[loteKey(r[0], r[1])] = idx; });
+
+    var histSheet = getOrCreateSheet(SHEETS.historialLotes, HISTORIAL_LOTES_HEADERS);
+    var histRows = [];
+    var nuevasFilas = [];
+    var nuevasKeys = {};
+    var creados = 0, actualizados = 0, errores = [];
+    var editable = ['tipo','ha','anio_siembra','palmas_sembradas','palmas_productivas','ciclo_objetivo_dias','estado','material_genetico','supervisor','observaciones'];
+
+    filas.forEach(function(d) {
+      var finca = String(d.finca||'').trim();
+      var lote = String(d.lote||'').trim();
+      if(!finca || !lote) { errores.push({finca:finca, lote:lote, error:'Finca y lote son requeridos'}); return; }
+      var key = loteKey(finca, lote);
+
+      if (keyToIdx[key] !== undefined) {
+        var idx = keyToIdx[key];
+        var actual = existingData[idx];
+        var actualObj = loteRowToObj(actual);
+        var nuevo = actual.slice();
+        var cambios = [];
+        editable.forEach(function(campo) {
+          if(d[campo] === undefined) return;
+          var colIdx = LOTES_HEADERS.indexOf(campo);
+          var valorAnterior, valorNuevo, valorParaGuardar;
+          if(campo === 'ha') {
+            valorAnterior = actualObj[campo]; valorParaGuardar = parseFloat(d[campo])||0; valorNuevo = valorParaGuardar;
+          } else if(['palmas_sembradas','palmas_productivas','ciclo_objetivo_dias','anio_siembra'].indexOf(campo) >= 0) {
+            valorAnterior = actualObj[campo]; valorParaGuardar = parseInt(d[campo],10)||0; valorNuevo = valorParaGuardar;
+          } else {
+            valorAnterior = actualObj[campo]; valorParaGuardar = String(d[campo]).trim(); valorNuevo = valorParaGuardar;
+          }
+          if(String(valorAnterior) !== String(valorNuevo)) {
+            cambios.push({campo:campo, anterior:valorAnterior, nuevo:valorNuevo});
+            nuevo[colIdx] = valorParaGuardar;
+          }
+        });
+        if (cambios.length > 0) {
+          nuevo[LOTES_HEADERS.indexOf('fecha_actualizacion')] = formatFecha(new Date());
+          existingData[idx] = nuevo;
+          cambios.forEach(function(c) {
+            histRows.push([new Date(), finca, lote, c.campo, String(c.anterior), String(c.nuevo), 'importacion']);
+          });
+        }
+        actualizados++;
+      } else if (nuevasKeys[key]) {
+        errores.push({finca:finca, lote:lote, error:'Duplicado dentro del mismo lote de importación'});
+      } else {
+        nuevasKeys[key] = true;
+        nuevasFilas.push([
+          finca, lote, String(d.tipo||'').trim(), parseFloat(d.ha)||0,
+          d.anio_siembra ? parseInt(d.anio_siembra,10)||'' : '',
+          parseInt(d.palmas_sembradas,10)||0, parseInt(d.palmas_productivas,10)||0,
+          parseInt(d.ciclo_objetivo_dias,10)||0, String(d.estado||'activo').trim() || 'activo',
+          String(d.material_genetico||'').trim(), String(d.supervisor||'').trim(),
+          String(d.observaciones||'').trim(), JSON.stringify([]), formatFecha(new Date()),
+        ]);
+        creados++;
+      }
+    });
+
+    if (existingData.length) {
+      sheet.getRange(2, 1, existingData.length, LOTES_HEADERS.length).setValues(existingData);
+    }
+    if (nuevasFilas.length) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, nuevasFilas.length, LOTES_HEADERS.length).setValues(nuevasFilas);
+    }
+    if (histRows.length) {
+      histSheet.getRange(histSheet.getLastRow() + 1, 1, histRows.length, HISTORIAL_LOTES_HEADERS.length).setValues(histRows);
+    }
+
+    return {ok:true, creados:creados, actualizados:actualizados, errores:errores};
   } finally {
     lock.releaseLock();
   }
