@@ -79,20 +79,8 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 .mc-pronto{opacity:.55;cursor:not-allowed;pointer-events:none;}
 
 /* ── LOGIN AGROVISIÓN ───────────────────── */
-#login-screen{position:fixed;inset:0;background:#FFFFFF;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:auto;font-family:"DM Sans",sans-serif;padding:20px;}
+#login-screen{position:fixed;inset:0;background:#FFFFFF url('fondo_login_desktop.jpg') center center no-repeat;background-size:cover;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:auto;font-family:"DM Sans",sans-serif;padding:20px;}
 #login-screen.hidden{display:none;}
-
-/* Decoración de fondo corporativo: hojas suaves en las esquinas + paisaje difuminado */
-.bg-deco{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
-.leaf-corner{position:absolute;width:300px;height:300px;opacity:.1;color:#1f6d3a;}
-.leaf-corner.tl{top:-50px;left:-60px;}
-.leaf-corner.tr{top:-50px;right:-60px;transform:scaleX(-1);}
-.leaf-corner.bl{bottom:-50px;left:-60px;transform:scaleY(-1);}
-.leaf-corner.br{bottom:-50px;right:-60px;transform:scale(-1,-1);}
-.plantation-band{position:absolute;left:0;right:0;bottom:0;height:20%;overflow:hidden;}
-.plantation-photo{position:absolute;inset:0;background-image:url('fondo_login_desktop.jpg');background-size:cover;background-position:center bottom;filter:blur(9px) saturate(.85);opacity:.28;}
-.plantation-fade{position:absolute;top:0;left:0;right:0;height:65%;background:linear-gradient(to bottom,#fff 0%,rgba(255,255,255,0) 100%);z-index:2;}
-.wave-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:3;}
 
 .login-wrap{position:relative;z-index:1;width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .login-brand{display:flex;flex-direction:column;align-items:center;text-align:center;color:#13321f;margin-bottom:18px;}
@@ -129,8 +117,7 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 .login-pin-box.active{display:block;}
 .login-card.pin-mode .login-userpass{display:none;}
 @media (max-width:760px){
-  .plantation-photo{background-image:url('fondo_login_mobile.jpg');}
-  .leaf-corner{width:180px;height:180px;}
+  #login-screen{background-image:url('fondo_login_mobile.jpg');}
   .login-brand img{width:110px;height:110px;}
   .login-brand h1{font-size:24px;}
   .login-card{width:100%;padding:28px 22px;}
@@ -140,20 +127,6 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 <body>
 
 <div id="login-screen">
-  <div class="bg-deco" aria-hidden="true">
-    <svg class="leaf-corner tl" viewBox="0 0 200 200" fill="currentColor"><path d="M0 0 C 60 10, 110 40, 140 90 C 160 125, 165 160, 160 200 C 150 165, 130 130, 95 105 C 60 80, 25 55, 0 30 Z"/><path d="M0 0 C 40 25, 75 55, 100 95 C 120 128, 130 165, 128 200 C 118 168, 100 138, 72 112 C 45 88, 20 60, 0 25 Z" opacity=".6"/></svg>
-    <svg class="leaf-corner tr" viewBox="0 0 200 200" fill="currentColor"><path d="M0 0 C 60 10, 110 40, 140 90 C 160 125, 165 160, 160 200 C 150 165, 130 130, 95 105 C 60 80, 25 55, 0 30 Z"/><path d="M0 0 C 40 25, 75 55, 100 95 C 120 128, 130 165, 128 200 C 118 168, 100 138, 72 112 C 45 88, 20 60, 0 25 Z" opacity=".6"/></svg>
-    <svg class="leaf-corner bl" viewBox="0 0 200 200" fill="currentColor"><path d="M0 0 C 60 10, 110 40, 140 90 C 160 125, 165 160, 160 200 C 150 165, 130 130, 95 105 C 60 80, 25 55, 0 30 Z"/><path d="M0 0 C 40 25, 75 55, 100 95 C 120 128, 130 165, 128 200 C 118 168, 100 138, 72 112 C 45 88, 20 60, 0 25 Z" opacity=".6"/></svg>
-    <svg class="leaf-corner br" viewBox="0 0 200 200" fill="currentColor"><path d="M0 0 C 60 10, 110 40, 140 90 C 160 125, 165 160, 160 200 C 150 165, 130 130, 95 105 C 60 80, 25 55, 0 30 Z"/><path d="M0 0 C 40 25, 75 55, 100 95 C 120 128, 130 165, 128 200 C 118 168, 100 138, 72 112 C 45 88, 20 60, 0 25 Z" opacity=".6"/></svg>
-    <div class="plantation-band">
-      <div class="plantation-photo"></div>
-      <div class="plantation-fade"></div>
-      <svg class="wave-overlay" viewBox="0 0 1440 220" preserveAspectRatio="none">
-        <path d="M0,140 C 240,90 480,190 720,140 C 960,90 1200,180 1440,130 L1440,220 L0,220 Z" fill="#16a34a" opacity=".10"/>
-        <path d="M0,170 C 260,130 500,210 760,165 C 1000,125 1260,200 1440,160 L1440,220 L0,220 Z" fill="#0B3B24" opacity=".08"/>
-      </svg>
-    </div>
-  </div>
   <div class="login-wrap">
     <div class="login-brand">
       <img src="logo_agrovision_small.png" alt="AgroVisión">
