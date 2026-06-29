@@ -6,6 +6,7 @@
 <title>Palma Grande S.A.S.</title>
 <!-- panel v2.1 -->
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&family=Poppins:wght@800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;}
@@ -2217,31 +2218,36 @@ function impDupKey(r){
 }
 
 function impDescargarPlantilla(){
-  const headerLine = IMP_COLUMNS.join(',');
-  const sampleLine = ['2026-01-15','Finca 1','Lote A1','Africana','12.5','340'].join(',');
   if (typeof XLSX !== 'undefined') {
     const ws = XLSX.utils.aoa_to_sheet([IMP_COLUMNS, ['2026-01-15','Finca 1','Lote A1','Africana',12.5,340]]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
     XLSX.writeFile(wb, 'plantilla_produccion_diaria.xlsx');
   } else {
-    const blob = new Blob([headerLine + '\n' + sampleLine + '\n'], {type:'text/csv;charset=utf-8;'});
+    // Separador ; y BOM UTF-8: Excel en español usa ; como separador de listas por defecto.
+    const headerLine = IMP_COLUMNS.join(';');
+    const sampleLine = ['2026-01-15','Finca 1','Lote A1','Africana','12.5','340'].join(';');
+    const BOM = '﻿';
+    const blob = new Blob([BOM + headerLine + '\n' + sampleLine + '\n'], {type:'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'plantilla_produccion_diaria.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    impToast('SheetJS no está disponible: se descargó la plantilla en formato CSV.');
+    impToast('No se pudo cargar el generador de Excel: se descargó la plantilla en formato CSV (separador ";").');
   }
 }
 
 function impParseCSV(text){
+  text = text.replace(/^﻿/, ''); // quitar BOM si está presente
   const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
   if (!lines.length) return [];
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  // Autodetectar separador: algunas configuraciones de Excel en español exportan con ";".
+  const delim = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
+  const headers = lines[0].split(delim).map(h => h.trim().toLowerCase());
   const rows = [];
   for (let i = 1; i < lines.length; i++){
-    const cells = lines[i].split(',');
+    const cells = lines[i].split(delim);
     const row = {};
     headers.forEach((h, idx) => { row[h] = (cells[idx] !== undefined ? cells[idx].trim() : ''); });
     rows.push(row);
