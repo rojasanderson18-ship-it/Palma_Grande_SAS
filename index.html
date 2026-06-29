@@ -770,157 +770,63 @@ a.mtab:hover{color:#16a34a;}
       <div id="section-cosecha" style="display:none;">
         <div id="cosecha-tab-resumen" class="cosecha-tabpanel">
         <div class="kpi-row cols-8" style="margin-top:18px;">
-          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
-          <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Producción acumulada (año)</div><div class="kpi-num">2.145,6 t</div><div class="kpi-delta">▲ +9,3% vs año anterior</div></div>
-          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Toneladas por día</div><div class="kpi-num">32,5 t</div><div class="kpi-delta neutral">Promedio del período</div></div>
-          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Toneladas por hectárea</div><div class="kpi-num">22,3 t/ha</div><div class="kpi-delta neutral">Área productiva: 1.820 ha</div></div>
-          <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-clock"/></svg></div><div class="kpi-lbl">Ciclo promedio</div><div class="kpi-num">12,6 días</div><div class="kpi-delta neutral">Óptimo: 11 - 13 días</div></div>
-          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num">22,1 %</div><div class="kpi-delta">▲ +0,6% vs período anterior</div></div>
-          <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-users"/></svg></div><div class="kpi-lbl">Cosecheros activos</div><div class="kpi-num">48</div><div class="kpi-delta neutral">Cuadrillas activas: 8</div></div>
-          <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento del plan</div><div class="kpi-num">96%</div><div class="kpi-delta neutral">Meta: 90%</div></div>
-        </div>
-
-        <div class="kpi-row cols-6">
-          <div class="kpi-card sm"><div class="kpi-lbl">Producción Hoy</div><div class="kpi-body"><div><div class="kpi-num">18,6 t</div><div class="kpi-delta">▲ +1,8 t vs ayer</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,15 20,16 30,11 40,12 50,6 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Producción Semana</div><div class="kpi-body"><div><div class="kpi-num">116,4 t</div><div class="kpi-delta">▲ +6,2% vs semana anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,17 10,16 20,12 30,13 40,9 50,8 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Producción Mes</div><div class="kpi-body"><div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs mes anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,19 10,14 20,15 30,10 40,11 50,7 60,5" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Ton/ha (período)</div><div class="kpi-body"><div><div class="kpi-num">22,3 t/ha</div><div class="kpi-delta">▲ +1,8 t/ha vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,16 10,17 20,12 30,13 40,9 50,10 60,5" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Ciclo Promedio</div><div class="kpi-body"><div><div class="kpi-num">12,6 días</div><div class="kpi-delta">▼ -0,8 días vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,16 20,17 30,12 40,13 50,8 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">OER Estimado</div><div class="kpi-body"><div><div class="kpi-num">22,1%</div><div class="kpi-delta">▲ +0,6% vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,16 20,17 30,12 40,13 50,8 60,6" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num" id="resumen-kpi-prod">N/D</div><div class="kpi-delta neutral" id="resumen-kpi-prod-delta">Mes en curso</div></div>
+          <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Producción acumulada (año)</div><div class="kpi-num" id="resumen-kpi-anio">N/D</div><div class="kpi-delta neutral" id="resumen-kpi-anio-sub"></div></div>
+          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Toneladas por día</div><div class="kpi-num" id="resumen-kpi-tonxdia">N/D</div><div class="kpi-delta neutral">Promedio del período</div></div>
+          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Toneladas por hectárea</div><div class="kpi-num" id="resumen-kpi-tonha">N/D</div><div class="kpi-delta neutral" id="resumen-kpi-tonha-sub">Sin datos de área</div></div>
+          <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-clock"/></svg></div><div class="kpi-lbl">Ciclo promedio</div><div class="kpi-num" style="font-size:16px;color:#94a3b8;">N/D</div><div class="kpi-delta neutral">Sin fechas de corte registradas</div></div>
+          <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num" style="font-size:16px;color:#94a3b8;">N/D</div><div class="kpi-delta neutral">Sin datos de planta registrados</div></div>
+          <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-users"/></svg></div><div class="kpi-lbl">Cosecheros activos</div><div class="kpi-num" style="font-size:16px;color:#94a3b8;">N/D</div><div class="kpi-delta neutral">Sin registro de mano de obra</div></div>
+          <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento del plan</div><div class="kpi-num" style="font-size:16px;color:#94a3b8;">N/D</div><div class="kpi-delta neutral">Sin meta configurada</div></div>
         </div>
 
         <div class="grid-row cols-3-eq">
           <div class="panel">
-            <div class="panel-head"><div><div class="panel-title">Producción diaria (período)</div><div class="panel-sub">Toneladas</div></div></div>
-            <div class="barchart">
-              <div class="bar-col"><div class="bar-val">28,4</div><div class="bar" style="height:57%;"></div></div>
-              <div class="bar-col"><div class="bar-val">31,2</div><div class="bar" style="height:62%;"></div></div>
-              <div class="bar-col"><div class="bar-val">27,6</div><div class="bar" style="height:55%;"></div></div>
-              <div class="bar-col"><div class="bar-val">30,8</div><div class="bar" style="height:62%;"></div></div>
-              <div class="bar-col"><div class="bar-val">26,9</div><div class="bar" style="height:54%;"></div></div>
-              <div class="bar-col"><div class="bar-val">35,7</div><div class="bar" style="height:71%;"></div></div>
-              <div class="bar-col"><div class="bar-val">33,4</div><div class="bar" style="height:67%;"></div></div>
-              <div class="bar-col"><div class="bar-val">36,1</div><div class="bar" style="height:72%;"></div></div>
-              <div class="bar-col"><div class="bar-val">34,8</div><div class="bar" style="height:70%;"></div></div>
-              <div class="bar-col"><div class="bar-val">31,9</div><div class="bar" style="height:64%;"></div></div>
-              <div class="bar-col"><div class="bar-val">22,7</div><div class="bar" style="height:45%;"></div></div>
-              <div class="bar-col"><div class="bar-val">30,6</div><div class="bar" style="height:61%;"></div></div>
-              <div class="bar-col"><div class="bar-val">33,1</div><div class="bar" style="height:66%;"></div></div>
-              <div class="bar-col"><div class="bar-val">32,5</div><div class="bar" style="height:65%;"></div></div>
-              <div class="bar-col"><div class="bar-val">18,6</div><div class="bar" style="height:37%;"></div></div>
-            </div>
-            <div class="linechart-axis"><span>01 May</span><span>04 May</span><span>07 May</span><span>10 May</span><span>13 May</span><span>15 May</span></div>
+            <div class="panel-head"><div><div class="panel-title">Producción diaria (período)</div><div class="panel-sub">Toneladas, mes en curso</div></div></div>
+            <div class="barchart" id="resumen-barchart"></div>
+            <div class="linechart-axis" id="resumen-bar-axis"></div>
           </div>
 
           <div class="panel">
-            <div class="panel-head"><div><div class="panel-title">Producción por Finca (período)</div><div class="panel-sub">Toneladas</div></div></div>
-            <div class="donut-wrap">
-              <div class="donut" style="background:conic-gradient(#16a34a 0% 53%, #2563eb 53% 89.2%, #f5b942 89.2% 100%);">
-                <div class="donut-center"><span class="num">487,2</span><span class="lbl">ton totales</span></div>
-              </div>
-              <div class="donut-legend">
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Finca 1</span><span class="dl-val">258,5 t</span></div><span class="dl-sub">(53,0%)</span></div>
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-lbl">Finca 2</span><span class="dl-val">176,4 t</span></div><span class="dl-sub">(36,2%)</span></div>
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Finca 3</span><span class="dl-val">52,3 t</span></div><span class="dl-sub">(10,8%)</span></div>
-              </div>
-            </div>
+            <div class="panel-head"><div><div class="panel-title">Producción por Finca (período)</div><div class="panel-sub">Toneladas, mes en curso</div></div></div>
+            <div id="resumen-finca-rows"><div class="empty-panel-msg">Sin datos de producción en el período.</div></div>
           </div>
 
           <div class="panel">
             <div class="panel-head"><div><div class="panel-title">Estado de Madurez del Fruto</div></div></div>
-            <div class="donut-wrap">
-              <div class="donut" style="background:conic-gradient(#16a34a 0% 62%, #f5b942 62% 86%, #2563eb 86% 96%, #dc2626 96% 100%);">
-                <div class="donut-center"></div>
-              </div>
-              <div class="donut-legend">
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Óptimo (Maduros)</span><span class="dl-val">62%</span></div></div>
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Sobre Maduro</span><span class="dl-val">24%</span></div></div>
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-lbl">Inmaduro (Verdes)</span><span class="dl-val">10%</span></div></div>
-                <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#dc2626;"></span><span class="dl-lbl">Podrido</span><span class="dl-val">4%</span></div></div>
-              </div>
-            </div>
+            <div class="empty-panel-msg">No se registra clasificación de madurez del fruto en Producción.</div>
           </div>
         </div>
 
         <div class="grid-row cols-3-eq">
-          <div class="panel">
+          <div class="panel" style="grid-column:span 2;">
             <div class="panel-head"><div><div class="panel-title">Top 5 Lotes por Producción (período)</div></div></div>
             <table class="s-table">
-              <thead><tr><th>#</th><th>Lote</th><th>Finca</th><th>Área (ha)</th><th>Prod. (t)</th><th>Ton/ha</th><th>Ciclo (días)</th><th>Estado</th></tr></thead>
-              <tbody>
-                <tr><td>1</td><td>45B</td><td>Finca 1</td><td>58,4</td><td>92,6</td><td>23,8</td><td>11</td><td><span class="chip green">Bueno</span></td></tr>
-                <tr><td>2</td><td>11A</td><td>Finca 1</td><td>42,7</td><td>71,9</td><td>22,7</td><td>12</td><td><span class="chip green">Bueno</span></td></tr>
-                <tr><td>3</td><td>26</td><td>Finca 2</td><td>35,1</td><td>63,2</td><td>22,1</td><td>14</td><td><span class="chip yellow">Regular</span></td></tr>
-                <tr><td>4</td><td>31</td><td>Finca 2</td><td>42,3</td><td>58,7</td><td>20,4</td><td>15</td><td><span class="chip yellow">Regular</span></td></tr>
-                <tr><td>5</td><td>15</td><td>Finca 1</td><td>36,8</td><td>52,1</td><td>19,2</td><td>13</td><td><span class="chip green">Bueno</span></td></tr>
-              </tbody>
+              <thead><tr><th>#</th><th>Lote</th><th>Finca</th><th>Área (ha)</th><th>Prod. (t)</th><th>Ton/ha</th></tr></thead>
+              <tbody id="resumen-top-lotes"></tbody>
             </table>
-            <a class="panel-link">Ver todos los lotes <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
           </div>
 
           <div class="panel">
             <div class="panel-head"><div><div class="panel-title">Ciclos - Estado de los Lotes</div></div></div>
-            <div class="stat-box-row">
-              <div class="stat-box green"><div class="sb-num">42</div><div class="sb-lbl">Verdes</div><div class="sb-sub">0 - 13 días (56%)</div></div>
-              <div class="stat-box yellow"><div class="sb-num">18</div><div class="sb-lbl">Amarillos</div><div class="sb-sub">14 - 15 días (24%)</div></div>
-              <div class="stat-box red"><div class="sb-num">16</div><div class="sb-lbl">Rojos</div><div class="sb-sub">&gt; 15 días (20%)</div></div>
-            </div>
-            <div class="donut-wrap">
-              <div class="donut" style="background:conic-gradient(#16a34a 0% 56%, #f5b942 56% 80%, #dc2626 80% 100%);">
-                <div class="donut-center"><span class="num">76</span><span class="lbl">total lotes</span></div>
-              </div>
-            </div>
-            <a class="panel-link">Ver mapa de ciclos <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><div><div class="panel-title">Rendimiento por Cosechero (período)</div></div></div>
-            <table class="s-table">
-              <thead><tr><th>#</th><th>Cosechero</th><th>Prod. (t)</th><th>Ton/Jornal</th><th>Calidad</th><th>Bonificación</th></tr></thead>
-              <tbody>
-                <tr><td>1</td><td>Carlos Pérez</td><td>18,6</td><td>1,86</td><td>98%</td><td><span class="chip green">$120.000</span></td></tr>
-                <tr><td>2</td><td>Luis Gómez</td><td>17,2</td><td>1,72</td><td>96%</td><td><span class="chip green">$110.000</span></td></tr>
-                <tr><td>3</td><td>María Quintero</td><td>16,8</td><td>1,68</td><td>97%</td><td><span class="chip green">$100.000</span></td></tr>
-                <tr><td>4</td><td>José Ramírez</td><td>15,1</td><td>1,51</td><td>95%</td><td><span class="chip green">$90.000</span></td></tr>
-                <tr><td>5</td><td>Andrés Díaz</td><td>14,3</td><td>1,43</td><td>94%</td><td><span class="chip green">$80.000</span></td></tr>
-              </tbody>
-            </table>
-            <a class="panel-link">Ver ranking completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            <div class="empty-panel-msg">Aún no se registran fechas de corte por lote, por lo que no es posible calcular el estado de los ciclos.</div>
           </div>
         </div>
 
         <div class="grid-row cols-3-eq">
           <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Rendimiento por Cosechero (período)</div></div></div>
+            <div class="empty-panel-msg">No se registra mano de obra/jornales en Producción.</div>
+          </div>
+
+          <div class="panel">
             <div class="panel-head"><div><div class="panel-title">Alertas y Novedades</div></div></div>
-            <div class="alert-list">
-              <div class="alert-item"><span class="alert-ic danger"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg></span><div><div class="alert-title">16 lotes con ciclo mayor a 15 días</div><div class="alert-sub">Atención inmediata requerida</div></div><span class="alert-time">Hoy 08:30 a. m.</span></div>
-              <div class="alert-item"><span class="alert-ic warn"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg></span><div><div class="alert-title">Calidad por debajo del 95% en Finca 2</div><div class="alert-sub">Revisar procesos de recolección</div></div><span class="alert-time">Hoy 07:45 a. m.</span></div>
-              <div class="alert-item"><span class="alert-ic info"><svg class="ic-svg"><use href="#i-info"/></svg></span><div><div class="alert-title">Clima: Lluvias intensas en próximas 48 horas</div><div class="alert-sub">Puede afectar la producción</div></div><span class="alert-time">Hoy 06:15 a. m.</span></div>
-            </div>
-            <a class="panel-link">Ver todas las alertas <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            <div class="empty-panel-msg">No hay alertas configuradas todavía.</div>
           </div>
 
           <div class="panel">
             <div class="panel-head"><div><div class="panel-title">Actividades Recientes</div></div></div>
-            <div class="act-list">
-              <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Evaluación de calidad - Lote 26 - Supervisor Felipe</div><span class="act-time">Hoy 08:20 a. m.</span></div>
-              <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Corte completado - Lote 11A - Cuadrilla 2</div><span class="act-time">Hoy 07:30 a. m.</span></div>
-              <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Registro de producción - Finca 2</div><span class="act-time">Hoy 07:15 a. m.</span></div>
-              <div class="act-item"><span class="act-check"><svg class="ic-svg"><use href="#i-check"/></svg></span><div class="act-text">Nueva evaluación de calidad - Lote 45B</div><span class="act-time">Ayer 05:40 p. m.</span></div>
-            </div>
-            <a class="panel-link">Ver historial completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><div><div class="panel-title">Proyección de Producción</div></div><span class="panel-sub">Próximos 7 días: 268 t estimados</span></div>
-            <div class="linechart-wrap">
-              <svg viewBox="0 0 240 80" width="100%" height="80" preserveAspectRatio="none">
-                <polyline points="0,48 30,38 60,42 90,30 120,24 150,16 180,10" fill="none" stroke="#16a34a" stroke-width="3"/>
-                <polygon points="0,48 30,38 60,42 90,30 120,24 150,16 180,10 180,80 0,80" fill="rgba(22,163,74,.12)"/>
-                <circle cx="0" cy="48" r="3" fill="#16a34a"/><circle cx="30" cy="38" r="3" fill="#16a34a"/><circle cx="60" cy="42" r="3" fill="#16a34a"/><circle cx="90" cy="30" r="3" fill="#16a34a"/><circle cx="120" cy="24" r="3" fill="#16a34a"/><circle cx="150" cy="16" r="3" fill="#16a34a"/><circle cx="180" cy="10" r="3" fill="#16a34a"/>
-              </svg>
-              <div class="linechart-axis"><span>Día 1</span><span>Día 2</span><span>Día 3</span><span>Día 4</span><span>Día 5</span><span>Día 6</span><span>Día 7</span></div>
-            </div>
+            <div class="empty-panel-msg">No hay un registro de actividades disponible todavía.</div>
           </div>
         </div>
         </div>
@@ -1988,6 +1894,7 @@ function showCosechaTab(name){
   document.getElementById('topbar-sub').textContent = info.sub;
   if(name === 'produccion') showProduccionSub('diaria');
   if(name === 'lotes' && typeof lotInit === 'function') lotInit();
+  if(name === 'resumen' && typeof resumenRender === 'function') resumenRender();
 }
 
 const PRODUCCION_SUB_INFO = {
@@ -2156,14 +2063,162 @@ async function inicioRender(){
   } catch(e) { /* keep N/D on failures */ }
 }
 
+async function resumenRender(){
+  try {
+    let rows = await impFetchProduccion();
+    if (tbFincaFiltro) rows = rows.filter(r => String(r.finca||'').trim() === tbFincaFiltro);
+    const hoy = new Date();
+    const anioActual = hoy.getFullYear();
+    const mesActual  = hoy.getMonth();
+    const mesPrevio  = mesActual === 0 ? 11 : mesActual - 1;
+    const anioPrevio = mesActual === 0 ? anioActual - 1 : anioActual;
+    const mesKey  = anioActual + '-' + String(mesActual + 1).padStart(2,'0');
+    const mesKeyP = anioPrevio + '-' + String(mesPrevio + 1).padStart(2,'0');
+    const diasEnMes = new Date(anioActual, mesActual + 1, 0).getDate();
+
+    const rowsPeriodo = rows.filter(r => String(r.fecha||'').slice(0,7) === mesKey);
+    const rowsPrevio  = rows.filter(r => String(r.fecha||'').slice(0,7) === mesKeyP);
+    const rowsAnio    = rows.filter(r => String(r.fecha||'').slice(0,4) === String(anioActual));
+    const rowsAnioPrevio = rows.filter(r => String(r.fecha||'').slice(0,4) === String(anioPrevio));
+
+    const sumTon = rs => rs.reduce((s, r) => s + (parseFloat(r.toneladas)||0), 0);
+    const totalPeriodo = sumTon(rowsPeriodo);
+    const totalPrevio  = sumTon(rowsPrevio);
+    const totalAnio    = sumTon(rowsAnio);
+    const totalAnioPrevio = sumTon(rowsAnioPrevio);
+
+    impSetText('resumen-kpi-prod', impFmtT(totalPeriodo));
+    if (totalPrevio > 0) {
+      const delta = ((totalPeriodo - totalPrevio) / totalPrevio * 100);
+      const sign = delta >= 0 ? '▲ +' : '▼ ';
+      const el = document.getElementById('resumen-kpi-prod-delta');
+      if (el) { el.textContent = sign + impNum(Math.abs(delta),1) + '% vs mes anterior'; el.className = 'kpi-delta' + (delta < 0 ? ' down' : ''); }
+    } else {
+      impSetText('resumen-kpi-prod-delta', IMP_MES_ABR[mesActual] + ' ' + anioActual);
+    }
+
+    impSetText('resumen-kpi-anio', impFmtT(totalAnio));
+    if (totalAnioPrevio > 0) {
+      const deltaA = ((totalAnio - totalAnioPrevio) / totalAnioPrevio * 100);
+      const signA = deltaA >= 0 ? '▲ +' : '▼ ';
+      const elA = document.getElementById('resumen-kpi-anio-sub');
+      if (elA) { elA.textContent = signA + impNum(Math.abs(deltaA),1) + '% vs año anterior'; elA.className = 'kpi-delta' + (deltaA < 0 ? ' down' : ''); }
+    } else {
+      impSetText('resumen-kpi-anio-sub', String(anioActual));
+    }
+
+    const diasConDatos = new Set(rowsPeriodo.map(r => r.fecha)).size;
+    const promDia = diasConDatos > 0 ? totalPeriodo / diasConDatos : 0;
+    impSetText('resumen-kpi-tonxdia', impFmtT(promDia));
+
+    if (typeof impCalcularTonHaKpi === 'function') {
+      const loteMap = new Map();
+      rowsPeriodo.forEach(r => {
+        const key = String(r.finca||'').trim() + '|' + String(r.lote||'').trim();
+        if (!loteMap.has(key)) loteMap.set(key, {finca: r.finca, lote: r.lote, toneladas: 0});
+        loteMap.get(key).toneladas += parseFloat(r.toneladas)||0;
+      });
+      await impCalcularTonHaKpi(Array.from(loteMap.values()), 'resumen-kpi-tonha', 'resumen-kpi-tonha-sub', IMP_MES_ABR[mesActual]);
+    }
+
+    // Producción diaria — todos los días del mes en curso
+    const byDateMes = new Map();
+    rowsPeriodo.forEach(r => byDateMes.set(r.fecha, (byDateMes.get(r.fecha)||0) + (parseFloat(r.toneladas)||0)));
+    const fechasMes = [];
+    for (let d = 1; d <= diasEnMes; d++) fechasMes.push(anioActual + '-' + String(mesActual+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'));
+    const valuesMes = fechasMes.map(f => byDateMes.get(f) || 0);
+    const maxVal = Math.max(...valuesMes, 1);
+    const barchart = document.getElementById('resumen-barchart');
+    const baraxis = document.getElementById('resumen-bar-axis');
+    if (barchart) {
+      barchart.innerHTML = fechasMes.map((f, i) => {
+        const ton = valuesMes[i];
+        const h = Math.round(ton / maxVal * 90);
+        return '<div class="bar-col">' +
+          '<div class="bar-val">' + (ton > 0 ? impNum(ton,1) : '') + '</div>' +
+          '<div class="bar" style="height:' + (h||0) + '%;"></div>' +
+          '</div>';
+      }).join('');
+      if (baraxis) {
+        const step = Math.max(1, Math.floor(diasEnMes / 5));
+        const ejes = [];
+        for (let i = 0; i < diasEnMes; i += step) {
+          const d = impParseFechaLocal(fechasMes[i]);
+          ejes.push('<span>' + d.getDate() + ' ' + IMP_MES_ABR[d.getMonth()] + '</span>');
+        }
+        baraxis.innerHTML = ejes.join('');
+      }
+    }
+
+    // Producción por finca
+    const byFincaMes = new Map();
+    rowsPeriodo.forEach(r => {
+      const f = String(r.finca||'Sin finca').trim();
+      byFincaMes.set(f, (byFincaMes.get(f)||0) + (parseFloat(r.toneladas)||0));
+    });
+    const fincasOrden = Array.from(byFincaMes.entries()).sort((a,b) => b[1]-a[1]);
+    const maxFinca = fincasOrden.length ? fincasOrden[0][1] : 1;
+    const totalFinca = fincasOrden.reduce((s,[,t]) => s+t, 0);
+    const fincaCont = document.getElementById('resumen-finca-rows');
+    if (fincaCont) {
+      if (!fincasOrden.length) {
+        fincaCont.innerHTML = '<div class="empty-panel-msg">Sin datos de producción en el período.</div>';
+      } else {
+        fincaCont.innerHTML = fincasOrden.map(([nombre, ton]) => {
+          const pct = totalFinca > 0 ? ton / totalFinca * 100 : 0;
+          const w = maxFinca > 0 ? ton / maxFinca * 100 : 0;
+          return '<div class="hbar-row"><span class="hbar-lbl">' + nombre + '</span>' +
+            '<div class="hbar-track"><div class="hbar-fill" style="width:' + w.toFixed(1) + '%;"></div></div>' +
+            '<span class="hbar-val">' + impFmtT(ton) + '</span>' +
+            '<span class="hbar-pct">' + impNum(pct,1) + '%</span></div>';
+        }).join('');
+      }
+    }
+
+    // Top 5 lotes por producción del período, cruzado con ha de Lotes
+    try {
+      const lotes = (typeof lotFetchLotes === 'function') ? await lotFetchLotes() : [];
+      const norm = s => String(s||'').trim().toLowerCase();
+      const haPorLote = new Map();
+      lotes.forEach(l => haPorLote.set(norm(l.finca) + '|' + norm(l.lote), parseFloat(l.ha) || 0));
+      const byLoteMes = new Map();
+      rowsPeriodo.forEach(r => {
+        const finca = String(r.finca||'').trim(), lote = String(r.lote||'').trim();
+        const key = finca + '|' + lote;
+        if (!byLoteMes.has(key)) byLoteMes.set(key, {finca, lote, toneladas: 0});
+        byLoteMes.get(key).toneladas += parseFloat(r.toneladas)||0;
+      });
+      const top5 = Array.from(byLoteMes.values()).sort((a,b) => b.toneladas - a.toneladas).slice(0,5);
+      const tbody = document.getElementById('resumen-top-lotes');
+      if (tbody) {
+        if (!top5.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;">Sin datos de producción en el período.</td></tr>';
+        } else {
+          tbody.innerHTML = top5.map((l, i) => {
+            const ha = haPorLote.get(norm(l.finca) + '|' + norm(l.lote)) || 0;
+            const tonha = ha > 0 ? l.toneladas / ha : null;
+            return '<tr><td>' + (i+1) + '</td><td>' + l.lote + '</td><td>' + l.finca + '</td>' +
+              '<td>' + (ha > 0 ? impNum(ha,1) : 'N/D') + '</td>' +
+              '<td>' + impNum(l.toneladas,1) + '</td>' +
+              '<td>' + (tonha !== null ? impNum(tonha,1) : 'N/D') + '</td></tr>';
+          }).join('');
+        }
+      }
+    } catch(e) {}
+  } catch(e) { /* keep N/D on failures */ }
+}
+
 async function tbRerenderVistaActual(){
   const inicioVisible = document.getElementById('section-inicio').style.display !== 'none';
   if (inicioVisible) { if (typeof inicioRender === 'function') await inicioRender(); return; }
   const cosechaVisible = document.getElementById('section-cosecha').style.display !== 'none';
   if (!cosechaVisible) return;
+  const resumenVisible = document.getElementById('cosecha-tab-resumen').style.display !== 'none';
   const prodVisible = document.getElementById('cosecha-tab-produccion').style.display !== 'none';
   const lotesVisible = document.getElementById('cosecha-tab-lotes').style.display !== 'none';
-  if (prodVisible) {
+  if (resumenVisible) {
+    if (typeof resumenRender === 'function') await resumenRender();
+  } else if (prodVisible) {
     const subs = ['diaria','semanal','mensual','anual','comparativo'];
     const activeSub = subs.find(s => document.getElementById('prod-sub-' + s).style.display !== 'none') || 'diaria';
     if (typeof impRenderProduccionTab === 'function') await impRenderProduccionTab(activeSub);
