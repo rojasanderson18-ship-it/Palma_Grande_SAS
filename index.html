@@ -135,6 +135,36 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
   .login-brand h1{font-size:18px;}
   .login-brand p{display:none;}
 }
+
+/* ── ADMINISTRACIÓN DE USUARIOS ───────────────────── */
+.btn-admin-users{margin-top:6px;background:#fff;border:1px solid #d6dbe3;color:#16a34a;font-weight:700;font-size:11px;padding:6px 12px;border-radius:16px;cursor:pointer;font-family:"DM Sans",sans-serif;}
+.btn-admin-users:hover{background:rgba(22,163,74,.08);}
+#admin-screen{position:fixed;inset:0;background:rgba(15,30,20,.45);display:none;align-items:center;justify-content:center;z-index:9998;padding:20px;font-family:"DM Sans",sans-serif;}
+#admin-screen.active{display:flex;}
+.admin-panel{background:#fff;border-radius:18px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.25);}
+.admin-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.admin-panel-head h3{font-size:19px;color:#0B3B24;font-weight:800;margin:0;}
+.admin-close{cursor:pointer;font-size:20px;color:#9aa1b5;background:none;border:none;}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;}
+.admin-table th{text-align:left;font-size:11px;color:#16a34a;text-transform:uppercase;letter-spacing:.4px;padding:8px 6px;border-bottom:2px solid #e3e6ed;}
+.admin-table td{padding:9px 6px;border-bottom:1px solid #eef0f4;color:#1a1f2e;}
+.admin-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;text-transform:uppercase;}
+.admin-badge.activo{background:#e7f8ed;color:#16a34a;}
+.admin-badge.inactivo{background:#fde8e8;color:#b42318;}
+.admin-badge.rol-admin{background:#eef2ff;color:#3730a3;margin-left:6px;}
+.admin-row-actions{display:flex;gap:6px;}
+.admin-row-actions button{border:none;background:none;cursor:pointer;font-size:14px;padding:2px 4px;}
+.admin-form{border-top:1px solid #eef0f4;padding-top:18px;}
+.admin-form h4{font-size:13px;color:#0B3B24;margin:0 0 12px;}
+.admin-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.admin-form .login-field{margin-bottom:0;}
+.admin-form-actions{display:flex;gap:10px;}
+.admin-form-actions .btn-login{width:auto;padding:11px 22px;}
+.admin-cancel-edit{background:#fff;border:1px solid #d6dbe3;color:#5f6d63;font-weight:700;border-radius:10px;padding:11px 18px;cursor:pointer;font-size:13px;font-family:"DM Sans",sans-serif;}
+@media (max-width:600px){
+  .admin-form-grid{grid-template-columns:1fr;}
+  .admin-table{font-size:12px;}
+}
 </style>
 </head>
 <body>
@@ -210,6 +240,7 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
   <div class="header-info">
     <div class="header-fecha" id="hdr-fecha">—</div>
     <div class="header-sem" id="hdr-sem">—</div>
+    <button class="btn-admin-users" id="btn-admin-users" onclick="abrirAdminUsuarios()" style="display:none;">👤 Usuarios</button>
   </div>
 </div>
 
@@ -345,6 +376,52 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 
 </div>
 
+<div id="admin-screen">
+  <div class="admin-panel">
+    <div class="admin-panel-head">
+      <h3>👤 Administración de usuarios</h3>
+      <button class="admin-close" onclick="cerrarAdminUsuarios()">✕</button>
+    </div>
+    <table class="admin-table">
+      <thead><tr><th>Usuario</th><th>Nombre</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="admin-users-tbody"><tr><td colspan="4">Cargando...</td></tr></tbody>
+    </table>
+    <form class="admin-form" id="admin-user-form" onsubmit="guardarUsuarioAdmin(event)">
+      <h4 id="admin-form-title">Nuevo usuario</h4>
+      <input type="hidden" id="admin-form-original-usuario" value="">
+      <div class="admin-form-grid">
+        <div class="login-field">
+          <label>USUARIO</label>
+          <div class="login-input-wrap"><span class="ic">👤</span>
+            <input type="text" id="admin-f-usuario" placeholder="nombre.usuario" required></div>
+        </div>
+        <div class="login-field">
+          <label>NOMBRE COMPLETO</label>
+          <div class="login-input-wrap"><span class="ic">🪪</span>
+            <input type="text" id="admin-f-nombre" placeholder="Nombre y apellido"></div>
+        </div>
+        <div class="login-field">
+          <label>CONTRASEÑA</label>
+          <div class="login-input-wrap"><span class="ic">🔒</span>
+            <input type="text" id="admin-f-clave" placeholder="Dejar vacío para no cambiar"></div>
+        </div>
+        <div class="login-field">
+          <label>ROL</label>
+          <div class="login-input-wrap"><span class="ic">🛡️</span>
+            <select id="admin-f-rol" style="flex:1;border:none;background:transparent;padding:12px 0;font-size:13px;font-family:'DM Sans',sans-serif;color:#1a1f2e;outline:none;">
+              <option value="usuario">Usuario</option>
+              <option value="admin">Administrador</option>
+            </select></div>
+        </div>
+      </div>
+      <div class="admin-form-actions">
+        <button type="submit" class="btn-login" id="admin-form-submit">Crear usuario</button>
+        <button type="button" class="admin-cancel-edit" id="admin-form-cancel" style="display:none;" onclick="cancelarEdicionUsuario()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
 const PIN_ACCESO = 'AGRO2026';
@@ -377,6 +454,8 @@ function entrarApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app-shell').style.display = '';
   initHeaderFecha();
+  const rol = localStorage.getItem('av_rol') || sessionStorage.getItem('av_rol') || 'usuario';
+  if (rol === 'admin') document.getElementById('btn-admin-users').style.display = '';
 }
 
 function loginError(msg) {
@@ -424,7 +503,9 @@ async function intentarLogin() {
     const url = GAS_URL + '?accion=validarLogin&usuario=' + encodeURIComponent(usuario) + '&clave=' + encodeURIComponent(clave);
     const resp = await gasJSONP(url);
     if (resp && resp.ok) {
-      (recordar ? localStorage : sessionStorage).setItem('av_logged_in', '1');
+      const store = recordar ? localStorage : sessionStorage;
+      store.setItem('av_logged_in', '1');
+      store.setItem('av_rol', resp.rol || 'usuario');
       entrarApp();
     } else {
       loginError('Usuario o contraseña incorrectos.');
@@ -441,10 +522,112 @@ function intentarPin() {
   const pin = document.getElementById('login-pin').value.trim();
   if (pin === PIN_ACCESO) {
     sessionStorage.setItem('av_logged_in', '1');
+    sessionStorage.setItem('av_rol', 'admin');
     entrarApp();
   } else {
     loginError('Código de acceso incorrecto.');
   }
+}
+
+function abrirAdminUsuarios() {
+  document.getElementById('admin-screen').classList.add('active');
+  cancelarEdicionUsuario();
+  cargarUsuariosAdmin();
+}
+
+function cerrarAdminUsuarios() {
+  document.getElementById('admin-screen').classList.remove('active');
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function cargarUsuariosAdmin() {
+  const tbody = document.getElementById('admin-users-tbody');
+  tbody.innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
+  const resp = await gasJSONP(GAS_URL + '?accion=listarUsuarios');
+  if (!resp || !resp.ok) { tbody.innerHTML = '<tr><td colspan="4">No se pudo cargar la lista.</td></tr>'; return; }
+  if (!resp.usuarios.length) { tbody.innerHTML = '<tr><td colspan="4">No hay usuarios registrados todavía.</td></tr>'; return; }
+  tbody.innerHTML = resp.usuarios.map(u => `
+    <tr>
+      <td>${escapeHtml(u.usuario)}</td>
+      <td>${escapeHtml(u.nombre)}</td>
+      <td>
+        <span class="admin-badge ${u.activo ? 'activo' : 'inactivo'}">${u.activo ? 'Activo' : 'Inactivo'}</span>
+        ${u.rol === 'admin' ? '<span class="admin-badge rol-admin">Admin</span>' : ''}
+      </td>
+      <td class="admin-row-actions">
+        <button title="Editar" onclick='editarUsuarioAdmin(${JSON.stringify(u)})'>✏️</button>
+        <button title="${u.activo ? 'Desactivar' : 'Activar'}" onclick="toggleActivoUsuarioAdmin('${escapeHtml(u.usuario)}', ${!u.activo})">${u.activo ? '🚫' : '✅'}</button>
+        <button title="Eliminar" onclick="eliminarUsuarioAdmin('${escapeHtml(u.usuario)}')">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function editarUsuarioAdmin(u) {
+  document.getElementById('admin-form-title').textContent = 'Editar usuario';
+  document.getElementById('admin-form-original-usuario').value = u.usuario;
+  document.getElementById('admin-f-usuario').value = u.usuario;
+  document.getElementById('admin-f-usuario').disabled = true;
+  document.getElementById('admin-f-nombre').value = u.nombre;
+  document.getElementById('admin-f-clave').value = '';
+  document.getElementById('admin-f-rol').value = u.rol;
+  document.getElementById('admin-form-submit').textContent = 'Guardar cambios';
+  document.getElementById('admin-form-cancel').style.display = '';
+}
+
+function cancelarEdicionUsuario() {
+  document.getElementById('admin-form-title').textContent = 'Nuevo usuario';
+  document.getElementById('admin-form-original-usuario').value = '';
+  document.getElementById('admin-user-form').reset();
+  document.getElementById('admin-f-usuario').disabled = false;
+  document.getElementById('admin-form-submit').textContent = 'Crear usuario';
+  document.getElementById('admin-form-cancel').style.display = 'none';
+}
+
+async function guardarUsuarioAdmin(ev) {
+  ev.preventDefault();
+  const original = document.getElementById('admin-form-original-usuario').value;
+  const usuario = document.getElementById('admin-f-usuario').value.trim();
+  const nombre = document.getElementById('admin-f-nombre').value.trim();
+  const clave = document.getElementById('admin-f-clave').value;
+  const rol = document.getElementById('admin-f-rol').value;
+  if (!usuario) return;
+  const btn = document.getElementById('admin-form-submit');
+  btn.disabled = true;
+  try {
+    let resp;
+    if (original) {
+      resp = await gasJSONP(GAS_URL + '?accion=actualizarUsuario&data=' + encodeURIComponent(JSON.stringify({usuario: original, nombre, clave, rol})));
+    } else {
+      if (!clave) { showToast('La contraseña es obligatoria para un usuario nuevo.'); btn.disabled = false; return; }
+      resp = await gasJSONP(GAS_URL + '?accion=crearUsuario&data=' + encodeURIComponent(JSON.stringify({usuario, nombre, clave, rol})));
+    }
+    if (resp && resp.ok) {
+      showToast(original ? 'Usuario actualizado.' : 'Usuario creado.');
+      cancelarEdicionUsuario();
+      cargarUsuariosAdmin();
+    } else {
+      showToast(resp && resp.error ? resp.error : 'No se pudo guardar el usuario.');
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function toggleActivoUsuarioAdmin(usuario, activo) {
+  const resp = await gasJSONP(GAS_URL + '?accion=actualizarUsuario&data=' + encodeURIComponent(JSON.stringify({usuario, activo})));
+  if (resp && resp.ok) { showToast(activo ? 'Usuario activado.' : 'Usuario desactivado.'); cargarUsuariosAdmin(); }
+  else showToast('No se pudo actualizar el estado.');
+}
+
+async function eliminarUsuarioAdmin(usuario) {
+  if (!confirm('¿Eliminar al usuario "' + usuario + '"? Esta acción no se puede deshacer.')) return;
+  const resp = await gasJSONP(GAS_URL + '?accion=eliminarUsuario&data=' + encodeURIComponent(JSON.stringify({usuario})));
+  if (resp && resp.ok) { showToast('Usuario eliminado.'); cargarUsuariosAdmin(); }
+  else showToast('No se pudo eliminar el usuario.');
 }
 
 const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];

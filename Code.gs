@@ -150,6 +150,29 @@ function doGet(e) {
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
       return jsonResponse(result);
     }
+    if(accion === 'listarUsuarios'){
+      var result = listarUsuarios();
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'crearUsuario'){
+      var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+      var result = crearUsuario(d);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'actualizarUsuario'){
+      var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+      var result = actualizarUsuario(d);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'eliminarUsuario'){
+      var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+      var result = eliminarUsuario(d.usuario || '');
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
     if(accion === 'obtenerCosecha'){
       var result = obtenerMarcasCosecha();
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -1317,21 +1340,87 @@ function parsearKey(key) {
 
 function validarLogin(usuario, clave) {
   if(!usuario || !clave) return {ok:false, error:'Usuario y contraseña requeridos'};
-  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo']);
+  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo','Rol']);
   var data = sheet.getDataRange().getValues();
   for(var i = 1; i < data.length; i++) {
     var fUsuario = String(data[i][0] || '').trim();
     var fClave   = String(data[i][1] || '');
     var fNombre  = String(data[i][2] || '');
     var fActivo  = data[i][3];
+    var fRol     = String(data[i][4] || '').trim().toLowerCase() || 'usuario';
     if(fUsuario.toLowerCase() === usuario.trim().toLowerCase() && fClave === clave) {
       if(fActivo === false || String(fActivo).toLowerCase() === 'no' || String(fActivo).toLowerCase() === 'false') {
         return {ok:false, error:'Usuario inactivo'};
       }
-      return {ok:true, nombre: fNombre || fUsuario};
+      return {ok:true, nombre: fNombre || fUsuario, rol: fRol};
     }
   }
   return {ok:false, error:'Credenciales inválidas'};
+}
+
+function listarUsuarios() {
+  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo','Rol']);
+  var data = sheet.getDataRange().getValues();
+  var usuarios = [];
+  for(var i = 1; i < data.length; i++) {
+    if(!data[i][0]) continue;
+    var fActivo = data[i][3];
+    var inactivo = fActivo === false || String(fActivo).toLowerCase() === 'no' || String(fActivo).toLowerCase() === 'false';
+    usuarios.push({
+      usuario: String(data[i][0] || ''),
+      nombre:  String(data[i][2] || ''),
+      activo:  !inactivo,
+      rol:     String(data[i][4] || '').trim().toLowerCase() || 'usuario',
+    });
+  }
+  return {ok:true, usuarios: usuarios};
+}
+
+function crearUsuario(d) {
+  var usuario = String(d.usuario || '').trim();
+  var clave   = String(d.clave || '');
+  if(!usuario || !clave) return {ok:false, error:'Usuario y contraseña requeridos'};
+  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo','Rol']);
+  var data = sheet.getDataRange().getValues();
+  for(var i = 1; i < data.length; i++) {
+    if(String(data[i][0] || '').trim().toLowerCase() === usuario.toLowerCase()) {
+      return {ok:false, error:'Ese usuario ya existe'};
+    }
+  }
+  sheet.appendRow([usuario, clave, String(d.nombre || ''), 'Sí', String(d.rol || 'usuario').trim().toLowerCase() || 'usuario']);
+  return {ok:true};
+}
+
+function actualizarUsuario(d) {
+  var usuario = String(d.usuario || '').trim();
+  if(!usuario) return {ok:false, error:'Usuario requerido'};
+  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo','Rol']);
+  var data = sheet.getDataRange().getValues();
+  for(var i = 1; i < data.length; i++) {
+    if(String(data[i][0] || '').trim().toLowerCase() === usuario.toLowerCase()) {
+      var fila = i + 1;
+      if(d.clave)              sheet.getRange(fila, 2).setValue(String(d.clave));
+      if(d.nombre !== undefined) sheet.getRange(fila, 3).setValue(String(d.nombre));
+      if(d.activo !== undefined) sheet.getRange(fila, 4).setValue(d.activo ? 'Sí' : 'No');
+      if(d.rol)                sheet.getRange(fila, 5).setValue(String(d.rol).trim().toLowerCase());
+      return {ok:true};
+    }
+  }
+  return {ok:false, error:'Usuario no encontrado'};
+}
+
+function eliminarUsuario(usuario) {
+  usuario = String(usuario || '').trim();
+  if(!usuario) return {ok:false, error:'Usuario requerido'};
+  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo','Rol']);
+  var data = sheet.getDataRange().getValues();
+  for(var i = 1; i < data.length; i++) {
+    if(String(data[i][0] || '').trim().toLowerCase() === usuario.toLowerCase()) {
+      sheet.deleteRow(i + 1);
+      return {ok:true};
+    }
+  }
+  return {ok:false, error:'Usuario no encontrado'};
 }
 
 function getOrCreateSheet(nombre, headers) {
