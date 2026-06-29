@@ -2044,7 +2044,7 @@ async function impFetchProduccion(force){
   return impServerCache;
 }
 function impDupKey(r){
-  return (r.fecha||'') + '|' + (r.finca||'').toLowerCase().trim() + '|' + (r.lote||'').toLowerCase().trim();
+  return (r.fecha||'') + '|' + String(r.finca||'').toLowerCase().trim() + '|' + String(r.lote||'').toLowerCase().trim();
 }
 
 function impDescargarPlantilla(){
@@ -2371,9 +2371,9 @@ function impComputeDashboardData(rows){
     if (!d) return;
     const ton = parseFloat(r.toneladas) || 0;
     const rac = parseInt(r.racimos, 10) || 0;
-    const finca = (r.finca || 'Sin finca').trim() || 'Sin finca';
-    const lote = (r.lote || 'Sin lote').trim() || 'Sin lote';
-    const tipo = (r.tipo_palma || '').trim();
+    const finca = String(r.finca || 'Sin finca').trim() || 'Sin finca';
+    const lote = String(r.lote || 'Sin lote').trim() || 'Sin lote';
+    const tipo = String(r.tipo_palma || '').trim();
     totalToneladas += ton; totalRacimos += rac;
 
     // por fecha (suma todas las fincas/lotes de ese día)
@@ -2650,7 +2650,7 @@ function impRenderSemanal(data){
     const d = impParseFechaLocal(r.fecha);
     if (!d) return;
     if (d >= actual.monday && d <= actual.sunday) {
-      const t = (r.tipo_palma||'').trim() || 'Sin clasificar';
+      const t = String(r.tipo_palma||'').trim() || 'Sin clasificar';
       tipoMap.set(t, (tipoMap.get(t)||0) + (parseFloat(r.toneladas)||0));
     }
   });
@@ -2673,8 +2673,8 @@ function impRenderSemanal(data){
   data.rows.forEach(r => {
     const d = impParseFechaLocal(r.fecha);
     if (!d || !(d >= actual.monday && d <= actual.sunday)) return;
-    const finca = (r.finca||'Sin finca').trim() || 'Sin finca';
-    const lote = (r.lote||'Sin lote').trim() || 'Sin lote';
+    const finca = String(r.finca||'Sin finca').trim() || 'Sin finca';
+    const lote = String(r.lote||'Sin lote').trim() || 'Sin lote';
     const key = finca + '|' + lote;
     if (!loteMap.has(key)) loteMap.set(key, {finca, lote, toneladas:0});
     loteMap.get(key).toneladas += parseFloat(r.toneladas)||0;
