@@ -33,6 +33,9 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .sb-link.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:#4ade80;font-weight:600;}
 .sb-link.active .ic-svg{color:#4ade80;}
 .sb-link.pronto{opacity:.45;cursor:not-allowed;}
+.sb-link-toggle{position:relative;}
+.sb-link-toggle .chev{position:absolute;right:18px;width:14px;height:14px;transition:transform .15s;}
+.sb-link-toggle.expanded .chev{transform:rotate(180deg);}
 .sb-sublink{display:flex;align-items:center;gap:11px;padding:9px 20px;font-size:13px;color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;border-left:3px solid transparent;}
 .sb-sublink .ic-svg{width:16px;height:16px;color:rgba(255,255,255,.6);}
 .sb-sublink:hover{background:rgba(255,255,255,.06);color:#fff;}
@@ -585,7 +588,7 @@ a.mtab:hover{color:#16a34a;}
 
     <div class="sb-section" id="sb-section-main">Módulos principales</div>
     <a class="sb-link active" id="sb-link-inicio" href="javascript:void(0)" onclick="showSection('inicio')"><svg class="ic-svg"><use href="#i-home"/></svg> Inicio</a>
-    <a class="sb-link" id="sb-link-cosecha" href="javascript:void(0)" onclick="showSection('cosecha')"><svg class="ic-svg"><use href="#i-leaf"/></svg> Cosecha</a>
+    <a class="sb-link sb-link-toggle" id="sb-link-cosecha" href="javascript:void(0)" onclick="toggleCosechaMenu()"><svg class="ic-svg"><use href="#i-leaf"/></svg> Cosecha <svg class="ic-svg chev" id="sb-cosecha-chev"><use href="#i-chevron-down"/></svg></a>
     <div id="sb-cosecha-sub" style="display:none;">
       <a class="sb-sublink active" id="sbc-resumen" href="javascript:void(0)" onclick="showCosechaTab('resumen')"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Resumen Ejecutivo</a>
       <a class="sb-sublink" id="sbc-produccion" href="javascript:void(0)" onclick="showCosechaTab('produccion')"><svg class="ic-svg"><use href="#i-trending-up"/></svg> Producción</a>
@@ -1951,6 +1954,19 @@ const COSECHA_TAB_INFO = {
   lotes:       {title: 'Lotes', sub: 'Gestión técnica de lotes de cultivo'},
 };
 
+function setCosechaMenuOpen(open){
+  document.getElementById('sb-cosecha-sub').style.display = open ? '' : 'none';
+  document.getElementById('sb-link-cosecha').classList.toggle('expanded', open);
+}
+
+function toggleCosechaMenu(){
+  const isOpen = document.getElementById('sb-cosecha-sub').style.display !== 'none';
+  setCosechaMenuOpen(!isOpen);
+  if (!isOpen && document.getElementById('section-cosecha').style.display === 'none') {
+    showCosechaTab('resumen');
+  }
+}
+
 function showSection(name){
   document.getElementById('section-inicio').style.display = name === 'inicio' ? '' : 'none';
   document.getElementById('section-cosecha').style.display = name === 'cosecha' ? '' : 'none';
@@ -1958,9 +1974,7 @@ function showSection(name){
   document.getElementById('sb-link-inicio').classList.toggle('active', name === 'inicio');
   document.getElementById('sb-link-cosecha').classList.toggle('active', name === 'cosecha');
   document.getElementById('sb-link-importar').classList.toggle('active', name === 'importar');
-  document.getElementById('sb-cosecha-sub').style.display = name === 'cosecha' ? '' : 'none';
-  document.getElementById('sb-link-cosecha').style.display = name === 'cosecha' ? 'none' : '';
-  document.getElementById('sb-section-main').textContent = name === 'cosecha' ? 'Cosecha' : 'Módulos principales';
+  if (name === 'cosecha') setCosechaMenuOpen(true);
   const info = SECTION_INFO[name];
   const nombre = document.getElementById('tb-user-name').textContent || 'Administrador';
   document.getElementById('topbar-greeting').textContent = info.title(nombre);
