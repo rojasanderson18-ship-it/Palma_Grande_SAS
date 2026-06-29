@@ -9,74 +9,138 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;}
-body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-height:100vh;display:flex;flex-direction:column;}
+body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-height:100vh;}
 
-/* HEADER */
-.header{background:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb;}
-.logo-wrap{display:flex;align-items:center;gap:12px;}
-.logo-icon{width:42px;height:42px;background:linear-gradient(145deg,#b8860b,#f0c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 10px rgba(184,134,11,.25);}
-.brand{display:flex;flex-direction:column;}
-.brand-name{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2.5px;color:#b8860b;line-height:1;}
-.brand-sub{font-size:10px;color:#9ca3af;letter-spacing:.8px;text-transform:uppercase;margin-top:1px;}
-.header-info{text-align:right;}
-.header-fecha{font-family:'DM Mono',monospace;font-size:13px;color:#374151;font-weight:500;}
-.header-sem{font-size:10px;color:#9ca3af;margin-top:2px;}
+/* ── LAYOUT ───────────────────── */
+.dash{display:flex;min-height:100vh;}
 
-/* HERO */
-.hero{padding:48px 28px 32px;text-align:center;}
-.hero-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#9ca3af;font-weight:500;margin-bottom:10px;}
-.hero-title{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:5px;color:#1a1f2e;line-height:1;}
-.hero-title span{color:#b8860b;}
-.hero-line{width:48px;height:3px;background:linear-gradient(90deg,#b8860b,#f0c96a);border-radius:2px;margin:16px auto 0;}
+/* SIDEBAR */
+.sidebar{width:248px;flex:0 0 auto;background:linear-gradient(180deg,#0f3520,#0a2818);color:#fff;display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sb-brand{display:flex;align-items:center;gap:10px;padding:0 20px 22px;}
+.sb-brand-icon{width:38px;height:38px;background:rgba(255,255,255,.12);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto;}
+.sb-brand-name{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;line-height:1.15;}
+.sb-brand-sub{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.5px;}
+.sb-section{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.35);padding:14px 20px 6px;}
+.sb-link{display:flex;align-items:center;gap:11px;padding:9px 20px;font-size:13px;color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;border-left:3px solid transparent;}
+.sb-link .ic{width:18px;text-align:center;font-size:14px;}
+.sb-link:hover{background:rgba(255,255,255,.06);color:#fff;}
+.sb-link.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:#4ade80;font-weight:600;}
+.sb-link.pronto{opacity:.45;cursor:not-allowed;}
+.sb-weather{margin:auto 16px 0;background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;font-size:12px;}
+.sb-weather-temp{font-family:'Bebas Neue',sans-serif;font-size:22px;}
+.sb-weather-desc{color:rgba(255,255,255,.55);font-size:11px;margin-top:2px;}
+.sb-weather-time{color:rgba(255,255,255,.35);font-size:10px;margin-top:6px;}
 
-/* STATS ROW */
-.stats-row{display:flex;justify-content:center;gap:40px;padding:0 28px 36px;}
-.stat-item{text-align:center;}
-.stat-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:#1a1f2e;line-height:1;}
-.stat-lbl{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;margin-top:3px;}
+/* MAIN */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
 
-/* MÓDULOS */
-.modulos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 28px 48px;max-width:1100px;margin:0 auto;width:100%;}
+/* TOPBAR */
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.hamburger{font-size:20px;color:#6b7280;cursor:pointer;display:none;}
+.topbar-title{font-size:19px;font-weight:800;color:#1a1f2e;}
+.topbar-sub{font-size:12px;color:#9ca3af;margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.tb-pill{display:flex;align-items:center;gap:8px;background:#f5f6f8;border:1px solid #e5e7eb;border-radius:10px;padding:8px 14px;font-size:12.5px;color:#374151;font-weight:500;cursor:pointer;white-space:nowrap;}
+.tb-bell{position:relative;font-size:18px;color:#6b7280;cursor:pointer;}
+.tb-bell .dot{position:absolute;top:-4px;right:-6px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;}
+.tb-user{display:flex;align-items:center;gap:9px;cursor:pointer;}
+.tb-avatar{width:34px;height:34px;border-radius:50%;background:#0f3520;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.tb-user-name{font-size:12.5px;font-weight:700;color:#1a1f2e;line-height:1.2;}
+.tb-user-sub{font-size:10.5px;color:#9ca3af;}
 
-.mod-card{border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .25s,box-shadow .25s;text-decoration:none;display:flex;flex-direction:column;position:relative;}
-.mod-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.14);}
+/* CONTENT */
+.content{padding:22px 28px 40px;display:flex;flex-direction:column;gap:18px;}
 
-/* Fondos por módulo */
-.mc-cosecha{background:linear-gradient(160deg,#064e20 0%,#0a5c26 50%,#052e16 100%);}
-.mc-mantto{background:linear-gradient(160deg,#1e3a5f 0%,#1e40af 50%,#0f172a 100%);}
-.mc-sanidad{background:linear-gradient(160deg,#4c1d95 0%,#6d28d9 50%,#2e1065 100%);}
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+.kpi-card{background:#fff;border-radius:14px;padding:16px;border:1px solid #eef0f4;}
+.kpi-icon{width:36px;height:36px;border-radius:9px;background:#e7f8ed;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+.kpi-lbl{font-size:11.5px;color:#6b7280;font-weight:500;}
+.kpi-num{font-family:'Bebas Neue',sans-serif;font-size:23px;color:#1a1f2e;margin-top:2px;}
+.kpi-delta{font-size:10.5px;color:#16a34a;font-weight:600;margin-top:4px;}
+.kpi-delta.neutral{color:#9ca3af;}
 
-.mod-top{padding:32px 24px 24px;flex:1;}
-.mod-emoji{font-size:36px;margin-bottom:16px;display:block;opacity:.9;}
-.mod-titulo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#fff;line-height:1;margin-bottom:6px;}
-.mod-subtitulo{font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.5px;}
+/* GRID ROWS */
+.grid-row{display:grid;gap:16px;}
+.grid-row.cols-3{grid-template-columns:1.3fr 1fr 1fr;}
+.panel{background:#fff;border-radius:14px;padding:20px;border:1px solid #eef0f4;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.panel-title{font-size:14.5px;font-weight:800;color:#1a1f2e;}
+.panel-sub{font-size:11px;color:#9ca3af;margin-top:1px;}
+.panel-link{font-size:11.5px;color:#16a34a;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;}
+.panel-select{font-size:11.5px;color:#6b7280;background:#f5f6f8;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;}
 
-.mod-divider{height:1px;background:rgba(255,255,255,.1);margin:0 24px;}
+/* BAR CHART */
+.barchart{display:flex;align-items:flex-end;gap:8px;height:160px;padding-top:10px;}
+.barchart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;}
+.barchart .bar{width:100%;max-width:26px;background:linear-gradient(180deg,#16a34a,#0f3520);border-radius:4px 4px 0 0;}
+.barchart .bar-val{font-size:9px;color:#9ca3af;}
+.barchart .bar-lbl{font-size:9.5px;color:#9ca3af;margin-top:6px;}
 
-.mod-labores{padding:18px 24px;display:flex;flex-direction:column;gap:8px;}
-.labor-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.labor-name{font-size:12px;color:rgba(255,255,255,.75);font-weight:400;}
-.labor-ciclo{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:10px;}
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:20px;}
+.donut{width:130px;height:130px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;position:relative;}
+.donut-center{position:absolute;text-align:center;}
+.donut-center .num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#1a1f2e;line-height:1;}
+.donut-center .lbl{font-size:9px;color:#9ca3af;}
+.donut-legend{display:flex;flex-direction:column;gap:8px;font-size:12px;}
+.donut-legend .dl-item{display:flex;align-items:center;gap:8px;}
+.donut-legend .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.donut-legend .dl-lbl{color:#374151;flex:1;}
+.donut-legend .dl-val{color:#9ca3af;font-weight:600;}
 
-.mod-footer{padding:14px 24px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}
-.mod-status{font-size:10px;text-transform:uppercase;letter-spacing:1px;}
-.ms-activo{color:#4ade80;}.ms-pronto{color:rgba(255,255,255,.3);}
-.mod-arrow{font-size:18px;color:rgba(255,255,255,.3);transition:color .2s,transform .2s;}
-.mod-card:hover .mod-arrow{color:rgba(255,255,255,.8);transform:translateX(4px);}
+/* ALERTS */
+.alert-list{display:flex;flex-direction:column;gap:12px;}
+.alert-item{display:flex;gap:10px;align-items:flex-start;}
+.alert-ic{font-size:15px;flex:0 0 auto;margin-top:1px;}
+.alert-title{font-size:12.5px;font-weight:700;color:#1a1f2e;}
+.alert-sub{font-size:11.5px;color:#9ca3af;}
+.alert-time{font-size:10px;color:#c1c6d0;margin-top:2px;}
 
-/* FOOTER */
-.footer{margin-top:auto;padding:14px 28px;text-align:center;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;background:#fff;}
+/* PRODUCCIÓN POR FINCA (lista de barras horizontales) */
+.hbar-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.hbar-lbl{font-size:12px;color:#374151;width:54px;flex:0 0 auto;}
+.hbar-track{flex:1;height:9px;background:#eef0f4;border-radius:6px;overflow:hidden;}
+.hbar-fill{height:100%;background:linear-gradient(90deg,#16a34a,#0f3520);border-radius:6px;}
+.hbar-val{font-size:12px;color:#1a1f2e;font-weight:700;width:90px;text-align:right;flex:0 0 auto;}
 
-@media(max-width:640px){
-  .modulos{grid-template-columns:1fr;}
-  .stats-row{gap:24px;}
-  .hero-title{font-size:34px;}
+/* LINE CHART */
+.linechart-wrap{display:flex;flex-direction:column;}
+.linechart-kpi{font-size:11px;color:#9ca3af;}
+.linechart-num{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#1a1f2e;}
+.linechart-delta{font-size:11px;color:#16a34a;font-weight:700;margin-bottom:8px;}
+
+/* ACTIVIDADES / ACCESOS */
+.act-list{display:flex;flex-direction:column;gap:13px;}
+.act-item{display:flex;align-items:center;gap:10px;}
+.act-check{color:#16a34a;font-size:14px;}
+.act-text{font-size:12.5px;color:#1a1f2e;flex:1;}
+.act-text b{font-weight:700;}
+.act-time{font-size:11px;color:#9ca3af;white-space:nowrap;}
+
+.quick-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.quick-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px;border-radius:12px;background:#f8faf9;cursor:pointer;text-align:center;}
+.quick-item:hover{background:#eef8f1;}
+.quick-ic{font-size:20px;}
+.quick-lbl{font-size:10.5px;color:#374151;font-weight:600;}
+
+@media(max-width:1100px){
+  .kpi-row{grid-template-columns:repeat(3,1fr);}
+  .grid-row.cols-3{grid-template-columns:1fr;}
+  .quick-grid{grid-template-columns:repeat(3,1fr);}
 }
-
-.mc-censo{background:linear-gradient(160deg,#7c2d12 0%,#b45309 50%,#451a03 100%);}
-.mc-taller{background:linear-gradient(160deg,#374151 0%,#4b5563 50%,#111827 100%);}
-.mc-almacen{background:linear-gradient(160deg,#14532d 0%,#166534 50%,#052e16 100%);}
-.mc-pronto{opacity:.55;cursor:not-allowed;pointer-events:none;}
+@media(max-width:760px){
+  .sidebar{position:fixed;left:-260px;z-index:500;transition:left .25s;box-shadow:0 0 30px rgba(0,0,0,.3);}
+  .sidebar.open{left:0;}
+  .hamburger{display:block;}
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .quick-grid{grid-template-columns:repeat(3,1fr);}
+  .content{padding:16px;}
+  .topbar{padding:14px 16px;}
+  .tb-user-name,.tb-user-sub{display:none;}
+  .tb-pill{padding:8px 10px;font-size:11.5px;}
+}
 
 /* ── LOGIN AGROVISIÓN ───────────────────── */
 #login-screen{position:fixed;inset:0;background:#FFFFFF url('fondo_login_desktop.jpg') center center no-repeat;background-size:cover;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:auto;font-family:"DM Sans",sans-serif;padding:20px;}
@@ -137,8 +201,6 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 }
 
 /* ── ADMINISTRACIÓN DE USUARIOS ───────────────────── */
-.btn-admin-users{margin-top:6px;background:#fff;border:1px solid #d6dbe3;color:#16a34a;font-weight:700;font-size:11px;padding:6px 12px;border-radius:16px;cursor:pointer;font-family:"DM Sans",sans-serif;}
-.btn-admin-users:hover{background:rgba(22,163,74,.08);}
 #admin-screen{position:fixed;inset:0;background:rgba(15,30,20,.45);display:none;align-items:center;justify-content:center;z-index:9998;padding:20px;font-family:"DM Sans",sans-serif;}
 #admin-screen.active{display:flex;}
 .admin-panel{background:#fff;border-radius:18px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.25);}
@@ -228,152 +290,178 @@ body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1f2e;min-heigh
 </div>
 
 <div id="app-shell" style="display:none;">
+<div class="dash">
 
-<div class="header">
-  <div class="logo-wrap">
-    <div class="logo-icon">🌴</div>
-    <div class="brand">
-      <div class="brand-name">Palma Grande</div>
-      <div class="brand-sub">Sistema de Gestión Agrícola</div>
+  <div class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-icon">🌴</div>
+      <div>
+        <div class="sb-brand-name">Palma Grande</div>
+        <div class="sb-brand-sub">S.A.S.</div>
+      </div>
+    </div>
+
+    <div class="sb-section">Módulos principales</div>
+    <a class="sb-link active" href="index.html"><span class="ic">🏠</span> Inicio</a>
+    <a class="sb-link" href="cosecha.html"><span class="ic">🌴</span> Cosecha</a>
+    <span class="sb-link pronto"><span class="ic">📦</span> Producción</span>
+    <a class="sb-link" href="sanidad_carpeta.html"><span class="ic">🧪</span> Sanidad</a>
+    <a class="sb-link" href="trampas_dashboard.html"><span class="ic">🪲</span> Trampeo · Rhynchophorus</a>
+    <span class="sb-link pronto"><span class="ic">🌿</span> Fertilización</span>
+    <span class="sb-link pronto"><span class="ic">🌼</span> Polinización</span>
+    <a class="sb-link" href="mantenimiento.html"><span class="ic">🔧</span> Mantenimiento</a>
+    <span class="sb-link pronto"><span class="ic">🚜</span> Flota y Combustible</span>
+    <span class="sb-link pronto"><span class="ic">📋</span> Inventarios</span>
+    <span class="sb-link pronto"><span class="ic">☁️</span> Clima</span>
+
+    <div class="sb-section">Reportes</div>
+    <span class="sb-link pronto"><span class="ic">📊</span> Informes</span>
+    <span class="sb-link pronto"><span class="ic">⬇️</span> Exportar Datos</span>
+
+    <div class="sb-section">Configuración</div>
+    <span class="sb-link pronto"><span class="ic">⚙️</span> Parámetros</span>
+    <a class="sb-link" id="sb-link-usuarios" href="javascript:void(0)" onclick="abrirAdminUsuarios()" style="display:none;"><span class="ic">👤</span> Usuarios</a>
+
+    <div class="sb-weather">
+      <div class="sb-weather-temp">☀️ 29°C</div>
+      <div class="sb-weather-desc">Soleado · Finca Central</div>
+      <div class="sb-weather-time" id="hdr-fecha">—</div>
     </div>
   </div>
-  <div class="header-info">
-    <div class="header-fecha" id="hdr-fecha">—</div>
-    <div class="header-sem" id="hdr-sem">—</div>
-    <button class="btn-admin-users" id="btn-admin-users" onclick="abrirAdminUsuarios()" style="display:none;">👤 Usuarios</button>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div>
+          <div class="topbar-title" id="topbar-greeting">¡Buenos días, Administrador!</div>
+          <div class="topbar-sub">Resumen general de la operación</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="tb-pill" id="hdr-fecha-pill">—</span>
+        <span class="tb-pill">📍 Todas las fincas</span>
+        <span class="tb-bell">🔔<span class="dot"></span></span>
+        <div class="tb-user">
+          <div class="tb-avatar">A</div>
+          <div>
+            <div class="tb-user-name" id="tb-user-name">Administrador</div>
+            <div class="tb-user-sub">Admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-icon">🌴</div><div class="kpi-lbl">Lotes</div><div class="kpi-num">62</div><div class="kpi-delta neutral">3 fincas</div></div>
+        <div class="kpi-card"><div class="kpi-icon">📐</div><div class="kpi-lbl">Hectáreas</div><div class="kpi-num">1.056</div><div class="kpi-delta neutral">Total cultivado</div></div>
+        <div class="kpi-card"><div class="kpi-icon">📦</div><div class="kpi-lbl">Producción mes</div><div class="kpi-num">184 t</div><div class="kpi-delta">▲ 6.2%</div></div>
+        <div class="kpi-card"><div class="kpi-icon">🪲</div><div class="kpi-lbl">Trampas activas</div><div class="kpi-num">48</div><div class="kpi-delta neutral">15 días ciclo</div></div>
+        <div class="kpi-card"><div class="kpi-icon">🔧</div><div class="kpi-lbl">Labores activas</div><div class="kpi-num">7</div><div class="kpi-delta neutral">En curso</div></div>
+        <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-lbl">Alertas abiertas</div><div class="kpi-num">3</div><div class="kpi-delta down">Requieren atención</div></div>
+      </div>
+
+      <div class="grid-row cols-3">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Cosecha por día</div><div class="panel-sub">Últimos 7 días · toneladas</div></div></div>
+          <div class="barchart">
+            <div class="bar-col"><div class="bar-val">5.2</div><div class="bar" style="height:52%;"></div><div class="bar-lbl">Lun</div></div>
+            <div class="bar-col"><div class="bar-val">6.8</div><div class="bar" style="height:68%;"></div><div class="bar-lbl">Mar</div></div>
+            <div class="bar-col"><div class="bar-val">7.4</div><div class="bar" style="height:74%;"></div><div class="bar-lbl">Mié</div></div>
+            <div class="bar-col"><div class="bar-val">6.1</div><div class="bar" style="height:61%;"></div><div class="bar-lbl">Jue</div></div>
+            <div class="bar-col"><div class="bar-val">8.9</div><div class="bar" style="height:89%;"></div><div class="bar-lbl">Vie</div></div>
+            <div class="bar-col"><div class="bar-val">9.6</div><div class="bar" style="height:96%;"></div><div class="bar-lbl">Sáb</div></div>
+            <div class="bar-col"><div class="bar-val">3.0</div><div class="bar" style="height:30%;"></div><div class="bar-lbl">Dom</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Estado de los ciclos</div><div class="panel-sub">Lotes por etapa</div></div></div>
+          <div class="donut-wrap">
+            <div class="donut" style="background:conic-gradient(#16a34a 0% 55%, #f59e0b 55% 80%, #d6dbe3 80% 100%);">
+              <div class="donut-center"><span class="num">62</span><span class="lbl">Lotes</span></div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="dl-item"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">En producción</span><span class="dl-val">34</span></div>
+            <div class="dl-item"><span class="dot" style="background:#f59e0b;"></span><span class="dl-lbl">En desarrollo</span><span class="dl-val">16</span></div>
+            <div class="dl-item"><span class="dot" style="background:#d6dbe3;"></span><span class="dl-lbl">Recién sembrado</span><span class="dl-val">12</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Alertas</div><div class="panel-sub">Pendientes por revisar</div></div></div>
+          <div class="alert-list">
+            <div class="alert-item"><span class="alert-ic">🪲</span><div><div class="alert-title">Trampa #14 sin revisar</div><div class="alert-sub">Lote 7 · Finca Central</div></div><span class="alert-time">2h</span></div>
+            <div class="alert-item"><span class="alert-ic">🧪</span><div><div class="alert-title">Foco de Pudrición de Cogollo</div><div class="alert-sub">Lote 22 · Finca Norte</div></div><span class="alert-time">5h</span></div>
+            <div class="alert-item"><span class="alert-ic">🔧</span><div><div class="alert-title">Poda atrasada</div><div class="alert-sub">Lote 9 · Finca Sur</div></div><span class="alert-time">1d</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-row cols-3">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Producción por finca</div><div class="panel-sub">Toneladas · mes actual</div></div></div>
+          <div class="hbar-row"><span class="hbar-lbl">Finca Central</span><div class="hbar-track"><div class="hbar-fill" style="width:88%;"></div></div><span class="hbar-val">81 t</span></div>
+          <div class="hbar-row"><span class="hbar-lbl">Finca Norte</span><div class="hbar-track"><div class="hbar-fill" style="width:64%;"></div></div><span class="hbar-val">59 t</span></div>
+          <div class="hbar-row"><span class="hbar-lbl">Finca Sur</span><div class="hbar-track"><div class="hbar-fill" style="width:48%;"></div></div><span class="hbar-val">44 t</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Estado de madurez del fruto</div><div class="panel-sub">Racimos muestreados</div></div></div>
+          <div class="donut-wrap">
+            <div class="donut" style="background:conic-gradient(#16a34a 0% 62%, #f59e0b 62% 86%, #ef4444 86% 100%);">
+              <div class="donut-center"><span class="num">86%</span><span class="lbl">Óptimo</span></div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="dl-item"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Maduro</span><span class="dl-val">62%</span></div>
+            <div class="dl-item"><span class="dot" style="background:#f59e0b;"></span><span class="dl-lbl">Pintón</span><span class="dl-val">24%</span></div>
+            <div class="dl-item"><span class="dot" style="background:#ef4444;"></span><span class="dl-lbl">Verde</span><span class="dl-val">14%</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Rendimiento promedio</div><div class="panel-sub">Toneladas / hectárea</div></div></div>
+          <div class="linechart-wrap">
+            <div class="linechart-kpi"><span class="linechart-num">1.74</span><span class="linechart-delta">▲ 4.1%</span></div>
+            <svg viewBox="0 0 240 80" width="100%" height="80" preserveAspectRatio="none">
+              <polyline points="0,60 40,52 80,48 120,38 160,30 200,22 240,16" fill="none" stroke="#16a34a" stroke-width="3"/>
+              <polygon points="0,60 40,52 80,48 120,38 160,30 200,22 240,16 240,80 0,80" fill="rgba(22,163,74,.12)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-row cols-3">
+        <div class="panel" style="grid-column:span 2;">
+          <div class="panel-head"><div><div class="panel-title">Actividades recientes</div><div class="panel-sub">Últimos registros del equipo</div></div></div>
+          <div class="act-list">
+            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>Juan Cosecha</b> registró cosecha en Lote 14</div><span class="act-time">Hace 30 min</span></div>
+            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>María Sanidad</b> revisó 6 trampas en Finca Norte</div><span class="act-time">Hace 1 h</span></div>
+            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>Pedro Mantto</b> completó poda en Lote 9</div><span class="act-time">Hace 3 h</span></div>
+            <div class="act-item"><span class="act-check">✅</span><div class="act-text"><b>Administrador</b> creó un nuevo usuario</div><span class="act-time">Ayer</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Accesos rápidos</div></div></div>
+          <div class="quick-grid">
+            <a class="quick-item" href="cosecha.html"><span class="quick-ic">🌴</span><span class="quick-lbl">Cosecha</span></a>
+            <a class="quick-item" href="mantenimiento.html"><span class="quick-ic">🔧</span><span class="quick-lbl">Mantto</span></a>
+            <a class="quick-item" href="sanidad_carpeta.html"><span class="quick-ic">🧪</span><span class="quick-lbl">Sanidad</span></a>
+            <a class="quick-item" href="trampas_dashboard.html"><span class="quick-ic">🪲</span><span class="quick-lbl">Trampeo</span></a>
+            <span class="quick-item" onclick="abrirAdminUsuarios()" style="cursor:pointer;"><span class="quick-ic">👤</span><span class="quick-lbl">Usuarios</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
+
 </div>
-
-<div class="hero">
-  <div class="hero-eyebrow">Panel de control</div>
-  <div class="hero-title">GESTIÓN <span>AGRÍCOLA</span></div>
-  <div class="hero-line"></div>
-</div>
-
-<div class="stats-row">
-  <div class="stat-item"><div class="stat-num">62</div><div class="stat-lbl">Lotes</div></div>
-  <div class="stat-item"><div class="stat-num">3</div><div class="stat-lbl">Fincas</div></div>
-  <div class="stat-item"><div class="stat-num">1.056</div><div class="stat-lbl">Hectáreas</div></div>
-  <div class="stat-item"><div class="stat-num">7</div><div class="stat-lbl">Labores</div></div>
-</div>
-
-<div class="modulos">
-
-  <!-- COSECHA -->
-  <a class="mod-card mc-cosecha" href="cosecha.html">
-    <div class="mod-top">
-      <span class="mod-emoji">🌴</span>
-      <div class="mod-titulo">Cosecha</div>
-      <div class="mod-subtitulo">Control de ciclos por lote</div>
-    </div>
-    <div class="mod-divider"></div>
-    <div class="mod-labores">
-      <div class="labor-row"><span class="labor-name">Guineensis</span><span class="labor-ciclo">11–12 días</span></div>
-      <div class="labor-row"><span class="labor-name">Híbrido</span><span class="labor-ciclo">21–22 días</span></div>
-    </div>
-    <div class="mod-footer">
-      <span class="mod-status ms-activo">● Activo</span>
-      <span class="mod-arrow">→</span>
-    </div>
-  </a>
-
-  <!-- MANTENIMIENTO -->
-  <a class="mod-card mc-mantto" href="mantenimiento.html">
-    <div class="mod-top">
-      <span class="mod-emoji">🔧</span>
-      <div class="mod-titulo">Mantenimiento</div>
-      <div class="mod-subtitulo">Labores culturales del cultivo</div>
-    </div>
-    <div class="mod-divider"></div>
-    <div class="mod-labores">
-      <div class="labor-row"><span class="labor-name">Poda Guineensis</span><span class="labor-ciclo">11 meses</span></div>
-      <div class="labor-row"><span class="labor-name">Poda Híbrido</span><span class="labor-ciclo">8 meses</span></div>
-      <div class="labor-row"><span class="labor-name">Rocería</span><span class="labor-ciclo">3 meses</span></div>
-      <div class="labor-row"><span class="labor-name">Rotospeed</span><span class="labor-ciclo">3 meses</span></div>
-      <div class="labor-row"><span class="labor-name">Rolo</span><span class="labor-ciclo">6 meses</span></div>
-    </div>
-    <div class="mod-footer">
-      <span class="mod-status ms-activo">● Activo</span>
-      <span class="mod-arrow">→</span>
-    </div>
-  </a>
-
-  <!-- SANIDAD -->
-  <a class="mod-card mc-sanidad" href="sanidad_carpeta.html">
-    <div class="mod-top">
-      <span class="mod-emoji">🧪</span>
-      <div class="mod-titulo">Sanidad</div>
-      <div class="mod-subtitulo">Monitoreo y control fitosanitario</div>
-    </div>
-    <div class="mod-divider"></div>
-    <div class="mod-labores">
-      <div class="labor-row"><span class="labor-name">Trampas Rhynchophorus</span><span class="labor-ciclo">15 días</span></div>
-      <div class="labor-row"><span class="labor-name">Censo enfermedades</span><span class="labor-ciclo">30 días</span></div>
-      <div class="labor-row"><span class="labor-name">Control PC</span><span class="labor-ciclo">30 días</span></div>
-    </div>
-    <div class="mod-footer">
-      <span class="mod-status ms-activo">● Activo</span>
-      <span class="mod-arrow">→</span>
-    </div>
-  </a>
-
-  <!-- CENSO DE PLANTACIÓN -->
-  <div class="mod-card mc-censo mc-pronto">
-    <div class="mod-top">
-      <span class="mod-emoji">🌱</span>
-      <div class="mod-titulo">Censo de Plantación</div>
-      <div class="mod-subtitulo">Estado y estadísticas de palmas</div>
-    </div>
-    <div class="mod-divider"></div>
-    <div class="mod-labores">
-      <div class="labor-row"><span class="labor-name">Estado de palmas</span><span class="labor-ciclo">Por lote</span></div>
-      <div class="labor-row"><span class="labor-name">Producción</span><span class="labor-ciclo">Por palma</span></div>
-    </div>
-    <div class="mod-footer">
-      <span class="mod-status ms-pronto">● En desarrollo</span>
-    </div>
-  </div>
-
-  <!-- TALLER -->
-  <div class="mod-card mc-taller mc-pronto">
-    <div class="mod-top">
-      <span class="mod-emoji">🚜</span>
-      <div class="mod-titulo">Taller</div>
-      <div class="mod-subtitulo">Maquinaria y flota</div>
-    </div>
-    <div class="mod-divider"></div>
-    <div class="mod-labores">
-      <div class="labor-row"><span class="labor-name">Preoperativos</span><span class="labor-ciclo">Diario</span></div>
-      <div class="labor-row"><span class="labor-name">Mantenimiento flota</span><span class="labor-ciclo">Por equipo</span></div>
-      <div class="labor-row"><span class="labor-name">Combustible</span><span class="labor-ciclo">Despachos</span></div>
-    </div>
-    <div class="mod-footer">
-      <span class="mod-status ms-pronto">● En desarrollo</span>
-    </div>
-  </div>
-
-  <!-- ALMACÉN -->
-  <div class="mod-card mc-almacen mc-pronto">
-    <div class="mod-top">
-      <span class="mod-emoji">⛽</span>
-      <div class="mod-titulo">Almacén</div>
-      <div class="mod-subtitulo">Insumos y combustible</div>
-    </div>
-    <div class="mod-divider"></div>
-    <div class="mod-labores">
-      <div class="labor-row"><span class="labor-name">Control combustible</span><span class="labor-ciclo">Despachos</span></div>
-      <div class="labor-row"><span class="labor-name">Insumos agrícolas</span><span class="labor-ciclo">Stock</span></div>
-      <div class="labor-row"><span class="labor-name">Fertilizantes</span><span class="labor-ciclo">Inventario</span></div>
-    </div>
-    <div class="mod-footer">
-      <span class="mod-status ms-pronto">● En desarrollo</span>
-    </div>
-  </div>
-
-</div>
-
-<div class="footer">Palma Grande S.A.S. · 2026</div>
-
 </div>
 
 <div id="admin-screen">
@@ -455,7 +543,7 @@ function entrarApp() {
   document.getElementById('app-shell').style.display = '';
   initHeaderFecha();
   const rol = localStorage.getItem('av_rol') || sessionStorage.getItem('av_rol') || 'usuario';
-  if (rol === 'admin') document.getElementById('btn-admin-users').style.display = '';
+  if (rol === 'admin') document.getElementById('sb-link-usuarios').style.display = '';
 }
 
 function loginError(msg) {
@@ -641,8 +729,9 @@ function semanaNum(d){
 }
 function initHeaderFecha(){
   const hoy=hoyLocal();
-  document.getElementById('hdr-fecha').textContent=hoy.getDate()+' '+MESES[hoy.getMonth()]+' '+hoy.getFullYear();
-  document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
+  const texto=hoy.getDate()+' de '+MESES[hoy.getMonth()]+' de '+hoy.getFullYear();
+  document.getElementById('hdr-fecha').textContent='Semana '+semanaNum(hoy);
+  document.getElementById('hdr-fecha-pill').textContent='📅 '+texto;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
