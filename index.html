@@ -215,6 +215,20 @@ a.mtab:hover{color:#16a34a;}
 .foot-note{font-size:11.5px;color:#9ca3af;}
 .foot-note b{color:#6b7280;}
 
+/* PRODUCCIÓN MENSUAL */
+.combo-wrap{position:relative;}
+.combo-tooltip{position:absolute;background:#1a1f2e;color:#fff;font-size:10px;border-radius:6px;padding:6px 10px;line-height:1.5;box-shadow:0 4px 10px rgba(0,0,0,.18);pointer-events:none;white-space:nowrap;}
+.combo-tooltip b{display:block;font-size:10.5px;}
+.split-panel{display:flex;gap:18px;align-items:flex-start;}
+.split-panel .s-table{flex:1;min-width:0;}
+.split-panel .donut-wrap{flex:0 0 150px;flex-direction:column;align-items:center;gap:12px;}
+.donut.sm{width:96px;height:96px;}
+.donut.sm .num{font-size:16px;}
+.mini-compare{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;}
+.mini-compare th{text-align:left;color:#9ca3af;font-weight:700;font-size:10px;padding:5px 6px;border-top:1px solid #eef0f4;}
+.mini-compare td{padding:5px 6px;color:#1a1f2e;font-weight:600;border-top:1px solid #eef0f4;text-align:center;}
+.mini-compare th:first-child,.mini-compare td:first-child{text-align:left;font-weight:700;}
+
 /* SIMPLE TABLE */
 .s-table{width:100%;border-collapse:collapse;font-size:12px;}
 .s-table th{text-align:left;color:#9ca3af;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:0 6px 8px;border-bottom:1px solid #eef0f4;}
@@ -467,7 +481,7 @@ a.mtab:hover{color:#16a34a;}
       <div id="sb-prod-sub" style="display:none;">
         <a class="sb-sublink sb-sublink2 active" id="sbp-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
         <a class="sb-sublink sb-sublink2" id="sbp-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
-        <span class="sb-sublink sb-sublink2 pronto">Producción Mensual</span>
+        <a class="sb-sublink sb-sublink2" id="sbp-mensual" href="javascript:void(0)" onclick="showProduccionSub('mensual')">Producción Mensual</a>
         <span class="sb-sublink sb-sublink2 pronto">Producción Anual</span>
         <span class="sb-sublink sb-sublink2 pronto">Comparativos</span>
         <span class="sb-sublink sb-sublink2 pronto">Histórico</span>
@@ -826,7 +840,7 @@ a.mtab:hover{color:#16a34a;}
               <span class="mtab pronto">Resumen</span>
               <a class="mtab active" id="mtab-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
               <a class="mtab" id="mtab-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
-              <span class="mtab pronto">Producción Mensual</span>
+              <a class="mtab" id="mtab-mensual" href="javascript:void(0)" onclick="showProduccionSub('mensual')">Producción Mensual</a>
               <span class="mtab pronto">Producción Anual</span>
               <span class="mtab pronto">Comparativos</span>
               <span class="mtab pronto">Histórico</span>
@@ -1134,6 +1148,184 @@ a.mtab:hover{color:#16a34a;}
           <div class="foot-note"><b>Nota:</b> Todos los datos están actualizados al 15/05/2024 06:00 a.m.</div>
           </div>
           <!-- /prod-sub-semanal -->
+
+          <div id="prod-sub-mensual" style="display:none;">
+          <div class="kpi-row cols-7" style="margin-top:18px;">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del mes</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs abril 2024</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Producción acumulada (año)</div><div class="kpi-num">2.145,6 t</div><div class="kpi-delta">▲ +9,3% vs 2023</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Promedio diario</div><div class="kpi-num">15,7 t</div><div class="kpi-delta neutral">31 días</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-star"/></svg></div><div class="kpi-lbl">Día de mayor producción</div><div class="kpi-num" style="font-size:16px;">Viernes 10</div><div class="kpi-delta neutral">24,8 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Toneladas por hectárea</div><div class="kpi-num">22,3 t/ha</div><div class="kpi-delta neutral">Área productiva: 1.820 ha</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num">22,1 %</div><div class="kpi-delta">▲ +0,6% vs abril 2024</div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento de meta</div><div class="kpi-num">96,3 %</div><div class="kpi-delta neutral">Meta: 506,1 t</div><div class="kpi-progress"><div class="kpi-progress-fill" style="width:96.3%;"></div></div></div>
+          </div>
+
+          <div class="grid-row cols-58-42">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción diaria del mes (Mayo 2024)</div><div class="panel-sub">Toneladas</div></div><span class="panel-select">Toneladas ▾</span></div>
+              <div class="barchart" style="gap:5px;">
+                <div class="bar-col"><div class="bar" style="height:50%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:56%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:48%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:60%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:53%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:62%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:58%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar-val">24,8 t</div><div class="bar" style="height:100%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:64%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:57%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:61%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:55%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:63%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:59%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:52%;max-width:14px;"></div></div>
+                <div class="bar-col"><div class="bar" style="height:65%;max-width:14px;"></div></div>
+              </div>
+              <div class="linechart-axis"><span>01</span><span>03</span><span>05</span><span>07</span><span>09</span><span>11</span><span>13</span><span>15</span><span>17</span><span>19</span><span>21</span><span>23</span><span>25</span><span>27</span><span>29</span><span>31</span></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción acumulada del mes</div></div></div>
+              <div class="combo-legend">
+                <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Acumulado real (t)</span>
+                <span class="lg-item"><span class="lg-dot" style="background:#2563eb;"></span>Meta acumulada (t)</span>
+                <span class="lg-item"><span class="lg-dot" style="background:#f59e0b;"></span>Meta anual proyectada (t)</span>
+              </div>
+              <div class="combo-wrap">
+                <svg class="combo-chart" viewBox="0 0 260 130" width="100%" height="150" preserveAspectRatio="none">
+                  <polyline points="9,122 32,110 55,96 78,80 101,64 124,46" fill="none" stroke="#16a34a" stroke-width="3"/>
+                  <circle cx="124" cy="46" r="3.5" fill="#16a34a"/>
+                  <polyline points="9,124 32,112 55,100 78,88 101,76 124,62 147,52 170,44 193,36 216,26 239,16" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,4"/>
+                  <polyline points="9,120 32,106 55,94 78,82 101,70 124,58 147,46 170,36 193,26 216,16 239,6" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,4"/>
+                </svg>
+                <div class="combo-tooltip" style="top:18%;left:38%;"><b>15 May</b>487,2 t</div>
+                <div class="as-list">
+                  <div class="as-item"><div class="as-lbl">Acumulado real</div><div class="as-val green">487,2 t</div></div>
+                  <div class="as-item"><div class="as-lbl">Meta mensual</div><div class="as-val">506,1 t</div></div>
+                  <div class="as-item"><div class="as-lbl">Cumplimiento</div><div class="as-val orange">96,3%</div></div>
+                  <div class="as-item"><div class="as-lbl">Diferencia</div><div class="as-val red">-18,9 t</div></div>
+                </div>
+              </div>
+              <div class="linechart-axis"><span>01</span><span>03</span><span>05</span><span>07</span><span>09</span><span>11</span><span>13</span><span>15</span><span>17</span><span>19</span><span>21</span><span>23</span><span>25</span><span>27</span><span>29</span><span>31</span></div>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por finca (Mayo 2024)</div></div></div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#16a34a 0% 53%, #2563eb 53% 89.2%, #f5b942 89.2% 100%);">
+                  <div class="donut-center"><span class="num">487,2 t</span><br><span style="font-size:9px;color:#9ca3af;">Total</span></div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Finca 1</span><span class="dl-val">258,5 t (53,0%)</span></div></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-lbl">Finca 2</span><span class="dl-val">176,4 t (36,2%)</span></div></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Finca 3</span><span class="dl-val">52,3 t (10,8%)</span></div></div>
+                </div>
+              </div>
+              <a class="panel-link">Ver detalle por finca <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por tipo de palma (Mayo 2024)</div></div></div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#16a34a 0% 78.3%, #f5b942 78.3% 100%);">
+                  <div class="donut-center"><span class="num">487,2 t</span><br><span style="font-size:9px;color:#9ca3af;">Total</span></div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Guineensis</span><span class="dl-val">381,4 t (78,3%)</span></div></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Híbrido</span><span class="dl-val">105,8 t (21,7%)</span></div></div>
+                </div>
+              </div>
+              <a class="panel-link">Ver detalle por tipo de palma <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por estado de los lotes</div></div></div>
+              <div class="split-panel">
+                <table class="s-table">
+                  <thead><tr><th>Estado</th><th>Toneladas</th><th>%</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="dot" style="background:#16a34a;display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;"></span>Óptimo (≤13 días)</td><td>321,5 t</td><td>65,9%</td></tr>
+                    <tr><td><span class="dot" style="background:#f5b942;display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;"></span>Próximo a vencer (14 - 15 días)</td><td>105,6 t</td><td>21,7%</td></tr>
+                    <tr><td><span class="dot" style="background:#dc2626;display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;"></span>Atrasado (&gt;15 días)</td><td>60,1 t</td><td>12,4%</td></tr>
+                    <tr><td><b>Total</b></td><td><b>487,2 t</b></td><td><b>100%</b></td></tr>
+                  </tbody>
+                </table>
+                <div class="donut-wrap">
+                  <div class="donut sm" style="background:conic-gradient(#16a34a 0% 68%, #f5b942 68% 89%, #dc2626 89% 100%);">
+                    <div class="donut-center"><span class="num">76</span><br><span style="font-size:8.5px;color:#9ca3af;">Total lotes</span></div>
+                  </div>
+                  <div class="donut-legend" style="gap:6px;">
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-val" style="font-weight:600;font-size:11px;">52 lotes (68%)</span></div></div>
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-val" style="font-weight:600;font-size:11px;">16 lotes (21%)</span></div></div>
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#dc2626;"></span><span class="dl-val" style="font-weight:600;font-size:11px;">8 lotes (11%)</span></div></div>
+                  </div>
+                </div>
+              </div>
+              <a class="panel-link">Ver mapa de ciclos <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Top 10 lotes por producción (Mayo 2024)</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>#</th><th>Lote</th><th>Finca</th><th>Área (ha)</th><th>Prod. (t)</th><th>Ton/ha</th><th>% del total</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>45B</td><td>Finca 1</td><td>58,4</td><td>32,6</td><td>0,56</td><td>6,7%</td></tr>
+                  <tr><td>2</td><td>11A</td><td>Finca 1</td><td>42,7</td><td>27,1</td><td>0,63</td><td>5,6%</td></tr>
+                  <tr><td>3</td><td>26</td><td>Finca 2</td><td>35,1</td><td>22,3</td><td>0,64</td><td>4,6%</td></tr>
+                  <tr><td>4</td><td>31</td><td>Finca 2</td><td>42,3</td><td>20,5</td><td>0,48</td><td>4,2%</td></tr>
+                  <tr><td>5</td><td>15</td><td>Finca 1</td><td>36,8</td><td>18,9</td><td>0,51</td><td>3,9%</td></tr>
+                </tbody>
+              </table>
+              <a class="panel-link">Ver todos los lotes <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Comparativo mensual (últimos 6 meses)</div></div></div>
+              <div class="combo-legend">
+                <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Producción (t)</span>
+                <span class="lg-item"><span class="lg-dot" style="background:#2563eb;"></span>Ton/ha</span>
+              </div>
+              <div class="combo-wrap">
+                <svg class="combo-chart" viewBox="0 0 260 130" width="100%" height="150" preserveAspectRatio="none">
+                  <rect x="14" y="78" width="26" height="46" fill="#16a34a"/>
+                  <rect x="58" y="100" width="26" height="24" fill="#16a34a"/>
+                  <rect x="102" y="72" width="26" height="52" fill="#16a34a"/>
+                  <rect x="146" y="60" width="26" height="64" fill="#16a34a"/>
+                  <rect x="190" y="56" width="26" height="68" fill="#16a34a"/>
+                  <rect x="220" y="40" width="26" height="84" fill="#16a34a"/>
+                  <polyline points="27,58 71,72 115,52 159,44 203,42 233,36" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,4"/>
+                  <circle cx="27" cy="58" r="3" fill="#2563eb"/><circle cx="71" cy="72" r="3" fill="#2563eb"/><circle cx="115" cy="52" r="3" fill="#2563eb"/><circle cx="159" cy="44" r="3" fill="#2563eb"/><circle cx="203" cy="42" r="3" fill="#2563eb"/><circle cx="233" cy="36" r="3" fill="#2563eb"/>
+                </svg>
+              </div>
+              <div class="linechart-axis"><span>Dic 2023</span><span>Ene 2024</span><span>Feb 2024</span><span>Mar 2024</span><span>Abr 2024</span><span>May 2024</span></div>
+              <table class="mini-compare">
+                <thead><tr><th>Producción (t)</th><td>412,5</td><td>398,7</td><td>435,2</td><td>454,1</td><td>452,0</td><td>487,2</td></tr></thead>
+                <tbody><tr><th>Ton/ha</th><td>20,6</td><td>19,9</td><td>21,8</td><td>22,7</td><td>22,0</td><td>22,3</td></tr></tbody>
+              </table>
+              <a class="panel-link">Ver análisis comparativo completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Indicadores del mes</div></div></div>
+              <div class="eff-grid">
+                <div class="eff-card kpi-card sm"><div class="kpi-icon" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-users"/></svg></div><div class="kpi-lbl">Racimos procesados</div><div class="kpi-num">78.542</div><div class="kpi-delta">▲ +6,1% vs abril</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon blue" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-box"/></svg></div><div class="kpi-lbl">Peso promedio racimo</div><div class="kpi-num">23,4 kg</div><div class="kpi-delta">▲ +0,6 kg vs abril</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon violet" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">% Racimos verdes</div><div class="kpi-num">6,2%</div><div class="kpi-delta down">▼ -0,3% vs abril</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-clock"/></svg></div><div class="kpi-lbl">% Racimos sobremaduros</div><div class="kpi-num">2,1%</div><div class="kpi-delta">▼ -0,2% vs abril</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon blue" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-alert-triangle"/></svg></div><div class="kpi-lbl">% Racimos podridos</div><div class="kpi-num">0,9%</div><div class="kpi-delta">▼ -0,1% vs abril</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-truck"/></svg></div><div class="kpi-lbl">Eficiencia de recolección</div><div class="kpi-num">87,5%</div><div class="kpi-delta">▲ +3,2% vs abril</div></div>
+              </div>
+              <a class="panel-link">Ver todos los indicadores <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+          </div>
+
+          <div class="foot-note"><b>Nota:</b> Los datos mostrados están actualizados al 15/05/2024 06:00 a.m.</div>
+          </div>
+          <!-- /prod-sub-mensual -->
         </div>
         <!-- /cosecha-tab-produccion -->
       </div>
@@ -1449,15 +1641,19 @@ function showCosechaTab(name){
 const PRODUCCION_SUB_INFO = {
   diaria:   {title: 'Producción Diaria', sub: 'Análisis detallado de la producción de fruta'},
   semanal:  {title: 'Producción Semanal', sub: 'Análisis detallado de la producción de fruta por semana'},
+  mensual:  {title: 'Producción Mensual', sub: 'Análisis detallado de la producción de fruta por mes'},
 };
 
 function showProduccionSub(name){
   document.getElementById('prod-sub-diaria').style.display = name === 'diaria' ? '' : 'none';
   document.getElementById('prod-sub-semanal').style.display = name === 'semanal' ? '' : 'none';
+  document.getElementById('prod-sub-mensual').style.display = name === 'mensual' ? '' : 'none';
   document.getElementById('mtab-diaria').classList.toggle('active', name === 'diaria');
   document.getElementById('mtab-semanal').classList.toggle('active', name === 'semanal');
+  document.getElementById('mtab-mensual').classList.toggle('active', name === 'mensual');
   document.getElementById('sbp-diaria').classList.toggle('active', name === 'diaria');
   document.getElementById('sbp-semanal').classList.toggle('active', name === 'semanal');
+  document.getElementById('sbp-mensual').classList.toggle('active', name === 'mensual');
   const info = PRODUCCION_SUB_INFO[name];
   document.getElementById('topbar-greeting').textContent = info.title;
   document.getElementById('topbar-sub').textContent = info.sub;
