@@ -30,13 +30,13 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .sb-link.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:#4ade80;font-weight:600;}
 .sb-link.active .ic-svg{color:#4ade80;}
 .sb-link.pronto{opacity:.45;cursor:not-allowed;}
-.sb-sublink{display:flex;align-items:center;gap:10px;padding:8px 20px 8px 38px;font-size:12.5px;color:rgba(255,255,255,.65);text-decoration:none;cursor:pointer;border-left:3px solid transparent;}
-.sb-sublink .ic-svg{width:14px;height:14px;color:rgba(255,255,255,.55);}
+.sb-sublink{display:flex;align-items:center;gap:11px;padding:9px 20px;font-size:13px;color:rgba(255,255,255,.78);text-decoration:none;cursor:pointer;border-left:3px solid transparent;}
+.sb-sublink .ic-svg{width:16px;height:16px;color:rgba(255,255,255,.6);}
 .sb-sublink:hover{background:rgba(255,255,255,.06);color:#fff;}
 .sb-sublink.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:#4ade80;font-weight:600;}
 .sb-sublink.active .ic-svg{color:#4ade80;}
 .sb-sublink.pronto{opacity:.45;cursor:not-allowed;}
-.sb-sublink2{padding-left:54px;font-size:11.5px;}
+.sb-sublink2{padding-left:38px;font-size:12px;}
 .sb-weather{margin:auto 16px 0;background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;font-size:12px;}
 .sb-weather-temp{font-family:'Bebas Neue',sans-serif;font-size:22px;display:flex;align-items:center;gap:8px;color:#fde68a;}
 .sb-weather-temp .ic-svg{width:20px;height:20px;}
@@ -458,7 +458,7 @@ a.mtab:hover{color:#16a34a;}
       </div>
     </div>
 
-    <div class="sb-section">Módulos principales</div>
+    <div class="sb-section" id="sb-section-main">Módulos principales</div>
     <a class="sb-link active" id="sb-link-inicio" href="javascript:void(0)" onclick="showSection('inicio')"><svg class="ic-svg"><use href="#i-home"/></svg> Inicio</a>
     <a class="sb-link" id="sb-link-cosecha" href="javascript:void(0)" onclick="showSection('cosecha')"><svg class="ic-svg"><use href="#i-leaf"/></svg> Cosecha</a>
     <div id="sb-cosecha-sub" style="display:none;">
@@ -479,6 +479,7 @@ a.mtab:hover{color:#16a34a;}
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-target"/></svg> Indicadores Gerenciales</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-info"/></svg> Inteligencia Artificial</span>
     </div>
+    <div class="sb-section">Módulos</div>
     <a class="sb-link" href="sanidad_carpeta.html"><svg class="ic-svg"><use href="#i-flask"/></svg> Sanidad</a>
     <a class="sb-link" href="trampas_dashboard.html"><svg class="ic-svg"><use href="#i-bug"/></svg> Trampeo · Rhynchophorus</a>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Fertilización</span>
@@ -1422,6 +1423,9 @@ function showSection(name){
   document.getElementById('sb-link-inicio').classList.toggle('active', name === 'inicio');
   document.getElementById('sb-link-cosecha').classList.toggle('active', name === 'cosecha');
   document.getElementById('sb-cosecha-sub').style.display = name === 'cosecha' ? '' : 'none';
+  document.getElementById('sb-link-inicio').style.display = name === 'cosecha' ? 'none' : '';
+  document.getElementById('sb-link-cosecha').style.display = name === 'cosecha' ? 'none' : '';
+  document.getElementById('sb-section-main').textContent = name === 'cosecha' ? 'Cosecha' : 'Módulos principales';
   const info = SECTION_INFO[name];
   const nombre = document.getElementById('tb-user-name').textContent || 'Administrador';
   document.getElementById('topbar-greeting').textContent = info.title(nombre);
