@@ -2426,7 +2426,7 @@ function impComputeDashboardData(rows){
     rows, totalToneladas, totalRacimos,
     byDate, byLote, byFinca, byTipo, byWeek, byMonth, byYear,
     fechasOrdenadas,
-    hasData: rows.length > 0,
+    hasData: byMonth.size > 0,
   };
 }
 
@@ -3084,6 +3084,8 @@ async function impRenderProduccionTab(name){
     else if (name === 'comparativo') impRenderComparativo(data);
   } catch (e) {
     console.error('impRenderProduccionTab error:', e);
+    const footEl = document.getElementById(name + '-footnote');
+    if (footEl) footEl.innerHTML = '<b>Error:</b> No se pudo cargar esta vista (' + (e && e.message ? e.message : e) + '). Intenta actualizar.';
   }
 }
 
