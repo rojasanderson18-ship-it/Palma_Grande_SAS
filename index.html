@@ -1993,7 +1993,6 @@ function showSection(name){
   document.getElementById('sb-link-inicio').classList.toggle('active', name === 'inicio');
   document.getElementById('sb-link-cosecha').classList.toggle('active', name === 'cosecha');
   document.getElementById('sb-cosecha-sub').style.display = name === 'cosecha' ? '' : 'none';
-  document.getElementById('sb-link-inicio').style.display = name === 'cosecha' ? 'none' : '';
   document.getElementById('sb-link-cosecha').style.display = name === 'cosecha' ? 'none' : '';
   document.getElementById('sb-section-main').textContent = name === 'cosecha' ? 'Cosecha' : 'Módulos principales';
   const info = SECTION_INFO[name];
