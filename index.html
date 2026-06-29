@@ -1807,7 +1807,7 @@ a.mtab:hover{color:#16a34a;}
 
         <div class="imp-card">
           <h4>2. Subir archivo</h4>
-          <div class="imp-card-sub">Formatos admitidos: .csv, .xlsx. Campos obligatorios: fecha, finca, lote, toneladas.</div>
+          <div class="imp-card-sub">Formatos admitidos: .csv, .xlsx. Campos obligatorios: fecha, finca, lote, toneladas. También acepta reportes de labor de cosecha exportados directamente del sistema (con una fila por empleado): se combinan automáticamente por finca/lote/día.</div>
           <div class="imp-dropzone" id="imp-dropzone" onclick="document.getElementById('imp-file-input').click()">
             <svg class="ic-svg"><use href="#i-upload"/></svg>
             <div>Arrastre su archivo aquí o haga clic para seleccionarlo</div>
@@ -2255,23 +2255,70 @@ function impParseCSV(text){
   return rows;
 }
 
+// Detecta si el archivo es la plantilla simple o un reporte de labor real (ERP de cosecha
+// con una fila por empleado/día/lote: columnas Etapa=finca, CantidadProducida+CodigoCantidadProducida,
+// UnidadPagar+CodigoUnidadPagar). Esto permite importar reportes reales sin reformatearlos a mano.
+function impDetectFormat(headers){
+  const set = new Set(headers);
+  if (set.has('etapa') && set.has('cantidadproducida') && set.has('unidadpagar')) return 'erp_labor';
+  return 'simple';
+}
+
+function impGet(raw, ...names){
+  for (const n of names) { if (raw[n] !== undefined && String(raw[n]).trim() !== '') return raw[n]; }
+  return '';
+}
+
+function impNormalizeRow(raw, format){
+  if (format === 'erp_labor') {
+    const codCantidad = String(raw['codigocantidadproducida']||'').toLowerCase();
+    const codUnidad = String(raw['codigounidadpagar']||'').toLowerCase();
+    const racimos = codCantidad.indexOf('racimo') >= 0 ? (parseFloat(raw['cantidadproducida'])||0) : 0;
+    const kg = codUnidad.indexOf('kilogramo') >= 0 ? (parseFloat(raw['unidadpagar'])||0) : 0;
+    return { fecha: raw['fecha']||'', finca: raw['etapa']||'', lote: raw['lote']||'', tipo_palma: '', toneladas: kg/1000, racimos: racimos };
+  }
+  let toneladas = impGet(raw, 'toneladas','tonelada','ton');
+  if (toneladas === '') {
+    const kg = impGet(raw, 'kilogramos','kilogramo','kg');
+    if (kg !== '') toneladas = (parseFloat(String(kg).replace(',','.'))||0) / 1000;
+  }
+  return {
+    fecha: impGet(raw, 'fecha'), finca: impGet(raw, 'finca'), lote: impGet(raw, 'lote'),
+    tipo_palma: impGet(raw, 'tipo_palma','tipopalma'), toneladas: toneladas,
+    racimos: impGet(raw, 'racimos','racimo'),
+  };
+}
+
+// Suma toneladas/racimos de filas que comparten fecha+finca+lote (p.ej. varios empleados
+// trabajando el mismo lote el mismo día) en un solo registro consolidado por lote/día.
+function impAggregateRows(rows){
+  const map = new Map();
+  const order = [];
+  rows.forEach(r => {
+    const key = impDupKey(r);
+    if (!map.has(key)) { map.set(key, { fecha:r.fecha, finca:r.finca, lote:r.lote, tipo_palma:r.tipo_palma||'', toneladas:0, racimos:0 }); order.push(key); }
+    const agg = map.get(key);
+    agg.toneladas = agg.toneladas + (parseFloat(r.toneladas)||0);
+    agg.racimos = agg.racimos + (parseInt(r.racimos,10)||0);
+    if (!agg.tipo_palma && r.tipo_palma) agg.tipo_palma = r.tipo_palma;
+  });
+  return order.map(k => { const a = map.get(k); a.toneladas = Math.round(a.toneladas * 1000) / 1000; return a; });
+}
+
 function impValidateRows(rows, stored){
-  const seenInFile = new Set();
   const storedKeys = new Set((stored||[]).map(impDupKey));
   return rows.map(row => {
     const errors = [];
     IMP_REQUIRED.forEach(f => {
       if (!row[f] || String(row[f]).trim() === '') errors.push('Falta "' + f + '"');
     });
-    if (row.toneladas && isNaN(parseFloat(String(row.toneladas).replace(',', '.')))) {
+    if (row.toneladas !== '' && isNaN(parseFloat(String(row.toneladas).replace(',', '.')))) {
       errors.push('Toneladas no numérico');
     }
     if (row.fecha && isNaN(new Date(row.fecha).getTime())) {
       errors.push('Fecha inválida');
     }
-    const key = impDupKey(row);
-    const isDup = errors.length === 0 && (storedKeys.has(key) || seenInFile.has(key));
-    if (errors.length === 0) seenInFile.add(key);
+    const isDup = errors.length === 0 && storedKeys.has(impDupKey(row));
     let status = 'ok';
     if (errors.length > 0) status = 'err';
     else if (isDup) status = 'dup';
@@ -2338,9 +2385,17 @@ function impHandleFile(file){
     } else {
       rows = impParseCSV(e.target.result);
     }
-    impToast('Validando contra los datos existentes en el servidor...');
+    const headers = rows.length ? Object.keys(rows[0]) : [];
+    const format = impDetectFormat(headers);
+    const normalized = rows.map(r => impNormalizeRow(r, format));
+    const aggregated = impAggregateRows(normalized);
+    if (format === 'erp_labor' && aggregated.length < normalized.length) {
+      impToast('Reporte de labor detectado: se combinaron ' + normalized.length + ' filas (por empleado) en ' + aggregated.length + ' registros por finca/lote/día.');
+    } else {
+      impToast('Validando contra los datos existentes en el servidor...');
+    }
     const stored = await impFetchProduccion(true);
-    impParsedRows = impValidateRows(rows, stored);
+    impParsedRows = impValidateRows(aggregated, stored);
     impRenderPreview(impParsedRows);
   };
   if (isXlsx) reader.readAsBinaryString(file);
