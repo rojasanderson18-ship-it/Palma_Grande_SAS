@@ -36,6 +36,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .sb-sublink.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:#4ade80;font-weight:600;}
 .sb-sublink.active .ic-svg{color:#4ade80;}
 .sb-sublink.pronto{opacity:.45;cursor:not-allowed;}
+.sb-sublink2{padding-left:54px;font-size:11.5px;}
 .sb-weather{margin:auto 16px 0;background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;font-size:12px;}
 .sb-weather-temp{font-family:'Bebas Neue',sans-serif;font-size:22px;display:flex;align-items:center;gap:8px;color:#fde68a;}
 .sb-weather-temp .ic-svg{width:20px;height:20px;}
@@ -158,9 +159,11 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 /* MODULE TABS */
 .module-tabs{display:flex;gap:22px;border-bottom:1px solid #eef0f4;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
 .module-tabs::-webkit-scrollbar{display:none;}
-.mtab{font-size:13px;font-weight:700;color:#9ca3af;padding:10px 2px;cursor:default;border-bottom:2px solid transparent;white-space:nowrap;flex:0 0 auto;}
+.mtab{font-size:13px;font-weight:700;color:#9ca3af;padding:10px 2px;cursor:default;border-bottom:2px solid transparent;white-space:nowrap;flex:0 0 auto;text-decoration:none;}
 .mtab.active{color:#16a34a;border-bottom-color:#16a34a;}
 .mtab.pronto{opacity:.5;cursor:not-allowed;}
+a.mtab{cursor:pointer;}
+a.mtab:hover{color:#16a34a;}
 
 /* KPI ROW VARIANTS */
 .kpi-row.cols-8{grid-template-columns:repeat(8,1fr);}
@@ -179,6 +182,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 
 /* PRODUCCIÓN DIARIA */
 .kpi-row.cols-6w{grid-template-columns:repeat(6,1fr);}
+.kpi-row.cols-7{grid-template-columns:repeat(7,1fr);}
 .kpi-progress{height:5px;border-radius:3px;background:#eef0f4;margin-top:6px;overflow:hidden;}
 .kpi-progress-fill{height:100%;background:#16a34a;border-radius:3px;}
 .panel-select{font-size:11px;color:#6b7280;border:1px solid #eef0f4;border-radius:8px;padding:4px 9px;background:#fff;font-weight:600;}
@@ -233,6 +237,8 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 @media(max-width:1100px){
   .kpi-row.cols-8{grid-template-columns:repeat(4,1fr);}
   .kpi-row.cols-6{grid-template-columns:repeat(3,1fr);}
+  .kpi-row.cols-7{grid-template-columns:repeat(4,1fr);}
+  .kpi-row.cols-6w{grid-template-columns:repeat(3,1fr);}
   .stat-box-row{flex-wrap:wrap;}
   .kpi-row{grid-template-columns:repeat(3,1fr);}
   .grid-row.cols-3{grid-template-columns:1fr;}
@@ -453,6 +459,14 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
     <div id="sb-cosecha-sub" style="display:none;">
       <a class="sb-sublink active" id="sbc-resumen" href="javascript:void(0)" onclick="showCosechaTab('resumen')"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Resumen Ejecutivo</a>
       <a class="sb-sublink" id="sbc-produccion" href="javascript:void(0)" onclick="showCosechaTab('produccion')"><svg class="ic-svg"><use href="#i-trending-up"/></svg> Producción</a>
+      <div id="sb-prod-sub" style="display:none;">
+        <a class="sb-sublink sb-sublink2 active" id="sbp-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
+        <a class="sb-sublink sb-sublink2" id="sbp-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
+        <span class="sb-sublink sb-sublink2 pronto">Producción Mensual</span>
+        <span class="sb-sublink sb-sublink2 pronto">Producción Anual</span>
+        <span class="sb-sublink sb-sublink2 pronto">Comparativos</span>
+        <span class="sb-sublink sb-sublink2 pronto">Histórico</span>
+      </div>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-map"/></svg> Producción por Finca</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-clock"/></svg> Ciclos</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-check"/></svg> Calidad</span>
@@ -803,14 +817,15 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
         <div id="cosecha-tab-produccion" class="cosecha-tabpanel" style="display:none;">
           <div class="module-tabs" style="margin-top:18px;">
             <span class="mtab pronto">Resumen</span>
-            <span class="mtab active">Producción Diaria</span>
-            <span class="mtab pronto">Producción Semanal</span>
+            <a class="mtab active" id="mtab-diaria" href="javascript:void(0)" onclick="showProduccionSub('diaria')">Producción Diaria</a>
+            <a class="mtab" id="mtab-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
             <span class="mtab pronto">Producción Mensual</span>
             <span class="mtab pronto">Producción Anual</span>
             <span class="mtab pronto">Comparativos</span>
             <span class="mtab pronto">Histórico</span>
           </div>
 
+          <div id="prod-sub-diaria">
           <div class="kpi-row cols-6w" style="margin-top:18px;">
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción del período</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs período anterior</div></div>
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Promedio diario</div><div class="kpi-num">32,5 t</div><div class="kpi-delta">▲ +1,8 t vs período anterior</div></div>
@@ -964,6 +979,152 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
           </div>
 
           <div class="foot-note"><b>Nota:</b> Todos los datos están actualizados al 15/05/2024 06:00 a.m.</div>
+          </div>
+          <!-- /prod-sub-diaria -->
+
+          <div id="prod-sub-semanal" style="display:none;">
+          <div class="kpi-row cols-7" style="margin-top:18px;">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción semana actual</div><div class="kpi-num">116,4 t</div><div class="kpi-delta">▲ +6,2% vs semana anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Producción semana anterior</div><div class="kpi-num">109,6 t</div><div class="kpi-delta neutral">05 - 11 May 2024</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Promedio diario</div><div class="kpi-num">16,6 t</div><div class="kpi-delta neutral">Esta semana</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-clock"/></svg></div><div class="kpi-lbl">Día de mayor producción</div><div class="kpi-num" style="font-size:16px;">Viernes</div><div class="kpi-delta neutral">24,8 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Toneladas por hectárea</div><div class="kpi-num">6,40 t/ha</div><div class="kpi-delta neutral">Área productiva: 1.820 ha</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="kpi-lbl">Extracción estimada (OER)</div><div class="kpi-num">22,1 %</div><div class="kpi-delta">▲ +0,7% vs semana anterior</div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento de meta</div><div class="kpi-num">96,3 %</div><div class="kpi-delta neutral">Meta semana: 121,0 t</div><div class="kpi-progress"><div class="kpi-progress-fill" style="width:96.3%;"></div></div></div>
+          </div>
+
+          <div class="grid-row cols-58-42">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción diaria de la semana (06 - 12 May 2024)</div><div class="panel-sub">Toneladas</div></div><span class="panel-select">Toneladas ▾</span></div>
+              <div class="barchart">
+                <div class="bar-col"><div class="bar-val">14,2</div><div class="bar" style="height:57%;"></div></div>
+                <div class="bar-col"><div class="bar-val">15,6</div><div class="bar" style="height:63%;"></div></div>
+                <div class="bar-col"><div class="bar-val">16,9</div><div class="bar" style="height:68%;"></div></div>
+                <div class="bar-col"><div class="bar-val">17,8</div><div class="bar" style="height:72%;"></div></div>
+                <div class="bar-col"><div class="bar-val">24,8</div><div class="bar" style="height:100%;"></div></div>
+                <div class="bar-col"><div class="bar-val">14,6</div><div class="bar" style="height:59%;"></div></div>
+                <div class="bar-col"><div class="bar-val">12,5</div><div class="bar" style="height:50%;"></div></div>
+              </div>
+              <div class="linechart-axis"><span>Lunes<br>06 May</span><span>Martes<br>07 May</span><span>Miércoles<br>08 May</span><span>Jueves<br>09 May</span><span>Viernes<br>10 May</span><span>Sábado<br>11 May</span><span>Domingo<br>12 May</span></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción acumulada de la semana</div></div></div>
+              <div class="combo-legend">
+                <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Acumulado actual (t)</span>
+                <span class="lg-item"><span class="lg-dot" style="background:#2563eb;"></span>Meta acumulada (t)</span>
+              </div>
+              <div class="combo-wrap">
+                <svg class="combo-chart" viewBox="0 0 260 130" width="100%" height="150" preserveAspectRatio="none">
+                  <polyline points="9,118 45,100 81,82 117,62 153,34 189,18 225,8" fill="none" stroke="#16a34a" stroke-width="3"/>
+                  <polygon points="9,118 45,100 81,82 117,62 153,34 189,18 225,8 225,128 9,128" fill="rgba(22,163,74,.10)"/>
+                  <circle cx="9" cy="118" r="3" fill="#16a34a"/><circle cx="45" cy="100" r="3" fill="#16a34a"/><circle cx="81" cy="82" r="3" fill="#16a34a"/><circle cx="117" cy="62" r="3" fill="#16a34a"/><circle cx="153" cy="34" r="3" fill="#16a34a"/><circle cx="189" cy="18" r="3" fill="#16a34a"/><circle cx="225" cy="8" r="3" fill="#16a34a"/>
+                  <polyline points="9,122 45,104 81,86 117,64 153,40 189,22 225,10" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,4"/>
+                </svg>
+                <div class="as-list">
+                  <div class="as-item"><div class="as-lbl">Acumulado actual</div><div class="as-val green">116,4 t</div></div>
+                  <div class="as-item"><div class="as-lbl">Meta acumulada</div><div class="as-val">121,0 t</div></div>
+                  <div class="as-item"><div class="as-lbl">Cumplimiento</div><div class="as-val orange">96,3%</div></div>
+                  <div class="as-item"><div class="as-lbl">Diferencia</div><div class="as-val red">-4,6 t</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por finca (semana actual)</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>Finca</th><th>Área productiva (ha)</th><th>Producción (t)</th><th>Ton/ha</th><th>% del total</th></tr></thead>
+                <tbody>
+                  <tr><td>Finca 1</td><td>812,5</td><td>61,2</td><td>7,53</td><td><div class="prog-bar" style="width:70px;display:inline-block;vertical-align:middle;margin-right:6px;"><div class="prog-fill" style="width:52.6%;background:#16a34a;"></div></div>52,6%</td></tr>
+                  <tr><td>Finca 2</td><td>654,2</td><td>39,1</td><td>5,97</td><td><div class="prog-bar" style="width:70px;display:inline-block;vertical-align:middle;margin-right:6px;"><div class="prog-fill" style="width:33.6%;background:#16a34a;"></div></div>33,6%</td></tr>
+                  <tr><td>Finca 3</td><td>353,3</td><td>16,1</td><td>4,56</td><td><div class="prog-bar" style="width:70px;display:inline-block;vertical-align:middle;margin-right:6px;"><div class="prog-fill" style="width:13.8%;background:#16a34a;"></div></div>13,8%</td></tr>
+                </tbody>
+              </table>
+              <div class="prog-total"><span>Total</span><span>1.820,0 · 116,4 · 6,40 · 100%</span></div>
+              <a class="panel-link">Ver detalle por finca <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Producción por tipo de palma (semana actual)</div></div></div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#16a34a 0% 81.5%, #f5b942 81.5% 100%);">
+                  <div class="donut-center"><span class="num">116,4 t</span><br><span style="font-size:9px;color:#9ca3af;">Total</span></div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-lbl">Guineensis</span><span class="dl-val">94,8 t (81,5%)</span></div></div>
+                  <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-lbl">Híbrido</span><span class="dl-val">21,6 t (18,5%)</span></div></div>
+                </div>
+              </div>
+              <a class="panel-link">Ver detalle por tipo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Variación vs semanas anteriores</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>Semana</th><th>Rango de fechas</th><th>Producción (t)</th><th>Variación (%)</th></tr></thead>
+                <tbody>
+                  <tr><td>Semana 19 (Actual)</td><td>06 - 12 May 2024</td><td>116,4</td><td><span style="color:#16a34a;">▲ +6,2%</span></td></tr>
+                  <tr><td>Semana 18</td><td>29 Abr - 05 May 2024</td><td>109,6</td><td><span style="color:#16a34a;">▲ +3,8%</span></td></tr>
+                  <tr><td>Semana 17</td><td>22 - 28 Abr 2024</td><td>105,6</td><td><span style="color:#dc2626;">▼ -2,1%</span></td></tr>
+                  <tr><td>Semana 16</td><td>15 - 21 Abr 2024</td><td>107,9</td><td><span style="color:#16a34a;">▲ +5,6%</span></td></tr>
+                  <tr><td>Semana 15</td><td>08 - 14 Abr 2024</td><td>102,2</td><td><span style="color:#16a34a;">▲ +1,3%</span></td></tr>
+                </tbody>
+              </table>
+              <a class="panel-link">Ver histórico completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Top 5 lotes por producción (semana actual)</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>#</th><th>Lote</th><th>Finca</th><th>Área (ha)</th><th>Producción (t)</th><th>Ton/ha</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>45B</td><td>Finca 1</td><td>58,4</td><td>9,8</td><td>0,17</td></tr>
+                  <tr><td>2</td><td>11A</td><td>Finca 1</td><td>42,7</td><td>8,1</td><td>0,19</td></tr>
+                  <tr><td>3</td><td>26</td><td>Finca 2</td><td>35,1</td><td>6,2</td><td>0,18</td></tr>
+                  <tr><td>4</td><td>31</td><td>Finca 2</td><td>42,3</td><td>5,6</td><td>0,13</td></tr>
+                  <tr><td>5</td><td>15</td><td>Finca 1</td><td>36,8</td><td>4,9</td><td>0,13</td></tr>
+                </tbody>
+              </table>
+              <a class="panel-link">Ver todos los lotes <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Indicadores de la semana actual</div></div></div>
+              <div class="eff-grid">
+                <div class="eff-card kpi-card sm"><div class="kpi-icon" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-users"/></svg></div><div class="kpi-lbl">Racimos procesados</div><div class="kpi-num">18.542</div><div class="kpi-delta">▲ +4,1% vs sem. anterior</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon blue" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-map"/></svg></div><div class="kpi-lbl">Racimos por hectárea</div><div class="kpi-num">10,20</div><div class="kpi-delta">▲ +0,5 vs sem. anterior</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Peso promedio racimo</div><div class="kpi-num">23,4 kg</div><div class="kpi-delta">▲ +0,6 kg vs sem. anterior</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon violet" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-check"/></svg></div><div class="kpi-lbl">% Racimos verdes</div><div class="kpi-num">6,2%</div><div class="kpi-delta down">▼ -0,3% vs sem. anterior</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon blue" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-clock"/></svg></div><div class="kpi-lbl">% Racimos sobremaduros</div><div class="kpi-num">2,1%</div><div class="kpi-delta">▼ -0,2% vs sem. anterior</div></div>
+                <div class="eff-card kpi-card sm"><div class="kpi-icon" style="width:28px;height:28px;"><svg class="ic-svg" style="width:14px;height:14px;"><use href="#i-alert-triangle"/></svg></div><div class="kpi-lbl">% Racimos podridos</div><div class="kpi-num">0,9%</div><div class="kpi-delta">▼ -0,1% vs sem. anterior</div></div>
+              </div>
+              <a class="panel-link">Ver más indicadores <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Comparativo semanal por día (t)</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>Día / Semana</th><th>Sem 15</th><th>Sem 16</th><th>Sem 17</th><th>Sem 18</th><th>Sem 19</th></tr></thead>
+                <tbody>
+                  <tr><td>Lunes</td><td>13,1</td><td>13,8</td><td>12,9</td><td>13,6</td><td style="background:#ecfdf3;font-weight:700;">14,2</td></tr>
+                  <tr><td>Martes</td><td>14,0</td><td>14,1</td><td>13,2</td><td>14,8</td><td style="background:#ecfdf3;font-weight:700;">15,6</td></tr>
+                  <tr><td>Miércoles</td><td>15,2</td><td>15,5</td><td>14,3</td><td>15,8</td><td style="background:#ecfdf3;font-weight:700;">16,9</td></tr>
+                  <tr><td>Jueves</td><td>16,1</td><td>16,4</td><td>16,0</td><td>17,2</td><td style="background:#ecfdf3;font-weight:700;">17,8</td></tr>
+                  <tr><td>Viernes</td><td>22,3</td><td>23,4</td><td>21,1</td><td>22,6</td><td style="background:#d1fae5;font-weight:700;">24,8</td></tr>
+                  <tr><td>Sábado</td><td>13,0</td><td>12,5</td><td>12,1</td><td>13,4</td><td style="background:#ecfdf3;font-weight:700;">14,6</td></tr>
+                  <tr><td>Domingo</td><td>9,2</td><td>10,2</td><td>9,8</td><td>11,2</td><td style="background:#ecfdf3;font-weight:700;">12,5</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="foot-note"><b>Nota:</b> Todos los datos están actualizados al 15/05/2024 06:00 a.m.</div>
+          </div>
+          <!-- /prod-sub-semanal -->
         </div>
         <!-- /cosecha-tab-produccion -->
       </div>
@@ -1266,7 +1427,26 @@ function showCosechaTab(name){
   document.getElementById('cosecha-tab-produccion').style.display = name === 'produccion' ? '' : 'none';
   document.getElementById('sbc-resumen').classList.toggle('active', name === 'resumen');
   document.getElementById('sbc-produccion').classList.toggle('active', name === 'produccion');
+  document.getElementById('sb-prod-sub').style.display = name === 'produccion' ? '' : 'none';
   const info = COSECHA_TAB_INFO[name];
+  document.getElementById('topbar-greeting').textContent = info.title;
+  document.getElementById('topbar-sub').textContent = info.sub;
+  if(name === 'produccion') showProduccionSub('diaria');
+}
+
+const PRODUCCION_SUB_INFO = {
+  diaria:   {title: 'Producción Diaria', sub: 'Análisis detallado de la producción de fruta'},
+  semanal:  {title: 'Producción Semanal', sub: 'Análisis detallado de la producción de fruta por semana'},
+};
+
+function showProduccionSub(name){
+  document.getElementById('prod-sub-diaria').style.display = name === 'diaria' ? '' : 'none';
+  document.getElementById('prod-sub-semanal').style.display = name === 'semanal' ? '' : 'none';
+  document.getElementById('mtab-diaria').classList.toggle('active', name === 'diaria');
+  document.getElementById('mtab-semanal').classList.toggle('active', name === 'semanal');
+  document.getElementById('sbp-diaria').classList.toggle('active', name === 'diaria');
+  document.getElementById('sbp-semanal').classList.toggle('active', name === 'semanal');
+  const info = PRODUCCION_SUB_INFO[name];
   document.getElementById('topbar-greeting').textContent = info.title;
   document.getElementById('topbar-sub').textContent = info.sub;
 }
