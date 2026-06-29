@@ -14,6 +14,7 @@ const SHEETS = {
   trampas:        'Trampas',
   trampasCfg:     'Trampas Config',
   anilloRojo:     'Anillo Rojo',
+  usuarios:       'Usuarios',
 };
 
 const LOTES = [
@@ -144,6 +145,11 @@ function doGet(e) {
       }
     }
 
+    if(accion === 'validarLogin'){
+      var result = validarLogin(params.usuario || '', params.clave || '');
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
     if(accion === 'obtenerCosecha'){
       var result = obtenerMarcasCosecha();
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -1307,6 +1313,25 @@ function parsearKey(key) {
   var lote  = partes[partes.length - 1];
   var finca = partes.slice(0, -1).join('_');
   return {finca:finca, lote:lote};
+}
+
+function validarLogin(usuario, clave) {
+  if(!usuario || !clave) return {ok:false, error:'Usuario y contraseña requeridos'};
+  var sheet = getOrCreateSheet(SHEETS.usuarios, ['Usuario','Contraseña','Nombre','Activo']);
+  var data = sheet.getDataRange().getValues();
+  for(var i = 1; i < data.length; i++) {
+    var fUsuario = String(data[i][0] || '').trim();
+    var fClave   = String(data[i][1] || '');
+    var fNombre  = String(data[i][2] || '');
+    var fActivo  = data[i][3];
+    if(fUsuario.toLowerCase() === usuario.trim().toLowerCase() && fClave === clave) {
+      if(fActivo === false || String(fActivo).toLowerCase() === 'no' || String(fActivo).toLowerCase() === 'false') {
+        return {ok:false, error:'Usuario inactivo'};
+      }
+      return {ok:true, nombre: fNombre || fUsuario};
+    }
+  }
+  return {ok:false, error:'Credenciales inválidas'};
 }
 
 function getOrCreateSheet(nombre, headers) {
