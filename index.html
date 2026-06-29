@@ -68,6 +68,19 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .tb-avatar{width:34px;height:34px;border-radius:50%;background:#7c5cf0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;}
 .tb-user-name{font-size:12.5px;font-weight:700;color:#1a1f2e;line-height:1.2;}
 .tb-user-sub{font-size:10.5px;color:#9ca3af;}
+.tb-dropdown-wrap{position:relative;}
+.tb-dropdown{display:none;position:absolute;top:calc(100% + 10px);right:0;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);min-width:240px;z-index:50;overflow:hidden;}
+.tb-dropdown.open{display:block;}
+.tb-dropdown-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;padding:12px 16px 8px;}
+.tb-notif-item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-top:1px solid #f0f1f3;cursor:default;}
+.tb-notif-item .ic-svg{width:16px;height:16px;color:#7c5cf0;flex-shrink:0;margin-top:2px;}
+.tn-txt{font-size:12.5px;color:#1a1f2e;line-height:1.4;}
+.tn-time{font-size:10.5px;color:#9ca3af;margin-top:2px;}
+.tb-dropdown-link{display:flex;align-items:center;gap:9px;padding:11px 16px;font-size:13px;color:#1a1f2e;text-decoration:none;cursor:pointer;}
+.tb-dropdown-link:hover{background:#f5f6f8;}
+.tb-dropdown-link .ic-svg{width:16px;height:16px;color:#dc2626;}
+.tb-bell.spinning .ic-svg{animation:tb-spin .8s linear infinite;}
+@keyframes tb-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 
 /* CONTENT */
 .content{padding:22px 28px 40px;display:flex;flex-direction:column;gap:18px;}
@@ -513,6 +526,7 @@ a.mtab:hover{color:#16a34a;}
 <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0-1 14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 6h12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </defs>
 </svg>
 
@@ -645,13 +659,26 @@ a.mtab:hover{color:#16a34a;}
       <div class="topbar-right">
         <span class="tb-pill" id="hdr-fecha-pill"><svg class="ic-svg"><use href="#i-calendar"/></svg> —<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></span>
         <span class="tb-pill"><svg class="ic-svg"><use href="#i-users"/></svg> Todas las fincas<svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></span>
-        <span class="tb-bell" id="tb-refresh" title="Actualizar"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg></span>
-        <span class="tb-bell"><svg class="ic-svg"><use href="#i-bell"/></svg><span class="dot">3</span></span>
-        <div class="tb-user">
-          <div class="tb-avatar">A</div>
-          <div>
-            <div class="tb-user-name" id="tb-user-name">Administrador</div>
-            <div class="tb-user-sub">Palma Grande S.A.S.</div>
+        <span class="tb-bell" id="tb-refresh" title="Actualizar" onclick="tbRefrescarTodo()"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg></span>
+        <div class="tb-dropdown-wrap">
+          <span class="tb-bell" id="tb-bell-btn" title="Notificaciones" onclick="tbToggleDropdown('tb-notif-menu')"><svg class="ic-svg"><use href="#i-bell"/></svg><span class="dot" id="tb-notif-dot">3</span></span>
+          <div class="tb-dropdown" id="tb-notif-menu">
+            <div class="tb-dropdown-title">Notificaciones</div>
+            <div class="tb-notif-item"><svg class="ic-svg"><use href="#i-alert-triangle"/></svg><div><div class="tn-txt">Producción por debajo del promedio en Finca 2</div><div class="tn-time">Hace 2 horas</div></div></div>
+            <div class="tb-notif-item"><svg class="ic-svg"><use href="#i-info"/></svg><div><div class="tn-txt">Nueva importación de datos completada</div><div class="tn-time">Hoy</div></div></div>
+            <div class="tb-notif-item"><svg class="ic-svg"><use href="#i-check-circle"/></svg><div><div class="tn-txt">Meta mensual de cosecha alcanzada</div><div class="tn-time">Ayer</div></div></div>
+          </div>
+        </div>
+        <div class="tb-dropdown-wrap">
+          <div class="tb-user" id="tb-user-btn" onclick="tbToggleDropdown('tb-user-menu')">
+            <div class="tb-avatar">A</div>
+            <div>
+              <div class="tb-user-name" id="tb-user-name">Administrador</div>
+              <div class="tb-user-sub">Palma Grande S.A.S.</div>
+            </div>
+          </div>
+          <div class="tb-dropdown" id="tb-user-menu">
+            <a class="tb-dropdown-link" href="javascript:void(0)" onclick="cerrarSesion()"><svg class="ic-svg"><use href="#i-log-out"/></svg> Cerrar sesión</a>
           </div>
         </div>
       </div>
@@ -2040,6 +2067,64 @@ function showProduccionSub(name){
   const info = PRODUCCION_SUB_INFO[name];
   document.getElementById('topbar-greeting').textContent = info.title;
   document.getElementById('topbar-sub').textContent = info.sub;
+}
+
+function tbToggleDropdown(id){
+  const target = document.getElementById(id);
+  const wasOpen = target.classList.contains('open');
+  document.querySelectorAll('.tb-dropdown.open').forEach(d => d.classList.remove('open'));
+  if (!wasOpen) {
+    target.classList.add('open');
+    if (id === 'tb-notif-menu') {
+      const dot = document.getElementById('tb-notif-dot');
+      if (dot) dot.style.display = 'none';
+    }
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.tb-dropdown-wrap')) {
+    document.querySelectorAll('.tb-dropdown.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
+function cerrarSesion(){
+  sessionStorage.removeItem('av_logged_in');
+  sessionStorage.removeItem('av_rol');
+  localStorage.removeItem('av_logged_in');
+  localStorage.removeItem('av_rol');
+  document.querySelectorAll('.tb-dropdown.open').forEach(d => d.classList.remove('open'));
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('login-screen').classList.remove('hidden');
+  const u = document.getElementById('login-usuario'); if (u) u.value = '';
+  const c = document.getElementById('login-clave'); if (c) c.value = '';
+}
+
+async function tbRefrescarTodo(){
+  const btn = document.getElementById('tb-refresh');
+  if (btn) btn.classList.add('spinning');
+  try {
+    if (typeof impFetchProduccion === 'function') await impFetchProduccion(true);
+    if (typeof lotFetchLotes === 'function') await lotFetchLotes(true);
+    const cosechaVisible = document.getElementById('section-cosecha').style.display !== 'none';
+    if (cosechaVisible) {
+      const prodVisible = document.getElementById('cosecha-tab-produccion').style.display !== 'none';
+      const lotesVisible = document.getElementById('cosecha-tab-lotes').style.display !== 'none';
+      if (prodVisible) {
+        const subs = ['diaria','semanal','mensual','anual','comparativo'];
+        const activeSub = subs.find(s => document.getElementById('prod-sub-' + s).style.display !== 'none') || 'diaria';
+        if (typeof impRefreshLivePanels === 'function') await impRefreshLivePanels(true);
+        if (typeof impRenderProduccionTab === 'function') await impRenderProduccionTab(activeSub);
+      } else if (lotesVisible && typeof lotInit === 'function') {
+        await lotInit();
+      }
+    }
+    if (typeof impToast === 'function') impToast('Datos actualizados desde Google Sheets.');
+  } catch (e) {
+    if (typeof impToast === 'function') impToast('No se pudo actualizar. Intenta de nuevo.');
+  } finally {
+    if (btn) btn.classList.remove('spinning');
+  }
 }
 
 function initHeaderFecha(){
