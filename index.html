@@ -70,6 +70,7 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .kpi-num{font-family:'Bebas Neue',sans-serif;font-size:21px;color:#1a1f2e;margin-top:2px;}
 .kpi-delta{font-size:10.5px;color:#16a34a;font-weight:600;margin-top:2px;}
 .kpi-delta.neutral{color:#9ca3af;}
+.kpi-delta.down{color:#dc2626;}
 
 /* GRID ROWS */
 .grid-row{display:grid;gap:16px;}
@@ -160,6 +161,8 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
 .kpi-row.cols-6{grid-template-columns:repeat(6,1fr);}
 .kpi-card.sm{padding:14px;gap:6px;}
 .kpi-card.sm .kpi-num{font-size:19px;}
+.kpi-card.sm .kpi-body{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
+.kpi-card.sm .spark{flex:0 0 auto;}
 
 /* SIMPLE TABLE */
 .s-table{width:100%;border-collapse:collapse;font-size:12px;}
@@ -609,12 +612,12 @@ body{font-family:'DM Sans',sans-serif;background:#f3f5f4;color:#1a1f2e;min-heigh
         </div>
 
         <div class="kpi-row cols-6">
-          <div class="kpi-card sm"><div class="kpi-lbl">Producción Hoy</div><div class="kpi-num">18,6 t</div><div class="kpi-delta">▲ +1,8 t vs ayer</div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Producción Semana</div><div class="kpi-num">116,4 t</div><div class="kpi-delta">▲ +6,2% vs semana anterior</div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Producción Mes</div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs mes anterior</div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Ton/ha (período)</div><div class="kpi-num">22,3 t/ha</div><div class="kpi-delta">▲ +1,8 t/ha vs anterior</div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">Ciclo Promedio</div><div class="kpi-num">12,6 días</div><div class="kpi-delta">▼ -0,8 días vs anterior</div></div>
-          <div class="kpi-card sm"><div class="kpi-lbl">OER Estimado</div><div class="kpi-num">22,1%</div><div class="kpi-delta">▲ +0,6% vs anterior</div></div>
+          <div class="kpi-card sm"><div class="kpi-lbl">Producción Hoy</div><div class="kpi-body"><div><div class="kpi-num">18,6 t</div><div class="kpi-delta">▲ +1,8 t vs ayer</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,15 20,16 30,11 40,12 50,6 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+          <div class="kpi-card sm"><div class="kpi-lbl">Producción Semana</div><div class="kpi-body"><div><div class="kpi-num">116,4 t</div><div class="kpi-delta">▲ +6,2% vs semana anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,17 10,16 20,12 30,13 40,9 50,8 60,4" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+          <div class="kpi-card sm"><div class="kpi-lbl">Producción Mes</div><div class="kpi-body"><div><div class="kpi-num">487,2 t</div><div class="kpi-delta">▲ +7,7% vs mes anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,19 10,14 20,15 30,10 40,11 50,7 60,5" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+          <div class="kpi-card sm"><div class="kpi-lbl">Ton/ha (período)</div><div class="kpi-body"><div><div class="kpi-num">22,3 t/ha</div><div class="kpi-delta">▲ +1,8 t/ha vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,16 10,17 20,12 30,13 40,9 50,10 60,5" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
+          <div class="kpi-card sm"><div class="kpi-lbl">Ciclo Promedio</div><div class="kpi-body"><div><div class="kpi-num">12,6 días</div><div class="kpi-delta down">▼ -0,8 días vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,5 10,8 20,7 30,12 40,11 50,16 60,18" fill="none" stroke="#dc2626" stroke-width="2"/></svg></div></div>
+          <div class="kpi-card sm"><div class="kpi-lbl">OER Estimado</div><div class="kpi-body"><div><div class="kpi-num">22,1%</div><div class="kpi-delta">▲ +0,6% vs anterior</div></div><svg class="spark" viewBox="0 0 60 24" width="60" height="24"><polyline points="0,18 10,16 20,17 30,12 40,13 50,8 60,6" fill="none" stroke="#16a34a" stroke-width="2"/></svg></div></div>
         </div>
 
         <div class="grid-row cols-3-eq">
