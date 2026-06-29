@@ -1432,6 +1432,7 @@ a.mtab:hover{color:#16a34a;}
               </select>
               <input type="text" class="imp-select" id="lot-filtro-busqueda" placeholder="Buscar por número de lote..." oninput="lotAplicarFiltros()" style="flex:1;min-width:160px;">
               <button class="btn-imp primary" onclick="lotAbrirModal()"><svg class="ic-svg"><use href="#i-plus"/></svg> Nuevo lote</button>
+              <button class="btn-imp" onclick="lotAbrirImportModal()"><svg class="ic-svg"><use href="#i-upload"/></svg> Importar Excel</button>
             </div>
 
             <div class="lot-tabs">
@@ -1619,6 +1620,43 @@ a.mtab:hover{color:#16a34a;}
         <button type="button" class="admin-cancel-edit" style="display:inline-block;" onclick="lotCerrarModal()">Cancelar</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div id="lot-import-overlay" class="lot-detalle-overlay" onclick="if(event.target===this) lotCerrarImportModal()">
+  <div class="admin-panel" style="max-width:760px;">
+    <div class="admin-panel-head">
+      <h3>Importar lotes desde Excel</h3>
+      <button class="admin-close" onclick="lotCerrarImportModal()"><svg class="ic-svg"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="imp-card-sub" style="margin-bottom:10px;">Use esta plantilla para cargar o actualizar lotes de cualquier finca/empresa. Si finca+lote ya existe se actualiza; si no existe, se crea. Columnas obligatorias: finca, lote. Las demás son opcionales.</div>
+    <div class="imp-row">
+      <button class="btn-imp primary" onclick="lotDescargarPlantilla()"><svg class="ic-svg"><use href="#i-download"/></svg> Descargar plantilla</button>
+    </div>
+    <div class="imp-dropzone" id="lot-import-dropzone" style="margin-top:12px;" onclick="document.getElementById('lot-import-file-input').click()">
+      <svg class="ic-svg"><use href="#i-upload"/></svg>
+      <div>Arrastre su archivo aquí o haga clic para seleccionarlo</div>
+      <div class="imp-filename" id="lot-import-filename"></div>
+    </div>
+    <input type="file" id="lot-import-file-input" accept=".csv,.xlsx" style="display:none;" onchange="lotProcesarArchivo(event)">
+
+    <div id="lot-import-preview-card" style="display:none;margin-top:14px;">
+      <div class="imp-summary">
+        <div class="imp-sum-pill total">Total filas<b id="lot-imp-sum-total">0</b></div>
+        <div class="imp-sum-pill ok">Válidas<b id="lot-imp-sum-ok">0</b></div>
+        <div class="imp-sum-pill err">Con errores<b id="lot-imp-sum-err">0</b></div>
+      </div>
+      <div class="imp-preview-wrap" style="max-height:320px;">
+        <table class="imp-preview">
+          <thead><tr><th>Estado</th><th>Finca</th><th>Lote</th><th>Tipo</th><th>Área (ha)</th><th>Detalle</th></tr></thead>
+          <tbody id="lot-import-preview-body"></tbody>
+        </table>
+      </div>
+      <div class="imp-row" style="margin-top:14px;">
+        <button class="btn-imp primary" id="lot-import-btn-confirm" onclick="lotConfirmarImport()">Confirmar carga</button>
+        <button class="btn-imp danger" onclick="lotCerrarImportModal()">Cancelar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3419,6 +3457,144 @@ async function lotGuardarDetalle(){
   } else {
     lotToast('Error al guardar los cambios' + (resp && resp.error ? ': ' + resp.error : '') + '.');
   }
+}
+
+const LOT_IMPORT_COLUMNS = ['finca','lote','tipo_palma','area_ha','anio_siembra','palmas_sembradas','palmas_productivas','ciclo_objetivo_dias','material_genetico','supervisor','observaciones'];
+let lotImportRows = [];
+
+function lotAbrirImportModal(){
+  document.getElementById('lot-import-overlay').style.display = 'flex';
+  document.getElementById('lot-import-preview-card').style.display = 'none';
+  document.getElementById('lot-import-filename').textContent = '';
+  document.getElementById('lot-import-file-input').value = '';
+  lotImportRows = [];
+}
+
+function lotCerrarImportModal(){
+  document.getElementById('lot-import-overlay').style.display = 'none';
+}
+
+function lotDescargarPlantilla(){
+  if (typeof XLSX === 'undefined'){
+    lotToast('No se pudo cargar la librería de Excel. Intente de nuevo.');
+    return;
+  }
+  const ws = XLSX.utils.aoa_to_sheet([LOT_IMPORT_COLUMNS, ['FINCA 1','18A','hibrido',12.5,2015,1800,1750,28,'Tenera','Juan Pérez','']]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+  XLSX.writeFile(wb, 'plantilla_lotes.xlsx');
+}
+
+function lotNormalizarTipo(v){
+  const s = String(v||'').trim().toLowerCase();
+  if (s.startsWith('hib')) return 'hibrido';
+  if (s.startsWith('guin') || s.startsWith('gui')) return 'guineensis';
+  return s === 'hibrido' || s === 'guineensis' ? s : '';
+}
+
+function lotProcesarArchivo(ev){
+  const file = ev.target.files[0];
+  if (!file) return;
+  document.getElementById('lot-import-filename').textContent = file.name;
+  if (typeof XLSX === 'undefined'){
+    lotToast('No se pudo cargar la librería de Excel. Intente de nuevo.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const wb = XLSX.read(e.target.result, {type:'binary'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(ws, {defval:''});
+    lotValidarFilas(json);
+  };
+  reader.readAsBinaryString(file);
+}
+
+function lotValidarFilas(json){
+  const vistos = new Set();
+  lotImportRows = json.map(function(row){
+    const finca = String(row.finca || row.Finca || '').trim();
+    const lote = String(row.lote || row.Lote || '').trim();
+    const errores = [];
+    if (!finca) errores.push('finca vacía');
+    if (!lote) errores.push('lote vacío');
+    const key = (finca + '|' + lote).toLowerCase();
+    if (finca && lote){
+      if (vistos.has(key)) errores.push('duplicado en el archivo');
+      vistos.add(key);
+    }
+    const tipoRaw = row.tipo_palma !== undefined ? row.tipo_palma : (row.tipo !== undefined ? row.tipo : '');
+    const tipo = lotNormalizarTipo(tipoRaw);
+    const ha = parseFloat(row.area_ha !== undefined ? row.area_ha : row.ha) || 0;
+    return {
+      finca, lote, tipo, ha,
+      anio_siembra: row.anio_siembra || '',
+      palmas_sembradas: parseInt(row.palmas_sembradas,10) || 0,
+      palmas_productivas: parseInt(row.palmas_productivas,10) || 0,
+      ciclo_objetivo_dias: parseInt(row.ciclo_objetivo_dias,10) || 0,
+      material_genetico: String(row.material_genetico||'').trim(),
+      supervisor: String(row.supervisor||'').trim(),
+      observaciones: String(row.observaciones||'').trim(),
+      esNuevo: !lotFindByKey(finca, lote),
+      errores,
+    };
+  });
+  lotRenderImportPreview();
+}
+
+function lotRenderImportPreview(){
+  document.getElementById('lot-import-preview-card').style.display = '';
+  const total = lotImportRows.length;
+  const conError = lotImportRows.filter(function(r){ return r.errores.length > 0; }).length;
+  const validas = total - conError;
+  document.getElementById('lot-imp-sum-total').textContent = total;
+  document.getElementById('lot-imp-sum-ok').textContent = validas;
+  document.getElementById('lot-imp-sum-err').textContent = conError;
+
+  const body = document.getElementById('lot-import-preview-body');
+  if (!lotImportRows.length){
+    body.innerHTML = impEmptyRow(6, 'No hay filas para mostrar.');
+    return;
+  }
+  body.innerHTML = lotImportRows.map(function(r){
+    const estado = r.errores.length ? '<span class="imp-badge err">Error</span>' : (r.esNuevo ? '<span class="imp-badge ok">Nuevo</span>' : '<span class="imp-badge dup">Actualiza</span>');
+    return '<tr><td>' + estado + '</td><td>' + lotEsc(r.finca) + '</td><td>' + lotEsc(r.lote) + '</td><td>' + lotEsc(r.tipo||'—') + '</td><td>' + (r.ha||'—') + '</td><td>' + lotEsc(r.errores.join(', ')) + '</td></tr>';
+  }).join('');
+
+  document.getElementById('lot-import-btn-confirm').disabled = validas === 0;
+}
+
+async function lotConfirmarImport(){
+  const filas = lotImportRows.filter(function(r){ return r.errores.length === 0; });
+  if (!filas.length){
+    lotToast('No hay filas válidas para importar.');
+    return;
+  }
+  const btn = document.getElementById('lot-import-btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Importando...';
+  let ok = 0, fallidas = 0;
+  for (const r of filas){
+    const accion = r.esNuevo ? 'crearLote' : 'actualizarLote';
+    const payload = {
+      finca: r.finca, lote: r.lote, tipo: r.tipo, ha: r.ha,
+      anio_siembra: r.anio_siembra, palmas_sembradas: r.palmas_sembradas,
+      palmas_productivas: r.palmas_productivas, ciclo_objetivo_dias: r.ciclo_objetivo_dias,
+      material_genetico: r.material_genetico, supervisor: r.supervisor, observaciones: r.observaciones,
+    };
+    try {
+      const resp = await gasJSONP(GAS_URL + '?accion=' + accion + '&data=' + encodeURIComponent(JSON.stringify(payload)));
+      if (resp && resp.ok) ok++; else fallidas++;
+    } catch(e){ fallidas++; }
+  }
+  btn.disabled = false;
+  btn.textContent = 'Confirmar carga';
+  lotToast('Importación completa: ' + ok + ' lotes guardados' + (fallidas ? ', ' + fallidas + ' con error' : '') + '.');
+  await lotFetchLotes(true);
+  lotPopularFiltroFinca();
+  lotRenderKPIs();
+  lotRenderTabla();
+  if (!fallidas) lotCerrarImportModal();
 }
 </script>
 </body>
