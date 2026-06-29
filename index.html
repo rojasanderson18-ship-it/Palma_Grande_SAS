@@ -225,6 +225,27 @@ a.mtab:hover{color:#16a34a;}
 .seg-toggle{display:flex;gap:6px;}
 .seg-btn{font-size:11.5px;color:#6b7280;background:#f5f6f8;border:1px solid #e5e7eb;border-radius:8px;padding:5px 12px;cursor:pointer;font-weight:600;}
 .seg-btn.active{background:#fff;color:#1a1f2e;border-color:#16a34a;}
+.cmp-filters{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:18px 0 4px;}
+.cmp-filter{display:flex;flex-direction:column;gap:4px;}
+.cmp-filter label{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.02em;}
+.cmp-filter select{font-size:12.5px;color:#1a1f2e;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:7px 10px;font-family:inherit;min-width:110px;}
+.cmp-export{margin-left:auto;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;height:35px;align-self:flex-end;}
+.cmp-export .ic-svg{width:14px;height:14px;}
+.heatmap{width:100%;border-collapse:collapse;font-size:11px;}
+.heatmap th{text-align:center;color:#9ca3af;font-weight:600;padding:6px 4px;border-bottom:1px solid #eef0f4;}
+.heatmap th:first-child{text-align:left;}
+.heatmap td{text-align:center;padding:6px 4px;font-weight:600;}
+.heatmap td:first-child{text-align:left;font-weight:700;color:#1a1f2e;}
+.insight-list{display:flex;flex-direction:column;gap:14px;}
+.insight-item{display:flex;gap:10px;align-items:flex-start;}
+.insight-ic{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;}
+.insight-ic .ic-svg{width:15px;height:15px;color:#6366f1;}
+.insight-txt{font-size:12px;color:#374151;line-height:1.5;}
+.hbar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:11.5px;}
+.hbar-lbl{flex:0 0 55px;color:#374151;font-weight:600;}
+.hbar-track{flex:1;background:#f3f4f6;border-radius:5px;height:14px;position:relative;}
+.hbar-fill{background:#16a34a;height:14px;border-radius:5px;}
+.hbar-val{flex:0 0 50px;text-align:right;color:#16a34a;font-weight:700;}
 .donut.sm{width:96px;height:96px;}
 .donut.sm .num{font-size:16px;}
 .mini-compare{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;}
@@ -401,6 +422,8 @@ a.mtab:hover{color:#16a34a;}
 <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
 <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="6" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-trending-down" viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M15 17h6v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-percent" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="17.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 <symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M21 4v6h-6M3 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 13a8.5 8.5 0 0 0 14.6 4.9L21 14M20.5 11A8.5 8.5 0 0 0 5.9 6.1L3 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </defs>
 </svg>
@@ -486,8 +509,8 @@ a.mtab:hover{color:#16a34a;}
         <a class="sb-sublink sb-sublink2" id="sbp-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
         <a class="sb-sublink sb-sublink2" id="sbp-mensual" href="javascript:void(0)" onclick="showProduccionSub('mensual')">Producción Mensual</a>
         <a class="sb-sublink sb-sublink2" id="sbp-anual" href="javascript:void(0)" onclick="showProduccionSub('anual')">Producción Anual</a>
-        <span class="sb-sublink sb-sublink2 pronto">Comparativos</span>
-        <span class="sb-sublink sb-sublink2 pronto">Histórico</span>
+        <span class="sb-sublink sb-sublink2 pronto">Por finca</span>
+        <a class="sb-sublink sb-sublink2" id="sbp-comparativo" href="javascript:void(0)" onclick="showProduccionSub('comparativo')">Comparativo</a>
       </div>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-map"/></svg> Producción por Finca</span>
       <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-clock"/></svg> Ciclos</span>
@@ -845,7 +868,7 @@ a.mtab:hover{color:#16a34a;}
               <a class="mtab" id="mtab-semanal" href="javascript:void(0)" onclick="showProduccionSub('semanal')">Producción Semanal</a>
               <a class="mtab" id="mtab-mensual" href="javascript:void(0)" onclick="showProduccionSub('mensual')">Producción Mensual</a>
               <a class="mtab" id="mtab-anual" href="javascript:void(0)" onclick="showProduccionSub('anual')">Producción Anual</a>
-              <span class="mtab pronto">Comparativos</span>
+              <a class="mtab" id="mtab-comparativo" href="javascript:void(0)" onclick="showProduccionSub('comparativo')">Comparativo</a>
               <span class="mtab pronto">Histórico</span>
             </div>
             <a class="panel-link dl-informe"><svg class="ic-svg"><use href="#i-download"/></svg> Descargar informe</a>
@@ -1504,6 +1527,183 @@ a.mtab:hover{color:#16a34a;}
           <div class="foot-note"><b>Nota:</b> Los datos mostrados están actualizados al 15/05/2024 06:00 a.m.</div>
           </div>
           <!-- /prod-sub-anual -->
+
+          <div id="prod-sub-comparativo" style="display:none;">
+          <div class="cmp-filters">
+            <div class="cmp-filter"><label>Año base</label><select><option>2026</option></select></div>
+            <div class="cmp-filter"><label>Año a comparar</label><select><option>2025</option></select></div>
+            <div class="cmp-filter"><label>Mes</label><select><option>Todos</option></select></div>
+            <div class="cmp-filter"><label>Finca</label><select><option>Todas</option></select></div>
+            <div class="cmp-filter"><label>Tipo de palma</label><select><option>Todas</option></select></div>
+            <div class="cmp-filter"><label>Indicador</label><select><option>Producción (t)</option></select></div>
+            <button type="button" class="cmp-export"><svg class="ic-svg"><use href="#i-download"/></svg> Exportar</button>
+          </div>
+
+          <div class="kpi-row cols-7">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción 2026 (Año base)</div><div class="kpi-num">2.145,6 t</div><div class="kpi-delta">▲ +7,3% vs 2025</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Producción 2025 (Año a comparar)</div><div class="kpi-num">2.000,7 t</div><div class="kpi-delta neutral">Año base de comparación</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Diferencia absoluta</div><div class="kpi-num">+144,9 t</div><div class="kpi-delta neutral">Más que 2025</div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-percent"/></svg></div><div class="kpi-lbl">Variación porcentual</div><div class="kpi-num">+7,3 %</div><div class="kpi-delta neutral">Respecto a 2025</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-star"/></svg></div><div class="kpi-lbl">Mejor mes (Mayor crecimiento)</div><div class="kpi-num" style="font-size:16px;">Mayo</div><div class="kpi-delta">▲ +38,6 t (+22,1%)</div></div>
+            <div class="kpi-card"><div class="kpi-icon" style="background:#fee2e2;color:#dc2626;"><svg class="ic-svg"><use href="#i-trending-down"/></svg></div><div class="kpi-lbl">Peor mes (Mayor caída)</div><div class="kpi-num" style="font-size:16px;">Agosto</div><div class="kpi-delta down">▼ -12,4 t (-7,2%)</div></div>
+            <div class="kpi-card"><div class="kpi-icon violet"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Cumplimiento meta anual</div><div class="kpi-num">96,3 %</div><div class="kpi-delta neutral">Meta: 2.227,4 t</div><div class="kpi-progress"><div class="kpi-progress-fill" style="width:96.3%;"></div></div></div>
+          </div>
+
+          <div class="grid-row cols-58-42">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Comparativo mes a mes (Producción en toneladas)</div></div><div class="seg-toggle"><span class="seg-btn active">Línea</span><span class="seg-btn">Barras</span></div></div>
+              <div class="combo-legend">
+                <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>2026 (Año base)</span>
+                <span class="lg-item"><span class="lg-dot" style="background:#9ca3af;"></span>2025 (Año a comparar)</span>
+              </div>
+              <div class="combo-wrap">
+                <svg class="combo-chart" viewBox="0 0 1200 220" width="100%" height="230" preserveAspectRatio="none">
+                  <polyline points="40,115 142,110 244,97 346,99 448,72 550,94 652,83 754,104 856,94 958,89 1060,91 1162,89" fill="none" stroke="#16a34a" stroke-width="3"/>
+                  <polyline points="40,121 142,112 244,105 346,105 448,95 550,98 652,88 754,97 856,101 958,98 1060,98 1162,102" fill="none" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5,4"/>
+                  <g fill="#16a34a"><circle cx="40" cy="115" r="3"/><circle cx="142" cy="110" r="3"/><circle cx="244" cy="97" r="3"/><circle cx="346" cy="99" r="3"/><circle cx="448" cy="72" r="3"/><circle cx="550" cy="94" r="3"/><circle cx="652" cy="83" r="3"/><circle cx="754" cy="104" r="3"/><circle cx="856" cy="94" r="3"/><circle cx="958" cy="89" r="3"/><circle cx="1060" cy="91" r="3"/><circle cx="1162" cy="89" r="3"/></g>
+                  <g fill="#9ca3af"><circle cx="40" cy="121" r="3"/><circle cx="142" cy="112" r="3"/><circle cx="244" cy="105" r="3"/><circle cx="346" cy="105" r="3"/><circle cx="448" cy="95" r="3"/><circle cx="550" cy="98" r="3"/><circle cx="652" cy="88" r="3"/><circle cx="754" cy="97" r="3"/><circle cx="856" cy="101" r="3"/><circle cx="958" cy="98" r="3"/><circle cx="1060" cy="98" r="3"/><circle cx="1162" cy="102" r="3"/></g>
+                  <g font-size="13" fill="#16a34a" text-anchor="middle" font-weight="700">
+                    <text x="40" y="100">141,0</text><text x="142" y="95">150,2</text><text x="244" y="82">171,3</text><text x="346" y="84">168,6</text><text x="448" y="57">213,2</text><text x="550" y="79">176,5</text><text x="652" y="68">194,8</text><text x="754" y="89">159,6</text><text x="856" y="79">176,9</text><text x="958" y="74">185,7</text><text x="1060" y="76">182,4</text><text x="1162" y="74">184,9</text>
+                  </g>
+                  <g font-size="13" fill="#9ca3af" text-anchor="middle" font-weight="700">
+                    <text x="40" y="140">132,4</text><text x="142" y="131">146,1</text><text x="244" y="124">158,1</text><text x="346" y="124">159,2</text><text x="448" y="114">174,6</text><text x="550" y="117">170,4</text><text x="652" y="107">186,2</text><text x="754" y="116">172,0</text><text x="856" y="120">165,3</text><text x="958" y="117">170,2</text><text x="1060" y="117">170,2</text><text x="1162" y="121">164,1</text>
+                  </g>
+                </svg>
+              </div>
+              <div class="linechart-axis"><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Resumen comparativo acumulado (Enero - Mayo)</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>Concepto</th><th>2026</th><th>2025</th><th>Diferencia</th><th>Variación %</th></tr></thead>
+                <tbody>
+                  <tr><td>Producción acumulada (t)</td><td>882,9</td><td>784,5</td><td>+98,4</td><td>+12,5%</td></tr>
+                  <tr><td>Promedio mensual (t)</td><td>176,6</td><td>156,9</td><td>+19,7</td><td>+12,6%</td></tr>
+                  <tr><td>Ton/ha promedio</td><td>23,1</td><td>20,6</td><td>+2,5</td><td>+12,1%</td></tr>
+                  <tr><td>Racimos procesados</td><td>33.842</td><td>30.112</td><td>+3.730</td><td>+12,4%</td></tr>
+                  <tr><td>Peso promedio racimo (kg)</td><td>23,4</td><td>22,7</td><td>+0,7</td><td>+3,1%</td></tr>
+                  <tr><td>OER estimado (%)</td><td>21,8%</td><td>20,6%</td><td>+1,2%</td><td>+5,8%</td></tr>
+                </tbody>
+              </table>
+              <div class="foot-note" style="margin-top:10px;padding-top:0;border-top:none;">* Acumulado hasta el mes seleccionado (Mayo)</div>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Comparativo por finca (Enero - Mayo)</div></div></div>
+              <table class="s-table">
+                <thead><tr><th>Finca</th><th>2026 (t)</th><th>2025 (t)</th><th>Diferencia (t)</th><th>Variación %</th><th>Participación 2026</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="dot" style="background:#16a34a;"></span> Finca 1</td><td>493,6</td><td>432,2</td><td>+61,4</td><td>+14,2%</td><td>55,9%</td></tr>
+                  <tr><td><span class="dot" style="background:#2563eb;"></span> Finca 2</td><td>294,8</td><td>269,7</td><td>+25,1</td><td>+9,3%</td><td>33,4%</td></tr>
+                  <tr><td><span class="dot" style="background:#f5b942;"></span> Finca 3</td><td>94,5</td><td>82,6</td><td>+11,9</td><td>+14,4%</td><td>10,7%</td></tr>
+                  <tr><td><b>Total</b></td><td><b>882,9</b></td><td><b>784,5</b></td><td><b>+98,4</b></td><td><b>+12,5%</b></td><td><b>100%</b></td></tr>
+                </tbody>
+              </table>
+              <a class="panel-link">Ver detalle por finca <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Participación porcentual (Enero - Mayo)</div></div></div>
+              <div style="display:flex;justify-content:space-around;gap:10px;">
+                <div style="text-align:center;">
+                  <div style="font-size:11px;color:#9ca3af;font-weight:700;margin-bottom:6px;">2026</div>
+                  <div class="donut sm" style="background:conic-gradient(#16a34a 0% 55.9%, #2563eb 55.9% 89.3%, #f5b942 89.3% 100%);">
+                    <div class="donut-center"><span class="num">882,9 t</span><br><span style="font-size:8px;color:#9ca3af;">Total</span></div>
+                  </div>
+                  <div class="donut-legend" style="gap:4px;margin-top:8px;text-align:left;">
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-val" style="font-size:10.5px;">Finca 1 55,9%</span></div></div>
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-val" style="font-size:10.5px;">Finca 2 33,4%</span></div></div>
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-val" style="font-size:10.5px;">Finca 3 10,7%</span></div></div>
+                  </div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:11px;color:#9ca3af;font-weight:700;margin-bottom:6px;">2025</div>
+                  <div class="donut sm" style="background:conic-gradient(#16a34a 0% 55.1%, #2563eb 55.1% 89.5%, #f5b942 89.5% 100%);">
+                    <div class="donut-center"><span class="num">784,5 t</span><br><span style="font-size:8px;color:#9ca3af;">Total</span></div>
+                  </div>
+                  <div class="donut-legend" style="gap:4px;margin-top:8px;text-align:left;">
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#16a34a;"></span><span class="dl-val" style="font-size:10.5px;">Finca 1 55,1%</span></div></div>
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#2563eb;"></span><span class="dl-val" style="font-size:10.5px;">Finca 2 34,4%</span></div></div>
+                    <div class="dl-item"><div class="dl-top"><span class="dot" style="background:#f5b942;"></span><span class="dl-val" style="font-size:10.5px;">Finca 3 10,5%</span></div></div>
+                  </div>
+                </div>
+              </div>
+              <a class="panel-link">Ver detalle completo <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Variación por finca (Enero - Mayo)</div></div></div>
+              <div class="combo-legend"><span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Variación %</span></div>
+              <div style="margin-top:8px;">
+                <div class="hbar-row"><span class="hbar-lbl">Finca 1</span><div class="hbar-track"><div class="hbar-fill" style="width:71%;"></div></div><span class="hbar-val">+14,2%</span></div>
+                <div class="hbar-row"><span class="hbar-lbl">Finca 2</span><div class="hbar-track"><div class="hbar-fill" style="width:46.5%;"></div></div><span class="hbar-val">+9,3%</span></div>
+                <div class="hbar-row"><span class="hbar-lbl">Finca 3</span><div class="hbar-track"><div class="hbar-fill" style="width:72%;"></div></div><span class="hbar-val">+14,4%</span></div>
+                <div class="hbar-row" style="margin-top:6px;border-top:1px solid #eef0f4;padding-top:10px;"><span class="hbar-lbl"><b>Total</b></span><div class="hbar-track"><div class="hbar-fill" style="width:62.5%;"></div></div><span class="hbar-val">+12,5%</span></div>
+              </div>
+              <div class="linechart-axis" style="margin-top:2px;"><span>0%</span><span>5%</span><span>10%</span><span>15%</span><span>20%</span></div>
+              <a class="panel-link">Ver análisis por finca <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+          </div>
+
+          <div class="grid-row cols-3-eq">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Detalle mensual comparativo (toneladas)</div></div></div>
+              <table class="s-table" style="font-size:10.5px;">
+                <thead><tr><th>Mes</th><th>2026 (t)</th><th>2025 (t)</th><th>Dif. (t)</th><th>Var. %</th></tr></thead>
+                <tbody>
+                  <tr><td>Enero</td><td>141,0</td><td>132,4</td><td>+8,6</td><td>+6,5%</td></tr>
+                  <tr><td>Febrero</td><td>150,2</td><td>146,1</td><td>+4,1</td><td>+2,8%</td></tr>
+                  <tr><td>Marzo</td><td>171,3</td><td>158,1</td><td>+13,2</td><td>+8,4%</td></tr>
+                  <tr><td>Abril</td><td>168,6</td><td>159,2</td><td>+9,4</td><td>+5,9%</td></tr>
+                  <tr><td>Mayo</td><td>213,2</td><td>174,6</td><td>+38,6</td><td>+22,1%</td></tr>
+                  <tr><td>Junio</td><td>176,5</td><td>170,4</td><td>+6,1</td><td>+3,8%</td></tr>
+                  <tr><td>Julio</td><td>194,8</td><td>186,2</td><td>+8,6</td><td>+4,6%</td></tr>
+                  <tr><td>Agosto</td><td>159,6</td><td>172,0</td><td>-12,4</td><td>-7,2%</td></tr>
+                  <tr><td>Septiembre</td><td>176,9</td><td>165,3</td><td>+11,6</td><td>+7,0%</td></tr>
+                  <tr><td>Octubre</td><td>185,7</td><td>170,2</td><td>+15,5</td><td>+9,1%</td></tr>
+                  <tr><td>Noviembre</td><td>182,4</td><td>170,2</td><td>+12,2</td><td>+7,2%</td></tr>
+                  <tr><td>Diciembre</td><td>184,9</td><td>164,1</td><td>+20,8</td><td>+12,7%</td></tr>
+                  <tr><td><b>Total</b></td><td><b>2.145,6</b></td><td><b>2.000,7</b></td><td><b>+144,9</b></td><td><b>+7,3%</b></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Mapa de calor: Variación % por lote (Enero - Mayo)</div></div></div>
+              <table class="heatmap">
+                <thead><tr><th>Lote</th><th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Promedio</th></tr></thead>
+                <tbody>
+                  <tr><td>45B</td><td style="background:#bbf7d0;">8%</td><td style="background:#dcfce7;">5%</td><td style="background:#86efac;">12%</td><td style="background:#bbf7d0;">10%</td><td style="background:#4ade80;">18%</td><td>10,6%</td></tr>
+                  <tr><td>11A</td><td style="background:#dcfce7;">6%</td><td style="background:#fef9c3;">3%</td><td style="background:#dcfce7;">7%</td><td style="background:#fef9c3;">4%</td><td style="background:#86efac;">12%</td><td>6,4%</td></tr>
+                  <tr><td>26</td><td style="background:#86efac;">12%</td><td style="background:#bbf7d0;">9%</td><td style="background:#4ade80;">15%</td><td style="background:#86efac;">11%</td><td style="background:#22c55e;">21%</td><td>13,6%</td></tr>
+                  <tr><td>31</td><td style="background:#fecaca;">-2%</td><td style="background:#fef9c3;">1%</td><td style="background:#dcfce7;">5%</td><td style="background:#fecaca;">-1%</td><td style="background:#bbf7d0;">8%</td><td>2,2%</td></tr>
+                  <tr><td>15</td><td style="background:#dcfce7;">7%</td><td style="background:#dcfce7;">6%</td><td style="background:#bbf7d0;">9%</td><td style="background:#dcfce7;">8%</td><td style="background:#86efac;">16%</td><td>9,2%</td></tr>
+                  <tr><td>10</td><td style="background:#fca5a5;">-3%</td><td style="background:#fecaca;">-2%</td><td style="background:#fef9c3;">0%</td><td style="background:#fecaca;">-2%</td><td style="background:#fecaca;">-1%</td><td>-1,6%</td></tr>
+                  <tr><td>41</td><td style="background:#86efac;">11%</td><td style="background:#bbf7d0;">8%</td><td style="background:#4ade80;">13%</td><td style="background:#86efac;">10%</td><td style="background:#4ade80;">17%</td><td>11,8%</td></tr>
+                  <tr><td>5</td><td style="background:#dcfce7;">5%</td><td style="background:#fef9c3;">4%</td><td style="background:#dcfce7;">6%</td><td style="background:#dcfce7;">5%</td><td style="background:#bbf7d0;">9%</td><td>5,8%</td></tr>
+                </tbody>
+              </table>
+              <a class="panel-link">Ver mapa completo de lotes <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Insights del comparativo</div></div></div>
+              <div class="insight-list">
+                <div class="insight-item"><div class="insight-ic"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="insight-txt">La producción acumulada de 2026 supera a 2025 en <b>144,9 toneladas (7,3%)</b>. El mayor crecimiento se presenta en mayo con <b>+22,1%</b>.</div></div>
+                <div class="insight-item"><div class="insight-ic"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="insight-txt"><b>Finca 1</b> lidera la producción con el 55,9% del total y muestra el mayor crecimiento <b>(+14,2%)</b>.</div></div>
+                <div class="insight-item"><div class="insight-ic"><svg class="ic-svg"><use href="#i-droplet"/></svg></div><div class="insight-txt"><b>Agosto</b> presenta la mayor caída (-7,2%) debido a condiciones climáticas y afectaciones en algunos lotes de <b>Finca 3</b>.</div></div>
+                <div class="insight-item"><div class="insight-ic"><svg class="ic-svg"><use href="#i-info"/></svg></div><div class="insight-txt">Se recomienda fortalecer labores de polinización y sanidad en los lotes con variación negativa para el segundo semestre.</div></div>
+              </div>
+              <a class="panel-link">Ver recomendaciones detalladas <svg class="ic-svg"><use href="#i-chevron-down"/></svg></a>
+            </div>
+          </div>
+
+          <div class="foot-note"><b>Nota:</b> Los datos mostrados están actualizados al 15/05/2024 06:00 a.m.</div>
+          </div>
+          <!-- /prod-sub-comparativo -->
         </div>
         <!-- /cosecha-tab-produccion -->
       </div>
@@ -1821,6 +2021,7 @@ const PRODUCCION_SUB_INFO = {
   semanal:  {title: 'Producción Semanal', sub: 'Análisis detallado de la producción de fruta por semana'},
   mensual:  {title: 'Producción Mensual', sub: 'Análisis detallado de la producción de fruta por mes'},
   anual:    {title: 'Producción Anual', sub: 'Análisis detallado de la producción de fruta por año'},
+  comparativo: {title: 'Producción - Comparativo', sub: 'Compare la producción mes a mes entre años'},
 };
 
 function showProduccionSub(name){
@@ -1828,14 +2029,17 @@ function showProduccionSub(name){
   document.getElementById('prod-sub-semanal').style.display = name === 'semanal' ? '' : 'none';
   document.getElementById('prod-sub-mensual').style.display = name === 'mensual' ? '' : 'none';
   document.getElementById('prod-sub-anual').style.display = name === 'anual' ? '' : 'none';
+  document.getElementById('prod-sub-comparativo').style.display = name === 'comparativo' ? '' : 'none';
   document.getElementById('mtab-diaria').classList.toggle('active', name === 'diaria');
   document.getElementById('mtab-semanal').classList.toggle('active', name === 'semanal');
   document.getElementById('mtab-mensual').classList.toggle('active', name === 'mensual');
   document.getElementById('mtab-anual').classList.toggle('active', name === 'anual');
+  document.getElementById('mtab-comparativo').classList.toggle('active', name === 'comparativo');
   document.getElementById('sbp-diaria').classList.toggle('active', name === 'diaria');
   document.getElementById('sbp-semanal').classList.toggle('active', name === 'semanal');
   document.getElementById('sbp-mensual').classList.toggle('active', name === 'mensual');
   document.getElementById('sbp-anual').classList.toggle('active', name === 'anual');
+  document.getElementById('sbp-comparativo').classList.toggle('active', name === 'comparativo');
   const info = PRODUCCION_SUB_INFO[name];
   document.getElementById('topbar-greeting').textContent = info.title;
   document.getElementById('topbar-sub').textContent = info.sub;
