@@ -15,6 +15,7 @@ const SHEETS = {
   trampasCfg:     'Trampas Config',
   anilloRojo:     'Anillo Rojo',
   usuarios:       'Usuarios',
+  produccion:     'Producción Importada',
 };
 
 const LOTES = [
@@ -302,6 +303,17 @@ function doGet(e) {
     if(accion === 'actualizarTrampaCfg'){
       var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
       var result = actualizarTrampaCfg(d);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'importarProduccion'){
+      var filas = params.data ? JSON.parse(decodeURIComponent(params.data)) : [];
+      var result = importarProduccion(filas);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'obtenerProduccion'){
+      var result = obtenerProduccion();
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
       return jsonResponse(result);
     }
@@ -1453,4 +1465,52 @@ function getWeekNum(d) {
 
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// =============================================
+// PRODUCCIÓN - IMPORTACIÓN DE DATOS (genérico, multiempresa)
+// =============================================
+
+function produccionDupKey(fecha, finca, lote) {
+  return String(fecha||'').trim() + '|' + String(finca||'').toLowerCase().trim() + '|' + String(lote||'').toLowerCase().trim();
+}
+
+function importarProduccion(filas) {
+  if(!filas || !Array.isArray(filas)) return {ok:false, error:'Sin filas'};
+  var sheet = getOrCreateSheet(SHEETS.produccion, ['Timestamp','Fecha','Finca','Lote','Tipo Palma','Toneladas','Racimos']);
+  var existentes = {};
+  var lastRow = sheet.getLastRow();
+  if(lastRow > 1){
+    var data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+    data.forEach(function(r){
+      existentes[produccionDupKey(r[1], r[2], r[3])] = true;
+    });
+  }
+  var nuevas = [];
+  var duplicadas = 0;
+  filas.forEach(function(f){
+    var key = produccionDupKey(f.fecha, f.finca, f.lote);
+    if(existentes[key]) { duplicadas++; return; }
+    existentes[key] = true;
+    nuevas.push([new Date(), f.fecha||'', f.finca||'', f.lote||'', f.tipo_palma||'', parseFloat(f.toneladas)||0, parseInt(f.racimos,10)||0]);
+  });
+  if(nuevas.length > 0){
+    sheet.getRange(sheet.getLastRow()+1, 1, nuevas.length, 7).setValues(nuevas);
+  }
+  return {ok:true, insertados:nuevas.length, duplicados:duplicadas};
+}
+
+function obtenerProduccion() {
+  var sheet = getOrCreateSheet(SHEETS.produccion, ['Timestamp','Fecha','Finca','Lote','Tipo Palma','Toneladas','Racimos']);
+  var lastRow = sheet.getLastRow();
+  if(lastRow <= 1) return {ok:true, filas:[]};
+  var data = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  var filas = data.map(function(r){
+    return {
+      fecha: (r[1] instanceof Date) ? Utilities.formatDate(r[1], 'America/Bogota', 'yyyy-MM-dd') : String(r[1]),
+      finca: r[2], lote: r[3], tipo_palma: r[4],
+      toneladas: parseFloat(r[5])||0, racimos: parseInt(r[6],10)||0,
+    };
+  });
+  return {ok:true, filas:filas};
 }

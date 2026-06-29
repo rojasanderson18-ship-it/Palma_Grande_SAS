@@ -2157,6 +2157,7 @@ const PRODUCCION_SUB_INFO = {
 };
 
 function showProduccionSub(name){
+  if (['diaria','mensual','anual'].includes(name) && typeof impRefreshLivePanels === 'function') impRefreshLivePanels();
   document.getElementById('prod-sub-diaria').style.display = name === 'diaria' ? '' : 'none';
   document.getElementById('prod-sub-semanal').style.display = name === 'semanal' ? '' : 'none';
   document.getElementById('prod-sub-mensual').style.display = name === 'mensual' ? '' : 'none';
@@ -2191,7 +2192,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ===================== Importación de Datos ===================== */
-const IMP_STORAGE_KEY = 'av_import_produccion';
 const IMP_COLUMNS = ['fecha','finca','lote','tipo_palma','toneladas','racimos'];
 const IMP_REQUIRED = ['fecha','finca','lote','toneladas'];
 let impParsedRows = [];
@@ -2204,12 +2204,13 @@ function impToast(msg){
   window.__impToastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-function impGetStored(){
-  try { return JSON.parse(localStorage.getItem(IMP_STORAGE_KEY) || '[]'); }
-  catch(e){ return []; }
-}
-function impSaveStored(rows){
-  localStorage.setItem(IMP_STORAGE_KEY, JSON.stringify(rows));
+let impServerCache = null;
+
+async function impFetchProduccion(force){
+  if (impServerCache && !force) return impServerCache;
+  const resp = await gasJSONP(GAS_URL + '?accion=obtenerProduccion');
+  impServerCache = (resp && resp.ok && Array.isArray(resp.filas)) ? resp.filas : [];
+  return impServerCache;
 }
 function impDupKey(r){
   return (r.fecha||'') + '|' + (r.finca||'').toLowerCase().trim() + '|' + (r.lote||'').toLowerCase().trim();
@@ -2248,10 +2249,9 @@ function impParseCSV(text){
   return rows;
 }
 
-function impValidateRows(rows){
+function impValidateRows(rows, stored){
   const seenInFile = new Set();
-  const stored = impGetStored();
-  const storedKeys = new Set(stored.map(impDupKey));
+  const storedKeys = new Set((stored||[]).map(impDupKey));
   return rows.map(row => {
     const errors = [];
     IMP_REQUIRED.forEach(f => {
@@ -2314,7 +2314,7 @@ function impHandleFile(file){
   document.getElementById('imp-filename').textContent = file.name;
   const isXlsx = /\.xlsx$/i.test(file.name);
   const reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = async function(e){
     let rows = [];
     if (isXlsx) {
       if (typeof XLSX === 'undefined') {
@@ -2332,25 +2332,34 @@ function impHandleFile(file){
     } else {
       rows = impParseCSV(e.target.result);
     }
-    impParsedRows = impValidateRows(rows);
+    impToast('Validando contra los datos existentes en el servidor...');
+    const stored = await impFetchProduccion(true);
+    impParsedRows = impValidateRows(rows, stored);
     impRenderPreview(impParsedRows);
   };
   if (isXlsx) reader.readAsBinaryString(file);
   else reader.readAsText(file);
 }
 
-function impConfirmar(){
+async function impConfirmar(){
   const validRows = impParsedRows.filter(r => r._status === 'ok').map(r => ({
     fecha: r.fecha, finca: r.finca, lote: r.lote,
     tipo_palma: r.tipo_palma || '', toneladas: parseFloat(String(r.toneladas).replace(',', '.')) || 0,
     racimos: parseInt(r.racimos, 10) || 0,
   }));
   if (!validRows.length) { impToast('No hay filas válidas para confirmar.'); return; }
-  const stored = impGetStored();
-  impSaveStored(stored.concat(validRows));
-  impToast(validRows.length + ' registro(s) importado(s) correctamente. El dashboard se actualizó automáticamente.');
+  const btn = document.getElementById('imp-btn-confirm');
+  btn.disabled = true;
+  impToast('Guardando en Google Sheets...');
+  const resp = await gasJSONP(GAS_URL + '?accion=importarProduccion&data=' + encodeURIComponent(JSON.stringify(validRows)));
+  btn.disabled = false;
+  if (!resp || !resp.ok) {
+    impToast('Error al guardar en el servidor. Intente nuevamente.');
+    return;
+  }
+  impToast(resp.insertados + ' registro(s) importado(s) correctamente' + (resp.duplicados ? ' (' + resp.duplicados + ' duplicados omitidos)' : '') + '. El dashboard se actualizó automáticamente.');
   impResetWizard();
-  impRefreshLivePanels();
+  await impRefreshLivePanels(true);
 }
 
 function impCancelar(){
@@ -2367,8 +2376,8 @@ function impResetWizard(){
   document.querySelector('#imp-steps .imp-step[data-step="1"]').classList.add('active');
 }
 
-function impRefreshLivePanels(){
-  const rows = impGetStored();
+async function impRefreshLivePanels(force){
+  const rows = await impFetchProduccion(force);
   ['diaria','mensual','anual'].forEach(view => {
     const panel = document.getElementById('imp-live-' + view);
     if (!panel) return;
