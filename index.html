@@ -3117,7 +3117,7 @@ function impRenderAnual(data){
 
   document.getElementById('anual-bar-title').textContent = 'Producción mensual del año ' + current.year;
   const monthBars = [];
-  for (let m=0;m<12;m++) monthBars.push({label: IMP_MES_ABR[m], value: current.meses.get(m) || 0});
+  for (let m=0;m<12;m++) if (current.meses.has(m)) monthBars.push({label: IMP_MES_ABR[m], value: current.meses.get(m)});
   impBuildBarChart('anual-barchart', 'anual-bar-axis', monthBars);
   impBuildCumulativeSVG('anual-combo-svg', monthBars.map(m => ({value: m.value})));
   impSetText('anual-acum-total', impFmtT(current.toneladas));
