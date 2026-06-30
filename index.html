@@ -1549,7 +1549,10 @@ a.mtab:hover{color:#16a34a;}
             </div>
             <div class="panel">
               <div class="panel-head"><div><div class="panel-title">Meta anual de la empresa</div></div></div>
-              <div class="kpi-num" style="font-size:24px;margin-bottom:14px;" id="metas-dist-meta-grande">0,0 t</div>
+              <div class="imp-row" style="align-items:baseline;gap:8px;margin-bottom:14px;">
+                <input type="number" min="0" step="0.1" id="metas-dist-meta-grande" value="0" style="font-size:22px;font-weight:700;width:140px;border:1px solid #d1d5db;border-radius:8px;padding:5px 10px;" onchange="metasEditarMetaEmpresaTotal(this.value)">
+                <span style="font-size:14px;color:#6b7280;">t</span>
+              </div>
               <div class="metas-detail-row"><span>Total distribuido</span><b id="metas-dist-total">0,0 t</b></div>
               <div class="metas-detail-row"><span>Diferencia</span><b id="metas-dist-diff">0,0 t</b></div>
               <div class="metas-detail-row"><span>% Distribuido</span><b id="metas-dist-pct">0 %</b></div>
@@ -3838,6 +3841,24 @@ function metasEditarFinca(idx, valor){
   metasRenderFinca();
 }
 
+function metasEditarMetaEmpresaTotal(valor){
+  const total = Math.max(0, parseFloat(valor) || 0);
+  const haTotal = metasTotalHa();
+  metasData.forEach(f => {
+    f.metaAnual = Math.round((haTotal > 0 ? (f.ha / haTotal) * total : (total / Math.max(1, metasData.length))) * 10) / 10;
+  });
+  if (metasMetodoActual === 'igual') {
+    metasAplicarReparto(metasMesesIgualesA(total));
+  } else if (metasMetodoActual === 'historico') {
+    metasPesosHistoricos().then(pesos => {
+      metasAplicarReparto(pesos ? pesos.map(p => Math.round(p * total * 10) / 10) : metasMesesIgualesA(total));
+      metasRenderDistribucion();
+    });
+    return;
+  }
+  metasRenderDistribucion();
+}
+
 function metasDistribuirAutomatico(){
   const haTotal = metasTotalHa();
   const total = metasTotalAnual();
@@ -3930,8 +3951,8 @@ function metasActualizarTotalesDistribucion(){
   const total = metasTotalAnual();
   const distribuido = metasTotalDistribuido();
   impSetText('metas-dist-total', impFmtT(distribuido));
-  impSetText('metas-dist-meta', impFmtT(total));
-  impSetText('metas-dist-meta-grande', impFmtT(total));
+  const metaInput = document.getElementById('metas-dist-meta-grande');
+  if (metaInput && document.activeElement !== metaInput) metaInput.value = total;
   const diff = distribuido - total;
   impSetText('metas-dist-diff', (diff >= 0 ? '+' : '') + impNum(diff,1) + ' t');
   impSetText('metas-dist-pct', total > 0 ? impNum(Math.min(100, distribuido/total*100),0) + ' %' : '0 %');
