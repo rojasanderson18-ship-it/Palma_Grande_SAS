@@ -1537,13 +1537,15 @@ a.mtab:hover{color:#16a34a;}
                 <div id="metas-dist-barchart" class="barchart"></div>
                 <div class="linechart-axis" id="metas-dist-axis"></div>
               </div>
-              <table class="s-table" id="metas-dist-edit-table" style="display:none;margin-top:14px;">
-                <thead><tr id="metas-dist-meses-head"></tr></thead>
-                <tbody>
-                  <tr id="metas-dist-meses-inputs"></tr>
-                  <tr id="metas-dist-meses-pct"></tr>
-                </tbody>
-              </table>
+              <div id="metas-dist-edit-table-wrap" style="display:none;margin-top:14px;overflow-x:auto;">
+                <table class="s-table" id="metas-dist-edit-table" style="min-width:780px;">
+                  <thead><tr id="metas-dist-meses-head"></tr></thead>
+                  <tbody>
+                    <tr id="metas-dist-meses-inputs"></tr>
+                    <tr id="metas-dist-meses-pct"></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div class="panel">
               <div class="panel-head"><div><div class="panel-title">Meta anual de la empresa</div></div></div>
@@ -3874,7 +3876,7 @@ async function metasSetMetodo(metodo){
   metasMetodoActual = metodo;
   ['igual','historico','personalizada'].forEach(m => document.getElementById('metas-method-' + m).classList.toggle('active', m === metodo));
   const total = metasTotalAnual();
-  document.getElementById('metas-dist-edit-table').style.display = metodo === 'personalizada' ? '' : 'none';
+  document.getElementById('metas-dist-edit-table-wrap').style.display = metodo === 'personalizada' ? '' : 'none';
   document.getElementById('metas-dist-preview-wrap').style.display = metodo === 'personalizada' ? 'none' : '';
   document.getElementById('metas-dist-preview-title').textContent = metodo === 'personalizada' ? 'Edite la meta de cada mes' : 'Vista previa del método seleccionado';
   if (total <= 0) { showToast('Defina primero la meta anual de la empresa.'); }
