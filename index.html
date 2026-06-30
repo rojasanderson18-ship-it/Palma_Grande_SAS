@@ -271,6 +271,37 @@ a.mtab:hover{color:#16a34a;}
 .hbar-track{flex:1;background:#f3f4f6;border-radius:5px;height:14px;position:relative;}
 .hbar-fill{background:#16a34a;height:14px;border-radius:5px;}
 .hbar-val{flex:0 0 50px;text-align:right;color:#16a34a;font-weight:700;}
+.metas-donut-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.metas-donut-legend{display:flex;flex-direction:column;gap:10px;width:100%;}
+.metas-donut-legend .mdl-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#374151;}
+.metas-donut-legend .mdl-dot{width:9px;height:9px;border-radius:2px;flex:0 0 auto;}
+.metas-donut-legend .mdl-lbl{flex:1;font-weight:600;}
+.metas-donut-legend .mdl-val{color:#6b7280;font-size:11.5px;white-space:nowrap;}
+.metas-quick-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;}
+.metas-quick-card{background:#fff;border:1px solid #eef0f4;border-radius:12px;padding:14px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.metas-quick-card:hover{border-color:#16a34a;box-shadow:0 2px 10px rgba(22,163,74,.10);}
+.metas-quick-ic{width:36px;height:36px;border-radius:10px;background:#e7f8ed;color:#16a34a;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.metas-quick-ic .ic-svg{width:18px;height:18px;}
+.metas-quick-title{font-size:12.5px;font-weight:700;color:#1a1f2e;}
+.metas-quick-sub{font-size:10.5px;color:#9ca3af;}
+.metas-info-banner{display:flex;align-items:flex-start;gap:10px;background:#f0f9f4;border:1px solid #d6f0de;border-radius:10px;padding:12px 14px;font-size:12px;color:#374151;margin-top:14px;}
+.metas-info-banner .ic-svg{width:16px;height:16px;color:#16a34a;flex:0 0 auto;margin-top:1px;}
+.estado-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#dcfce7;color:#16a34a;}
+.row-actions{display:flex;gap:6px;}
+.row-action-btn{width:28px;height:28px;border-radius:8px;border:1px solid #eef0f4;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;}
+.row-action-btn:hover{background:#f8fafc;}
+.row-action-btn .ic-svg{width:14px;height:14px;}
+.row-action-btn.danger:hover{color:#dc2626;border-color:#fecaca;background:#fef2f2;}
+.metas-method-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.metas-method-card{background:#fff;border:2px solid #eef0f4;border-radius:12px;padding:16px;cursor:pointer;transition:border-color .15s;}
+.metas-method-card.active{border-color:#16a34a;background:#f0f9f4;}
+.metas-method-card .mm-title{font-size:13px;font-weight:700;color:#1a1f2e;display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.metas-method-card .mm-sub{font-size:11px;color:#6b7280;line-height:1.4;}
+.metas-lote-layout{display:grid;grid-template-columns:1fr 280px;gap:16px;}
+.metas-lote-row{cursor:pointer;}
+.metas-lote-row.selected{background:#f0f9f4;}
+.metas-detail-row{display:flex;justify-content:space-between;font-size:12px;color:#374151;padding:7px 0;border-bottom:1px solid #f3f4f6;}
+.metas-detail-row b{color:#1a1f2e;}
 .imp-steps{display:flex;align-items:center;gap:6px;margin-bottom:18px;}
 .imp-step{display:flex;align-items:center;gap:8px;font-size:12px;color:#9ca3af;font-weight:600;}
 .imp-step .imp-step-num{width:24px;height:24px;border-radius:50%;background:#f3f4f6;color:#9ca3af;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;}
@@ -1397,14 +1428,14 @@ a.mtab:hover{color:#16a34a;}
 
         <div id="metas-tab-resumen" class="cosecha-tabpanel">
           <div class="kpi-row cols-4">
-            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Meta anual de la empresa</div><div class="kpi-num" id="metas-kpi-total">0,0 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Meta anual empresa</div><div class="kpi-num" id="metas-kpi-total">0,0 t</div></div>
             <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Área productiva total</div><div class="kpi-num" id="metas-kpi-area">0,0 ha</div></div>
             <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Meta promedio ton/ha</div><div class="kpi-num" id="metas-kpi-tonha">0,0</div></div>
             <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Última actualización</div><div class="kpi-num" style="font-size:15px;" id="metas-kpi-fecha">—</div></div>
           </div>
           <div class="grid-row cols-3-eq">
             <div class="panel" style="grid-column:span 2;">
-              <div class="panel-head"><div><div class="panel-title">Distribución de la meta por finca</div></div></div>
+              <div class="panel-head"><div><div class="panel-title">Distribución de la meta por finca</div><div class="panel-sub">Participación sobre la meta anual</div></div></div>
               <div id="metas-resumen-finca-rows"><div class="empty-panel-msg">Sin metas configuradas para este año.</div></div>
             </div>
             <div class="panel">
@@ -1412,70 +1443,136 @@ a.mtab:hover{color:#16a34a;}
               <div id="metas-resumen-config"></div>
             </div>
           </div>
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Accesos rápidos</div></div></div>
+            <div class="metas-quick-row">
+              <div class="metas-quick-card" onclick="showMetasTab('finca')"><div class="metas-quick-ic"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div><div class="metas-quick-title">Meta por Finca</div><div class="metas-quick-sub">Administrar metas por finca</div></div></div>
+              <div class="metas-quick-card" onclick="showMetasTab('lote')"><div class="metas-quick-ic"><svg class="ic-svg"><use href="#i-map"/></svg></div><div><div class="metas-quick-title">Meta por Lote</div><div class="metas-quick-sub">Administrar metas por lote</div></div></div>
+              <div class="metas-quick-card" onclick="showMetasTab('distribucion')"><div class="metas-quick-ic"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div><div class="metas-quick-title">Distribución Mensual</div><div class="metas-quick-sub">Distribuir meta por meses</div></div></div>
+              <div class="metas-quick-card" onclick="showMetasTab('historial')"><div class="metas-quick-ic"><svg class="ic-svg"><use href="#i-clock"/></svg></div><div><div class="metas-quick-title">Historial de Metas</div><div class="metas-quick-sub">Ver metas de años anteriores</div></div></div>
+            </div>
+            <div class="metas-info-banner"><svg class="ic-svg"><use href="#i-info"/></svg><div>Las metas configuradas aquí serán utilizadas automáticamente en los módulos de Producción para calcular cumplimiento y proyecciones.</div></div>
+          </div>
         </div>
 
         <div id="metas-tab-finca" class="cosecha-tabpanel" style="display:none;">
-          <div class="imp-row" style="margin-bottom:10px;">
-            <button class="btn-imp" onclick="metasDistribuirAutomatico()"><svg class="ic-svg"><use href="#i-target"/></svg> Distribuir automáticamente (según área)</button>
+          <div class="kpi-row cols-4">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Meta anual empresa</div><div class="kpi-num" id="metas-finca-kpi-total">0,0 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Meta distribuida</div><div class="kpi-num" id="metas-finca-kpi-distribuida">0,0 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-percent"/></svg></div><div class="kpi-lbl">% Distribuido</div><div class="kpi-num" id="metas-finca-kpi-pct">0 %</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-check-circle"/></svg></div><div class="kpi-lbl">Fincas configuradas</div><div class="kpi-num" id="metas-finca-kpi-configuradas">0 de 0</div></div>
           </div>
-          <table class="s-table">
-            <thead><tr><th>Finca</th><th>Área productiva (ha)</th><th>Meta anual (t)</th><th>Ton/ha</th><th>Participación %</th></tr></thead>
-            <tbody id="metas-finca-tabla"></tbody>
-          </table>
+          <div class="grid-row cols-3-eq">
+            <div class="panel" style="grid-column:span 2;">
+              <div class="panel-head">
+                <div><div class="panel-title">Metas anuales por finca</div></div>
+                <button class="btn-imp" onclick="metasDistribuirAutomatico()"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Distribuir automáticamente</button>
+              </div>
+              <table class="s-table">
+                <thead><tr><th>Finca</th><th>Área productiva (ha)</th><th>Meta anual (t)</th><th>Ton/ha objetivo</th><th>Participación (%)</th><th>Estado</th></tr></thead>
+                <tbody id="metas-finca-tabla"></tbody>
+              </table>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Distribución de la meta</div><div class="panel-sub">Participación por finca</div></div></div>
+              <div id="metas-finca-donut"></div>
+            </div>
+          </div>
         </div>
 
         <div id="metas-tab-lote" class="cosecha-tabpanel" style="display:none;">
-          <div class="foot-note" style="border:none;margin-bottom:10px;">La meta de cada lote se calcula distribuyendo la meta de su finca de forma proporcional al área (ha) del lote.</div>
-          <table class="s-table">
-            <thead><tr><th>Finca</th><th>Lote</th><th>Área (ha)</th><th>Meta anual (t)</th><th>Producción real del año (t)</th><th>Ton/ha real</th><th>Cumplimiento</th></tr></thead>
-            <tbody id="metas-lote-tabla"></tbody>
-          </table>
+          <div class="kpi-row cols-4">
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-users"/></svg></div><div class="kpi-lbl">Total de lotes</div><div class="kpi-num" id="metas-lote-kpi-total">0</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-leaf"/></svg></div><div class="kpi-lbl">Meta acumulada lotes</div><div class="kpi-num" id="metas-lote-kpi-meta">0,0 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Ton/ha promedio</div><div class="kpi-num" id="metas-lote-kpi-tonha">0,0</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-check-circle"/></svg></div><div class="kpi-lbl">Lotes configurados</div><div class="kpi-num" id="metas-lote-kpi-configurados">0 de 0</div></div>
+          </div>
+          <div class="imp-row" style="gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+            <select class="imp-select" id="metas-lote-filtro-finca" onchange="metasRenderLote()"><option value="">Todas las fincas</option></select>
+            <select class="imp-select" id="metas-lote-filtro-tipo" onchange="metasRenderLote()"><option value="">Todos los tipos</option></select>
+            <input type="text" class="imp-select" id="metas-lote-filtro-buscar" placeholder="Buscar lote..." oninput="metasRenderLote()" style="flex:1;min-width:160px;">
+          </div>
+          <div class="metas-lote-layout">
+            <table class="s-table">
+              <thead><tr><th>Lote</th><th>Finca</th><th>Tipo palma</th><th>Área (ha)</th><th>Meta anual (t)</th><th>Ton/ha objetivo</th><th>Cumplimiento</th></tr></thead>
+              <tbody id="metas-lote-tabla"></tbody>
+            </table>
+            <div class="panel" style="margin:0;">
+              <div class="panel-head"><div><div class="panel-title">Detalle del lote seleccionado</div></div></div>
+              <div id="metas-lote-detalle"><div class="empty-panel-msg">Selecciona un lote en la tabla.</div></div>
+            </div>
+          </div>
         </div>
 
         <div id="metas-tab-distribucion" class="cosecha-tabpanel" style="display:none;">
-          <div class="panel">
-            <div class="panel-head"><div><div class="panel-title">Distribución mensual de la meta anual de la empresa</div></div></div>
-            <div class="imp-row" style="margin-bottom:10px;">
-              <button class="btn-imp" onclick="metasDistribucionIgualitaria()"><svg class="ic-svg"><use href="#i-target"/></svg> Distribución igualitaria (12 meses)</button>
+          <div class="grid-row cols-3-eq">
+            <div class="panel" style="grid-column:span 2;">
+              <div class="panel-head"><div><div class="panel-title">Seleccione el método de distribución</div></div></div>
+              <div class="metas-method-row">
+                <div class="metas-method-card active" id="metas-method-igual" onclick="metasSetMetodo('igual')">
+                  <div class="mm-title"><svg class="ic-svg"><use href="#i-percent"/></svg> Distribución igualitaria</div>
+                  <div class="mm-sub">Distribuye la meta en partes iguales en los 12 meses.</div>
+                </div>
+                <div class="metas-method-card" id="metas-method-historico" onclick="metasSetMetodo('historico')">
+                  <div class="mm-title"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Según histórico</div>
+                  <div class="mm-sub">Distribuye según el comportamiento histórico de producción.</div>
+                </div>
+                <div class="metas-method-card" id="metas-method-personalizada" onclick="metasSetMetodo('personalizada')">
+                  <div class="mm-title"><svg class="ic-svg"><use href="#i-edit"/></svg> Personalizada</div>
+                  <div class="mm-sub">Ingrese manualmente la meta para cada mes.</div>
+                </div>
+              </div>
+              <div class="panel-title" style="font-size:12.5px;margin-bottom:8px;">Vista previa del método seleccionado</div>
+              <div id="metas-dist-barchart" class="barchart"></div>
+              <div class="linechart-axis" id="metas-dist-axis"></div>
+              <table class="s-table" id="metas-dist-edit-table" style="display:none;margin-top:14px;">
+                <thead><tr id="metas-dist-meses-head"></tr></thead>
+                <tbody>
+                  <tr id="metas-dist-meses-inputs"></tr>
+                  <tr id="metas-dist-meses-pct"></tr>
+                </tbody>
+              </table>
             </div>
-            <table class="s-table">
-              <thead><tr id="metas-dist-meses-head"></tr></thead>
-              <tbody>
-                <tr id="metas-dist-meses-inputs"></tr>
-                <tr id="metas-dist-meses-pct"></tr>
-              </tbody>
-            </table>
-            <div class="imp-row" style="margin-top:10px;gap:18px;font-size:12.5px;color:#475569;">
-              <div>Total distribuido: <b id="metas-dist-total">0,0 t</b></div>
-              <div>Meta anual: <b id="metas-dist-meta">0,0 t</b></div>
-              <div>Diferencia: <b id="metas-dist-diff">0,0 t</b></div>
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Meta anual de la empresa</div></div></div>
+              <div class="kpi-num" style="font-size:24px;margin-bottom:14px;" id="metas-dist-meta-grande">0,0 t</div>
+              <div class="metas-detail-row"><span>Total distribuido</span><b id="metas-dist-total">0,0 t</b></div>
+              <div class="metas-detail-row"><span>Diferencia</span><b id="metas-dist-diff">0,0 t</b></div>
+              <div class="metas-detail-row"><span>% Distribuido</span><b id="metas-dist-pct">0 %</b></div>
+              <div class="imp-row" style="margin-top:16px;justify-content:flex-end;">
+                <button class="btn-imp primary" onclick="metasGuardar()">Aplicar distribución <svg class="ic-svg"><use href="#i-check"/></svg></button>
+              </div>
             </div>
           </div>
         </div>
 
         <div id="metas-tab-historial" class="cosecha-tabpanel" style="display:none;">
-          <div class="panel">
-            <div class="panel-head">
-              <div><div class="panel-title">Comparativo meta vs. producción real por año</div></div>
+          <div class="grid-row cols-3-eq">
+            <div class="panel" style="grid-column:span 2;">
+              <div class="panel-head"><div><div class="panel-title">Historial de metas anuales</div><div class="panel-sub">Metas de la empresa y por finca</div></div></div>
+              <table class="s-table" style="font-size:11.5px;">
+                <thead><tr id="metas-historial-head"></tr></thead>
+                <tbody id="metas-historial-tabla"></tbody>
+              </table>
             </div>
-            <div class="combo-legend">
-              <span class="lg-item"><span class="lg-dot" style="background:#f59e0b;"></span>Meta empresa (t)</span>
-              <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Producción real (t)</span>
-            </div>
-            <div id="metas-comparativo-cont"><div class="empty-panel-msg">Sin metas guardadas todavía.</div></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head">
-              <div><div class="panel-title">Historial de metas anuales</div></div>
-              <div class="imp-row" style="gap:8px;">
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Información</div></div></div>
+              <div class="foot-note" style="border:none;padding:0 0 14px;">En este historial puede visualizar la evolución de las metas definidas para cada año y compararlas con la producción real obtenida.</div>
+              <div class="panel-title" style="font-size:12.5px;margin-bottom:8px;">Acciones rápidas</div>
+              <div class="imp-row" style="flex-direction:column;gap:8px;align-items:stretch;">
                 <button class="btn-imp" onclick="metasDuplicarAnterior()"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Duplicar metas del año anterior</button>
                 <button class="btn-imp" onclick="metasExportarHistorial()"><svg class="ic-svg"><use href="#i-download"/></svg> Exportar historial</button>
               </div>
             </div>
-            <table class="s-table">
-              <thead><tr><th>Año</th><th>Meta empresa (t)</th><th>Producción real (t)</th><th>Cumplimiento</th><th>Fincas configuradas</th><th>Última actualización</th></tr></thead>
-              <tbody id="metas-historial-tabla"></tbody>
-            </table>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Comparativo de metas vs. producción real</div></div></div>
+            <div class="combo-legend">
+              <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Meta empresa (t)</span>
+              <span class="lg-item"><span class="lg-dot" style="background:#2563eb;"></span>Producción real (t)</span>
+              <span class="lg-item"><span class="lg-dot" style="background:#f59e0b;"></span>Ton/ha real</span>
+            </div>
+            <div id="metas-comparativo-cont"><div class="empty-panel-msg">Sin metas guardadas todavía.</div></div>
           </div>
         </div>
       </div>
@@ -3611,6 +3708,28 @@ function metasTotalAnual(){ return metasData.reduce((s,f) => s + (parseFloat(f.m
 function metasTotalHa(){ return metasData.reduce((s,f) => s + (parseFloat(f.ha)||0), 0); }
 function metasTotalPorMes(m){ return metasData.reduce((s,f) => s + (parseFloat(f.meses[m])||0), 0); }
 
+const METAS_COLORES = ['#16a34a','#2563eb','#f59e0b','#7c3aed','#dc2626','#0891b2','#db2777'];
+
+function metasBuildDonutHTML(items, centerLabel, centerSub){
+  const total = items.reduce((s,it) => s + it.value, 0);
+  if (total <= 0) return '<div class="empty-panel-msg">Sin metas configuradas para este año.</div>';
+  let acc = 0;
+  const stops = items.map((it,i) => {
+    const from = acc / total * 100;
+    acc += it.value;
+    const to = acc / total * 100;
+    return (METAS_COLORES[i % METAS_COLORES.length]) + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
+  }).join(', ');
+  const legend = items.map((it,i) => {
+    const pct = it.value / total * 100;
+    return '<div class="mdl-row"><span class="mdl-dot" style="background:' + METAS_COLORES[i % METAS_COLORES.length] + ';"></span>' +
+      '<span class="mdl-lbl">' + it.label + '</span><span class="mdl-val">' + impFmtT(it.value) + ' (' + impNum(pct,0) + '%)</span></div>';
+  }).join('');
+  return '<div class="metas-donut-wrap">' +
+    '<div class="donut" style="background:conic-gradient(' + stops + ');"><div class="donut-center"><span class="num">' + impFmtT(centerLabel) + '</span><div class="lbl">' + (centerSub||'') + '</div></div></div>' +
+    '<div class="metas-donut-legend">' + legend + '</div></div>';
+}
+
 function metasRenderResumen(){
   const total = metasTotalAnual();
   const haTotal = metasTotalHa();
@@ -3622,19 +3741,9 @@ function metasRenderResumen(){
   const cont = document.getElementById('metas-resumen-finca-rows');
   if (cont) {
     const conMeta = metasData.filter(f => f.metaAnual > 0);
-    if (!conMeta.length || total <= 0) {
-      cont.innerHTML = '<div class="empty-panel-msg">Sin metas configuradas para este año.</div>';
-    } else {
-      const max = Math.max(...metasData.map(f => f.metaAnual), 1);
-      cont.innerHTML = metasData.map(f => {
-        const pct = total > 0 ? f.metaAnual / total * 100 : 0;
-        const w = max > 0 ? f.metaAnual / max * 100 : 0;
-        return '<div class="hbar-row"><span class="hbar-lbl">' + f.finca + '</span>' +
-          '<div class="hbar-track"><div class="hbar-fill" style="width:' + w.toFixed(1) + '%;"></div></div>' +
-          '<span class="hbar-val">' + impFmtT(f.metaAnual) + '</span>' +
-          '<span class="hbar-pct">' + impNum(pct,1) + '%</span></div>';
-      }).join('');
-    }
+    cont.innerHTML = (!conMeta.length || total <= 0) ?
+      '<div class="empty-panel-msg">Sin metas configuradas para este año.</div>' :
+      metasBuildDonutHTML(metasData.filter(f => f.metaAnual > 0).map(f => ({label: f.finca, value: f.metaAnual})), total, 'Meta empresa');
   }
 
   const cfg = document.getElementById('metas-resumen-config');
@@ -3656,22 +3765,34 @@ function metasRenderFinca(){
   const tbody = document.getElementById('metas-finca-tabla');
   if (!tbody) return;
   const total = metasTotalAnual();
+  const haTotal = metasTotalHa();
+  impSetText('metas-finca-kpi-total', impFmtT(total));
+  const distribuida = metasData.reduce((s,f) => s + (f.metaAnual>0?f.metaAnual:0), 0);
+  impSetText('metas-finca-kpi-distribuida', impFmtT(distribuida));
+  impSetText('metas-finca-kpi-pct', total > 0 ? impNum(distribuida/total*100,0) + ' %' : '0 %');
+  const configuradas = metasData.filter(f => f.metaAnual > 0).length;
+  impSetText('metas-finca-kpi-configuradas', configuradas + ' de ' + metasData.length);
+
+  const donutCont = document.getElementById('metas-finca-donut');
+  if (donutCont) donutCont.innerHTML = metasBuildDonutHTML(metasData.filter(f => f.metaAnual > 0).map(f => ({label: f.finca, value: f.metaAnual})), total, 'Meta empresa');
+
   if (!metasData.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-panel-msg">No hay fincas registradas en Lotes.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-panel-msg">No hay fincas registradas en Lotes.</td></tr>';
     return;
   }
   tbody.innerHTML = metasData.map((f, i) => {
     const tonha = f.ha > 0 ? f.metaAnual / f.ha : 0;
     const pct = total > 0 ? f.metaAnual / total * 100 : 0;
     return '<tr>' +
-      '<td>' + f.finca + '</td>' +
+      '<td><span class="mdl-dot" style="display:inline-block;background:' + METAS_COLORES[i % METAS_COLORES.length] + ';width:9px;height:9px;border-radius:2px;margin-right:6px;"></span>' + f.finca + '</td>' +
       '<td>' + impNum(f.ha,1) + '</td>' +
       '<td><input type="number" min="0" step="0.1" value="' + f.metaAnual + '" style="width:90px;" onchange="metasEditarFinca(' + i + ', this.value)"></td>' +
       '<td>' + impNum(tonha,1) + '</td>' +
       '<td>' + impNum(pct,1) + ' %</td>' +
+      '<td><span class="estado-badge">Activo</span></td>' +
       '</tr>';
   }).join('') +
-    '<tr><td><b>TOTAL</b></td><td><b>' + impNum(total > 0 ? metasTotalHa() : metasTotalHa(),1) + '</b></td><td><b>' + impFmtT(total) + '</b></td><td><b>' + impNum(metasTotalHa() > 0 ? total/metasTotalHa() : 0,1) + '</b></td><td><b>100 %</b></td></tr>';
+    '<tr><td><b>TOTAL</b></td><td><b>' + impNum(haTotal,1) + '</b></td><td><b>' + impFmtT(total) + '</b></td><td><b>' + impNum(haTotal > 0 ? total/haTotal : 0,1) + '</b></td><td><b>100 %</b></td><td>—</td></tr>';
 }
 
 function metasEditarFinca(idx, valor){
@@ -3693,6 +3814,48 @@ function metasDistribuirAutomatico(){
   showToast('Meta distribuida automáticamente según área productiva.');
 }
 
+let metasMetodoActual = 'igual';
+
+function metasAplicarReparto(repartoMensual){
+  const haTotal = metasTotalHa();
+  metasData.forEach(f => {
+    const proporcion = haTotal > 0 ? (f.ha / haTotal) : (1 / Math.max(1, metasData.length));
+    f.meses = repartoMensual.map(v => Math.round(v * proporcion * 10) / 10);
+  });
+}
+
+async function metasPesosHistoricos(){
+  const filas = (typeof impFetchProduccion === 'function') ? await impFetchProduccion() : [];
+  const porMes = new Array(12).fill(0);
+  filas.forEach(r => {
+    const d = impParseFechaLocal(r.fecha);
+    if (!d) return;
+    porMes[d.getMonth()] += parseFloat(r.toneladas) || 0;
+  });
+  const total = porMes.reduce((s,v) => s+v, 0);
+  return total > 0 ? porMes.map(v => v/total) : null;
+}
+
+async function metasSetMetodo(metodo){
+  metasMetodoActual = metodo;
+  ['igual','historico','personalizada'].forEach(m => document.getElementById('metas-method-' + m).classList.toggle('active', m === metodo));
+  const total = metasTotalAnual();
+  document.getElementById('metas-dist-edit-table').style.display = metodo === 'personalizada' ? '' : 'none';
+  if (total <= 0) { showToast('Defina primero la meta anual de la empresa.'); }
+  if (metodo === 'igual') {
+    metasAplicarReparto(metasMesesIgualesA(total));
+  } else if (metodo === 'historico') {
+    const pesos = await metasPesosHistoricos();
+    if (!pesos) {
+      showToast('No hay producción histórica registrada; se usó distribución igualitaria.');
+      metasAplicarReparto(metasMesesIgualesA(total));
+    } else {
+      metasAplicarReparto(pesos.map(p => Math.round(p * total * 10) / 10));
+    }
+  }
+  metasRenderDistribucion();
+}
+
 function metasRenderDistribucion(){
   const head = document.getElementById('metas-dist-meses-head');
   const inputsRow = document.getElementById('metas-dist-meses-inputs');
@@ -3706,6 +3869,8 @@ function metasRenderDistribucion(){
   pctRow.innerHTML = '<td>% del total</td>' +
     Array.from({length:12}, (_, m) => '<td>' + (total > 0 ? impNum(metasTotalPorMes(m)/total*100,1) : '0,0') + '%</td>').join('') +
     '<td>100%</td>';
+  const meses = Array.from({length:12}, (_, m) => ({label: IMP_MES_ABR[m], value: metasTotalPorMes(m)}));
+  if (typeof impBuildBarChart === 'function') impBuildBarChart('metas-dist-barchart', 'metas-dist-axis', meses);
   metasActualizarTotalesDistribucion();
 }
 
@@ -3720,16 +3885,7 @@ function metasEditarMes(mes, valor){
 }
 
 function metasDistribucionIgualitaria(){
-  const total = metasTotalAnual();
-  if (total <= 0) { showToast('Defina primero la meta anual de la empresa.'); return; }
-  const repartoMensual = metasMesesIgualesA(total);
-  const haTotal = metasTotalHa();
-  metasData.forEach(f => {
-    const proporcion = haTotal > 0 ? (f.ha / haTotal) : (1 / Math.max(1, metasData.length));
-    f.meses = repartoMensual.map(v => Math.round(v * proporcion * 10) / 10);
-  });
-  metasRenderDistribucion();
-  showToast('Meta distribuida en partes iguales en los 12 meses.');
+  metasSetMetodo('igual');
 }
 
 function metasActualizarTotalesDistribucion(){
@@ -3737,8 +3893,10 @@ function metasActualizarTotalesDistribucion(){
   const distribuido = metasTotalDistribuido();
   impSetText('metas-dist-total', impFmtT(distribuido));
   impSetText('metas-dist-meta', impFmtT(total));
+  impSetText('metas-dist-meta-grande', impFmtT(total));
   const diff = distribuido - total;
   impSetText('metas-dist-diff', (diff >= 0 ? '+' : '') + impNum(diff,1) + ' t');
+  impSetText('metas-dist-pct', total > 0 ? impNum(Math.min(100, distribuido/total*100),0) + ' %' : '0 %');
 }
 
 async function metasProduccionRealPorAnio(anio){
@@ -3749,6 +3907,9 @@ async function metasProduccionRealPorAnio(anio){
   }).reduce((s, r) => s + (parseFloat(r.toneladas) || 0), 0);
 }
 
+let metasLoteRows = [];
+let metasLoteSeleccionado = null;
+
 async function metasRenderLote(){
   const tbody = document.getElementById('metas-lote-tabla');
   if (!tbody) return;
@@ -3756,8 +3917,25 @@ async function metasRenderLote(){
   let lotes = [];
   try { lotes = (typeof lotFetchLotes === 'function') ? await lotFetchLotes() : []; } catch(e) {}
   lotes = lotes.filter(l => l.estado !== 'inactivo');
+  const selFinca = document.getElementById('metas-lote-filtro-finca');
+  const selTipo = document.getElementById('metas-lote-filtro-tipo');
+  if (selFinca && !selFinca.dataset.lleno) {
+    const fincas = Array.from(new Set(lotes.map(l => String(l.finca||'').trim()))).sort();
+    selFinca.innerHTML = '<option value="">Todas las fincas</option>' + fincas.map(f => '<option value="' + f + '">' + f + '</option>').join('');
+    selFinca.dataset.lleno = '1';
+  }
+  if (selTipo && !selTipo.dataset.lleno) {
+    const tipos = Array.from(new Set(lotes.map(l => String(l.tipo||'').trim()).filter(Boolean))).sort();
+    selTipo.innerHTML = '<option value="">Todos los tipos</option>' + tipos.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+    selTipo.dataset.lleno = '1';
+  }
+
   if (!lotes.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-panel-msg">No hay lotes registrados.</td></tr>';
+    impSetText('metas-lote-kpi-total', '0');
+    impSetText('metas-lote-kpi-meta', '0,0 t');
+    impSetText('metas-lote-kpi-tonha', '0,0');
+    impSetText('metas-lote-kpi-configurados', '0 de 0');
     return;
   }
   const filasProd = (typeof impFetchProduccion === 'function') ? await impFetchProduccion() : [];
@@ -3770,7 +3948,8 @@ async function metasRenderLote(){
   });
   const haPorFinca = new Map();
   lotes.forEach(l => { const f = String(l.finca||'').trim(); haPorFinca.set(f, (haPorFinca.get(f) || 0) + (parseFloat(l.ha) || 0)); });
-  tbody.innerHTML = lotes.map(l => {
+
+  metasLoteRows = lotes.map(l => {
     const finca = String(l.finca||'').trim();
     const metaFinca = metasData.find(f => f.finca === finca);
     const haFincaTotal = haPorFinca.get(finca) || 0;
@@ -3778,59 +3957,138 @@ async function metasRenderLote(){
     const metaLote = metaFinca ? metaFinca.metaAnual * proporcion : 0;
     const real = prodPorLote.get(finca + '|' + String(l.lote||'').trim()) || 0;
     const tonha = (parseFloat(l.ha) || 0) > 0 ? real / l.ha : 0;
-    const cumplimiento = metaLote > 0 ? (real / metaLote * 100) : 0;
-    return '<tr>' +
-      '<td>' + finca + '</td>' +
-      '<td>' + l.lote + '</td>' +
-      '<td>' + impNum(l.ha,1) + '</td>' +
-      '<td>' + impFmtT(metaLote) + '</td>' +
-      '<td>' + impFmtT(real) + '</td>' +
-      '<td>' + impNum(tonha,1) + '</td>' +
-      '<td>' + (metaLote > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</td>' +
+    return { finca, lote: String(l.lote||''), tipo: String(l.tipo||'—'), ha: parseFloat(l.ha)||0, metaLote, real, tonha, estado: l.estado||'activo' };
+  });
+
+  const fFinca = selFinca ? selFinca.value : '';
+  const fTipo = selTipo ? selTipo.value : '';
+  const buscar = (document.getElementById('metas-lote-filtro-buscar') || {}).value || '';
+  const filtradas = metasLoteRows.filter(r =>
+    (!fFinca || r.finca === fFinca) &&
+    (!fTipo || r.tipo === fTipo) &&
+    (!buscar || r.lote.toLowerCase().includes(buscar.toLowerCase()))
+  );
+
+  impSetText('metas-lote-kpi-total', String(filtradas.length));
+  const metaAcumulada = filtradas.reduce((s,r) => s + r.metaLote, 0);
+  impSetText('metas-lote-kpi-meta', impFmtT(metaAcumulada));
+  const haTotal = filtradas.reduce((s,r) => s + r.ha, 0);
+  impSetText('metas-lote-kpi-tonha', haTotal > 0 ? impNum(metaAcumulada/haTotal,1) : '0,0');
+  impSetText('metas-lote-kpi-configurados', filtradas.filter(r => r.metaLote > 0).length + ' de ' + filtradas.length);
+
+  if (!filtradas.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-panel-msg">No hay lotes que coincidan con el filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtradas.map((r, i) => {
+    const cumplimiento = r.metaLote > 0 ? (r.real / r.metaLote * 100) : 0;
+    return '<tr class="metas-lote-row' + (metasLoteSeleccionado === (r.finca+'|'+r.lote) ? ' selected' : '') + '" onclick="metasSeleccionarLote(\'' + r.finca.replace(/'/g,"\\'") + '\',\'' + r.lote.replace(/'/g,"\\'") + '\')">' +
+      '<td><b>' + r.lote + '</b></td>' +
+      '<td>' + r.finca + '</td>' +
+      '<td>' + r.tipo + '</td>' +
+      '<td>' + impNum(r.ha,1) + '</td>' +
+      '<td>' + impFmtT(r.metaLote) + '</td>' +
+      '<td>' + impNum(r.tonha,1) + '</td>' +
+      '<td>' + (r.metaLote > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</td>' +
       '</tr>';
   }).join('');
+
+  if (metasLoteSeleccionado) {
+    const sel = filtradas.find(r => (r.finca+'|'+r.lote) === metasLoteSeleccionado);
+    if (sel) metasMostrarDetalleLote(sel);
+  }
+}
+
+function metasSeleccionarLote(finca, lote){
+  metasLoteSeleccionado = finca + '|' + lote;
+  const sel = metasLoteRows.find(r => r.finca === finca && r.lote === lote);
+  if (sel) metasMostrarDetalleLote(sel);
+  metasRenderLote();
+}
+
+function metasMostrarDetalleLote(r){
+  const cont = document.getElementById('metas-lote-detalle');
+  if (!cont) return;
+  const cumplimiento = r.metaLote > 0 ? (r.real / r.metaLote * 100) : 0;
+  cont.innerHTML =
+    '<div style="font-weight:700;font-size:13.5px;margin-bottom:10px;">' + r.lote + ' - ' + r.finca + ' <span class="estado-badge">' + r.tipo + '</span></div>' +
+    '<div class="metas-detail-row"><span>Área (ha)</span><b>' + impNum(r.ha,1) + '</b></div>' +
+    '<div class="metas-detail-row"><span>Producción real del año</span><b>' + impFmtT(r.real) + '</b></div>' +
+    '<div class="metas-detail-row"><span>Ton/ha real</span><b>' + impNum(r.tonha,1) + '</b></div>' +
+    '<div class="metas-detail-row"><span>Meta anual asignada</span><b>' + impFmtT(r.metaLote) + '</b></div>' +
+    '<div class="metas-detail-row"><span>Cumplimiento</span><b>' + (r.metaLote > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</b></div>';
 }
 
 function metasBuildComparativoChart(containerId, items){
-  // items: [{label, meta, real}]
+  // items: [{label, meta, real, ha}]
   const cont = document.getElementById(containerId);
   if (!cont) return;
   if (!items.length) { cont.innerHTML = '<div class="empty-panel-msg">Sin metas guardadas todavía.</div>'; return; }
   const max = Math.max.apply(null, items.flatMap(it => [it.meta, it.real])) || 1;
-  cont.innerHTML = '<div class="imp-row" style="align-items:flex-end;gap:18px;height:160px;padding:6px 4px 0;">' +
+  const tonhaVals = items.map(it => it.ha > 0 ? it.real / it.ha : 0);
+  const maxTonha = Math.max.apply(null, tonhaVals.concat([1]));
+  const n = items.length;
+  const W = 100, padX = 6;
+  const pts = tonhaVals.map((v, i) => {
+    const x = n === 1 ? 50 : padX + (i * (W - 2*padX) / (n - 1));
+    const y = 100 - (v / maxTonha) * 90;
+    return x.toFixed(2) + ',' + y.toFixed(2);
+  });
+  const lineHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:130px;pointer-events:none;">' +
+    '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#f59e0b" stroke-width="1.6" vector-effect="non-scaling-stroke"/>' +
+    pts.map(p => { const xy = p.split(','); return '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="1.6" fill="#f59e0b"/>'; }).join('') +
+    '</svg>';
+  cont.innerHTML = '<div style="position:relative;">' + lineHTML +
+    '<div class="imp-row" style="align-items:flex-end;gap:18px;height:130px;padding:6px 4px 0;position:relative;">' +
     items.map(it => {
-      const hMeta = Math.max(2, Math.round((it.meta / max) * 130));
-      const hReal = Math.max(2, Math.round((it.real / max) * 130));
+      const hMeta = Math.max(2, Math.round((it.meta / max) * 110));
+      const hReal = Math.max(2, Math.round((it.real / max) * 110));
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">' +
-        '<div style="display:flex;align-items:flex-end;gap:4px;height:130px;">' +
-        '<div title="Meta: ' + impFmtT(it.meta) + '" style="width:18px;height:' + hMeta + 'px;background:#f59e0b;border-radius:3px 3px 0 0;"></div>' +
-        '<div title="Real: ' + impFmtT(it.real) + '" style="width:18px;height:' + hReal + 'px;background:#16a34a;border-radius:3px 3px 0 0;"></div>' +
-        '</div><div style="font-size:11.5px;font-weight:600;color:#475569;">' + it.label + '</div></div>';
+        '<div style="display:flex;align-items:flex-end;gap:4px;height:110px;">' +
+        '<div title="Meta: ' + impFmtT(it.meta) + '" style="width:18px;height:' + hMeta + 'px;background:#16a34a;border-radius:3px 3px 0 0;"></div>' +
+        '<div title="Real: ' + impFmtT(it.real) + '" style="width:18px;height:' + hReal + 'px;background:#2563eb;border-radius:3px 3px 0 0;"></div>' +
+        '</div></div>';
     }).join('') +
+    '</div></div>' +
+    '<div class="imp-row" style="gap:18px;padding:0 4px;">' +
+    items.map(it => '<div style="flex:1;text-align:center;font-size:11.5px;font-weight:600;color:#475569;">' + it.label + '</div>').join('') +
     '</div>';
 }
 
 async function metasRenderHistorial(){
   const tbody = document.getElementById('metas-historial-tabla');
+  const head = document.getElementById('metas-historial-head');
   if (!tbody) return;
   const resp = await gasJSONP(GAS_URL + '?accion=listarMetasHistorial');
   const historial = (resp && resp.ok && Array.isArray(resp.historial)) ? resp.historial : [];
   metasHistorialCache = historial;
+  let lotes = [];
+  try { lotes = (typeof lotFetchLotes === 'function') ? await lotFetchLotes() : []; } catch(e) {}
+  const haPorFinca = new Map();
+  lotes.filter(l => l.estado !== 'inactivo').forEach(l => { const f = String(l.finca||'').trim(); haPorFinca.set(f, (haPorFinca.get(f)||0) + (parseFloat(l.ha)||0)); });
+  const haTotalGlobal = Array.from(haPorFinca.values()).reduce((s,v) => s+v, 0);
+
   if (!historial.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-panel-msg">Aún no hay metas guardadas en años anteriores.</td></tr>';
+    if (head) head.innerHTML = '<th>Año</th><th>Meta empresa (t)</th><th>Producción real (t)</th><th>Cumplimiento</th><th>Última actualización</th>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-panel-msg">Aún no hay metas guardadas en años anteriores.</td></tr>';
     metasBuildComparativoChart('metas-comparativo-cont', []);
     return;
   }
+  const fincasTodas = Array.from(new Set(historial.flatMap(h => h.fincas.map(f => f.finca)))).sort();
+  if (head) head.innerHTML = '<th>Año</th><th>Meta empresa (t)</th>' + fincasTodas.map(f => '<th>' + f + ' (t)</th>').join('') + '<th>Meta ton/ha</th><th>Área productiva (ha)</th><th>Creado por</th><th>Fecha creación</th>';
+
   const ordenado = historial.slice().sort((a,b) => a.anio - b.anio);
   const reales = await Promise.all(ordenado.map(h => metasProduccionRealPorAnio(h.anio)));
   tbody.innerHTML = ordenado.slice().reverse().map(h => {
     const idx = ordenado.indexOf(h);
-    const real = reales[idx];
-    const configuradas = h.fincas.filter(f => f.metaAnual > 0).length;
-    const cumplimiento = h.metaEmpresa > 0 ? (real / h.metaEmpresa * 100) : 0;
-    return '<tr><td>' + h.anio + '</td><td>' + impFmtT(h.metaEmpresa) + '</td><td>' + impFmtT(real) + '</td><td>' + (h.metaEmpresa > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</td><td>' + configuradas + ' de ' + h.fincas.length + '</td><td>' + (h.fechaActualizacion || '—') + '</td></tr>';
+    const tonha = haTotalGlobal > 0 ? h.metaEmpresa / haTotalGlobal : 0;
+    const fincaCols = fincasTodas.map(f => {
+      const ff = h.fincas.find(x => x.finca === f);
+      return '<td>' + (ff ? impNum(ff.metaAnual,1) : '—') + '</td>';
+    }).join('');
+    return '<tr><td><b>' + h.anio + '</b></td><td>' + impNum(h.metaEmpresa,1) + '</td>' + fincaCols + '<td>' + impNum(tonha,1) + '</td><td>' + impNum(haTotalGlobal,1) + '</td><td>' + (h.usuario || 'Administrador') + '</td><td>' + (h.fechaActualizacion || '—') + '</td></tr>';
   }).join('');
-  metasBuildComparativoChart('metas-comparativo-cont', ordenado.map((h, i) => ({label: h.anio, meta: h.metaEmpresa, real: reales[i]})));
+  metasBuildComparativoChart('metas-comparativo-cont', ordenado.map((h, i) => ({label: h.anio, meta: h.metaEmpresa, real: reales[i], ha: haTotalGlobal})));
 }
 
 async function metasDuplicarAnterior(){
