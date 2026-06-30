@@ -642,6 +642,7 @@ a.mtab:hover{color:#16a34a;}
     <div id="sb-metas-sub" style="display:none;">
       <a class="sb-sublink active" id="sbm-resumen" href="javascript:void(0)" onclick="showMetasTab('resumen')">Resumen General</a>
       <a class="sb-sublink" id="sbm-finca" href="javascript:void(0)" onclick="showMetasTab('finca')">Meta por Finca</a>
+      <a class="sb-sublink" id="sbm-lote" href="javascript:void(0)" onclick="showMetasTab('lote')">Meta por Lote</a>
       <a class="sb-sublink" id="sbm-distribucion" href="javascript:void(0)" onclick="showMetasTab('distribucion')">Distribución Mensual</a>
       <a class="sb-sublink" id="sbm-historial" href="javascript:void(0)" onclick="showMetasTab('historial')">Historial de Metas</a>
     </div>
@@ -1423,6 +1424,14 @@ a.mtab:hover{color:#16a34a;}
           </table>
         </div>
 
+        <div id="metas-tab-lote" class="cosecha-tabpanel" style="display:none;">
+          <div class="foot-note" style="border:none;margin-bottom:10px;">La meta de cada lote se calcula distribuyendo la meta de su finca de forma proporcional al área (ha) del lote.</div>
+          <table class="s-table">
+            <thead><tr><th>Finca</th><th>Lote</th><th>Área (ha)</th><th>Meta anual (t)</th><th>Producción real del año (t)</th><th>Ton/ha real</th><th>Cumplimiento</th></tr></thead>
+            <tbody id="metas-lote-tabla"></tbody>
+          </table>
+        </div>
+
         <div id="metas-tab-distribucion" class="cosecha-tabpanel" style="display:none;">
           <div class="panel">
             <div class="panel-head"><div><div class="panel-title">Distribución mensual de la meta anual de la empresa</div></div></div>
@@ -1446,9 +1455,25 @@ a.mtab:hover{color:#16a34a;}
 
         <div id="metas-tab-historial" class="cosecha-tabpanel" style="display:none;">
           <div class="panel">
-            <div class="panel-head"><div><div class="panel-title">Historial de metas anuales</div></div></div>
+            <div class="panel-head">
+              <div><div class="panel-title">Comparativo meta vs. producción real por año</div></div>
+            </div>
+            <div class="combo-legend">
+              <span class="lg-item"><span class="lg-dot" style="background:#f59e0b;"></span>Meta empresa (t)</span>
+              <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Producción real (t)</span>
+            </div>
+            <div id="metas-comparativo-cont"><div class="empty-panel-msg">Sin metas guardadas todavía.</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div><div class="panel-title">Historial de metas anuales</div></div>
+              <div class="imp-row" style="gap:8px;">
+                <button class="btn-imp" onclick="metasDuplicarAnterior()"><svg class="ic-svg"><use href="#i-refresh-cw"/></svg> Duplicar metas del año anterior</button>
+                <button class="btn-imp" onclick="metasExportarHistorial()"><svg class="ic-svg"><use href="#i-download"/></svg> Exportar historial</button>
+              </div>
+            </div>
             <table class="s-table">
-              <thead><tr><th>Año</th><th>Meta empresa (t)</th><th>Fincas configuradas</th><th>Última actualización</th></tr></thead>
+              <thead><tr><th>Año</th><th>Meta empresa (t)</th><th>Producción real (t)</th><th>Cumplimiento</th><th>Fincas configuradas</th><th>Última actualización</th></tr></thead>
               <tbody id="metas-historial-tabla"></tbody>
             </table>
           </div>
@@ -1970,15 +1995,16 @@ function toggleMetasMenu(){
 
 async function showMetasTab(name){
   showSection('metas');
-  ['resumen','finca','distribucion','historial'].forEach(t => {
+  ['resumen','finca','lote','distribucion','historial'].forEach(t => {
     document.getElementById('metas-tab-' + t).style.display = t === name ? '' : 'none';
     document.getElementById('sbm-' + t).classList.toggle('active', t === name);
   });
   if (!metasCargado && typeof metasInit === 'function') await metasInit();
   if (name === 'resumen' && typeof metasRenderResumen === 'function') metasRenderResumen();
   if (name === 'finca' && typeof metasRenderFinca === 'function') metasRenderFinca();
+  if (name === 'lote' && typeof metasRenderLote === 'function') await metasRenderLote();
   if (name === 'distribucion' && typeof metasRenderDistribucion === 'function') metasRenderDistribucion();
-  if (name === 'historial' && typeof metasRenderHistorial === 'function') metasRenderHistorial();
+  if (name === 'historial' && typeof metasRenderHistorial === 'function') await metasRenderHistorial();
 }
 
 function setProduccionMenuOpen(open){
@@ -3529,6 +3555,7 @@ async function impRenderProduccionTab(name){
 let metasAnio = new Date().getFullYear();
 let metasData = []; // [{finca, metaAnual, meses:[12]}]
 let metasCargado = false;
+let metasHistorialCache = [];
 
 function metasMesesIgualesA(total){
   const base = Math.floor((total/12)*10)/10;
@@ -3714,19 +3741,122 @@ function metasActualizarTotalesDistribucion(){
   impSetText('metas-dist-diff', (diff >= 0 ? '+' : '') + impNum(diff,1) + ' t');
 }
 
+async function metasProduccionRealPorAnio(anio){
+  const filas = (typeof impFetchProduccion === 'function') ? await impFetchProduccion() : [];
+  return filas.filter(r => {
+    const d = impParseFechaLocal(r.fecha);
+    return d && d.getFullYear() === parseInt(anio, 10);
+  }).reduce((s, r) => s + (parseFloat(r.toneladas) || 0), 0);
+}
+
+async function metasRenderLote(){
+  const tbody = document.getElementById('metas-lote-tabla');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-panel-msg">Cargando...</td></tr>';
+  let lotes = [];
+  try { lotes = (typeof lotFetchLotes === 'function') ? await lotFetchLotes() : []; } catch(e) {}
+  lotes = lotes.filter(l => l.estado !== 'inactivo');
+  if (!lotes.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-panel-msg">No hay lotes registrados.</td></tr>';
+    return;
+  }
+  const filasProd = (typeof impFetchProduccion === 'function') ? await impFetchProduccion() : [];
+  const prodPorLote = new Map();
+  filasProd.forEach(r => {
+    const d = impParseFechaLocal(r.fecha);
+    if (!d || d.getFullYear() !== parseInt(metasAnio, 10)) return;
+    const key = String(r.finca||'').trim() + '|' + String(r.lote||'').trim();
+    prodPorLote.set(key, (prodPorLote.get(key) || 0) + (parseFloat(r.toneladas) || 0));
+  });
+  const haPorFinca = new Map();
+  lotes.forEach(l => { const f = String(l.finca||'').trim(); haPorFinca.set(f, (haPorFinca.get(f) || 0) + (parseFloat(l.ha) || 0)); });
+  tbody.innerHTML = lotes.map(l => {
+    const finca = String(l.finca||'').trim();
+    const metaFinca = metasData.find(f => f.finca === finca);
+    const haFincaTotal = haPorFinca.get(finca) || 0;
+    const proporcion = haFincaTotal > 0 ? (parseFloat(l.ha) || 0) / haFincaTotal : 0;
+    const metaLote = metaFinca ? metaFinca.metaAnual * proporcion : 0;
+    const real = prodPorLote.get(finca + '|' + String(l.lote||'').trim()) || 0;
+    const tonha = (parseFloat(l.ha) || 0) > 0 ? real / l.ha : 0;
+    const cumplimiento = metaLote > 0 ? (real / metaLote * 100) : 0;
+    return '<tr>' +
+      '<td>' + finca + '</td>' +
+      '<td>' + l.lote + '</td>' +
+      '<td>' + impNum(l.ha,1) + '</td>' +
+      '<td>' + impFmtT(metaLote) + '</td>' +
+      '<td>' + impFmtT(real) + '</td>' +
+      '<td>' + impNum(tonha,1) + '</td>' +
+      '<td>' + (metaLote > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function metasBuildComparativoChart(containerId, items){
+  // items: [{label, meta, real}]
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  if (!items.length) { cont.innerHTML = '<div class="empty-panel-msg">Sin metas guardadas todavía.</div>'; return; }
+  const max = Math.max.apply(null, items.flatMap(it => [it.meta, it.real])) || 1;
+  cont.innerHTML = '<div class="imp-row" style="align-items:flex-end;gap:18px;height:160px;padding:6px 4px 0;">' +
+    items.map(it => {
+      const hMeta = Math.max(2, Math.round((it.meta / max) * 130));
+      const hReal = Math.max(2, Math.round((it.real / max) * 130));
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">' +
+        '<div style="display:flex;align-items:flex-end;gap:4px;height:130px;">' +
+        '<div title="Meta: ' + impFmtT(it.meta) + '" style="width:18px;height:' + hMeta + 'px;background:#f59e0b;border-radius:3px 3px 0 0;"></div>' +
+        '<div title="Real: ' + impFmtT(it.real) + '" style="width:18px;height:' + hReal + 'px;background:#16a34a;border-radius:3px 3px 0 0;"></div>' +
+        '</div><div style="font-size:11.5px;font-weight:600;color:#475569;">' + it.label + '</div></div>';
+    }).join('') +
+    '</div>';
+}
+
 async function metasRenderHistorial(){
   const tbody = document.getElementById('metas-historial-tabla');
   if (!tbody) return;
   const resp = await gasJSONP(GAS_URL + '?accion=listarMetasHistorial');
   const historial = (resp && resp.ok && Array.isArray(resp.historial)) ? resp.historial : [];
+  metasHistorialCache = historial;
   if (!historial.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-panel-msg">Aún no hay metas guardadas en años anteriores.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-panel-msg">Aún no hay metas guardadas en años anteriores.</td></tr>';
+    metasBuildComparativoChart('metas-comparativo-cont', []);
     return;
   }
-  tbody.innerHTML = historial.map(h => {
+  const ordenado = historial.slice().sort((a,b) => a.anio - b.anio);
+  const reales = await Promise.all(ordenado.map(h => metasProduccionRealPorAnio(h.anio)));
+  tbody.innerHTML = ordenado.slice().reverse().map(h => {
+    const idx = ordenado.indexOf(h);
+    const real = reales[idx];
     const configuradas = h.fincas.filter(f => f.metaAnual > 0).length;
-    return '<tr><td>' + h.anio + '</td><td>' + impFmtT(h.metaEmpresa) + '</td><td>' + configuradas + ' de ' + h.fincas.length + '</td><td>' + (h.fechaActualizacion || '—') + '</td></tr>';
+    const cumplimiento = h.metaEmpresa > 0 ? (real / h.metaEmpresa * 100) : 0;
+    return '<tr><td>' + h.anio + '</td><td>' + impFmtT(h.metaEmpresa) + '</td><td>' + impFmtT(real) + '</td><td>' + (h.metaEmpresa > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</td><td>' + configuradas + ' de ' + h.fincas.length + '</td><td>' + (h.fechaActualizacion || '—') + '</td></tr>';
   }).join('');
+  metasBuildComparativoChart('metas-comparativo-cont', ordenado.map((h, i) => ({label: h.anio, meta: h.metaEmpresa, real: reales[i]})));
+}
+
+async function metasDuplicarAnterior(){
+  const anioAnterior = metasAnio - 1;
+  const resp = await gasJSONP(GAS_URL + '?accion=listarMetas&anio=' + anioAnterior);
+  const previas = (resp && resp.ok && Array.isArray(resp.metas)) ? resp.metas : [];
+  if (!previas.length) { showToast('No hay metas guardadas para ' + anioAnterior + '.'); return; }
+  metasData.forEach(f => {
+    const previa = previas.find(p => String(p.finca||'').trim() === f.finca);
+    if (previa) { f.metaAnual = previa.metaAnual; f.meses = previa.meses.slice(); }
+  });
+  showMetasTab('finca');
+  showToast('Se copiaron las metas de ' + anioAnterior + '. Revisa y guarda los cambios.');
+}
+
+function metasExportarHistorial(){
+  if (!metasHistorialCache.length) { showToast('No hay historial para exportar.'); return; }
+  const header = ['Anio','MetaEmpresa','FincasConfiguradas','FechaActualizacion'];
+  const lineas = metasHistorialCache.map(h => [h.anio, h.metaEmpresa, h.fincas.filter(f => f.metaAnual > 0).length + ' de ' + h.fincas.length, h.fechaActualizacion || ''].join(';'));
+  const BOM = '﻿';
+  const blob = new Blob([BOM + header.join(';') + '\n' + lineas.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'historial_metas.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function metasGuardar(){
