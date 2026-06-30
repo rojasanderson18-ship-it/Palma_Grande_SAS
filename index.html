@@ -287,6 +287,16 @@ a.mtab:hover{color:#16a34a;}
 .metas-info-banner{display:flex;align-items:flex-start;gap:10px;background:#f0f9f4;border:1px solid #d6f0de;border-radius:10px;padding:12px 14px;font-size:12px;color:#374151;margin-top:14px;}
 .metas-info-banner .ic-svg{width:16px;height:16px;color:#16a34a;flex:0 0 auto;margin-top:1px;}
 .estado-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#dcfce7;color:#16a34a;}
+.metas-check-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;color:#374151;}
+.metas-check-row:last-child{border-bottom:none;}
+.metas-check-row .mcr-lbl{display:flex;align-items:center;gap:8px;font-weight:600;}
+.metas-check-row .mcr-ic{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.metas-check-row .mcr-ic .ic-svg{width:11px;height:11px;}
+.metas-check-row .mcr-ic.ok{background:#dcfce7;color:#16a34a;}
+.metas-check-row .mcr-ic.pending{background:#f3f4f6;color:#9ca3af;}
+.metas-check-row .mcr-val{font-weight:700;}
+.metas-check-row .mcr-val.ok{color:#16a34a;}
+.metas-check-row .mcr-val.pending{color:#9ca3af;}
 .row-actions{display:flex;gap:6px;}
 .row-action-btn{width:28px;height:28px;border-radius:8px;border:1px solid #eef0f4;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;}
 .row-action-btn:hover{background:#f8fafc;}
@@ -2099,7 +2109,7 @@ async function showMetasTab(name){
     document.getElementById('sbm-' + t).classList.toggle('active', t === name);
   });
   if (!metasCargado && typeof metasInit === 'function') await metasInit();
-  if (name === 'resumen' && typeof metasRenderResumen === 'function') metasRenderResumen();
+  if (name === 'resumen' && typeof metasRenderResumen === 'function') await metasRenderResumen();
   if (name === 'finca' && typeof metasRenderFinca === 'function') metasRenderFinca();
   if (name === 'lote' && typeof metasRenderLote === 'function') await metasRenderLote();
   if (name === 'distribucion' && typeof metasRenderDistribucion === 'function') metasRenderDistribucion();
@@ -3737,7 +3747,11 @@ function metasBuildDonutHTML(items, centerLabel, centerSub){
     '<div class="metas-donut-legend">' + legend + '</div></div>';
 }
 
-function metasRenderResumen(){
+function metasCheckRowHTML(label, ok, valorTexto){
+  return '<div class="metas-check-row"><span class="mcr-lbl"><span class="mcr-ic ' + (ok?'ok':'pending') + '"><svg class="ic-svg"><use href="#' + (ok?'i-check':'i-clock') + '"/></svg></span>' + label + '</span><span class="mcr-val ' + (ok?'ok':'pending') + '">' + valorTexto + '</span></div>';
+}
+
+async function metasRenderResumen(){
   const total = metasTotalAnual();
   const haTotal = metasTotalHa();
   impSetText('metas-kpi-total', impFmtT(total));
@@ -3756,9 +3770,22 @@ function metasRenderResumen(){
   const cfg = document.getElementById('metas-resumen-config');
   if (cfg) {
     const configuradas = metasData.filter(f => f.metaAnual > 0).length;
+    const fincasOk = configuradas > 0 && configuradas === metasData.length;
+    let lotes = [];
+    try { lotes = (typeof lotFetchLotes === 'function') ? await lotFetchLotes() : []; } catch(e) {}
+    lotes = lotes.filter(l => l.estado !== 'inactivo');
+    const fincasConMeta = new Set(metasData.filter(f => f.metaAnual > 0).map(f => f.finca));
+    const lotesConfigurados = lotes.filter(l => fincasConMeta.has(String(l.finca||'').trim())).length;
+    const lotesOk = lotes.length > 0 && lotesConfigurados === lotes.length;
+    const distribuido = metasTotalDistribuido();
+    const tolerancia = Math.max(0.5, total * 0.01);
+    const distribucionOk = total > 0 && Math.abs(distribuido - total) < tolerancia;
+    const validadasOk = fincasOk && distribucionOk;
     cfg.innerHTML =
-      '<div class="hbar-row"><span class="hbar-lbl">Fincas configuradas</span><span class="hbar-val">' + configuradas + ' de ' + metasData.length + '</span></div>' +
-      '<div class="hbar-row"><span class="hbar-lbl">Distribución mensual</span><span class="hbar-val">' + (Math.abs(metasTotalDistribuido() - total) < 0.5 && total > 0 ? '12 meses OK' : 'Pendiente') + '</span></div>';
+      metasCheckRowHTML('Fincas configuradas', fincasOk, configuradas + ' de ' + metasData.length) +
+      metasCheckRowHTML('Lotes configurados', lotesOk, lotesConfigurados + ' de ' + lotes.length) +
+      metasCheckRowHTML('Distribución mensual', distribucionOk, distribucionOk ? '12 meses OK' : 'Pendiente') +
+      metasCheckRowHTML('Metas validadas', validadasOk, validadasOk ? 'Completo' : 'Pendiente');
   }
 }
 
@@ -3965,8 +3992,10 @@ async function metasRenderLote(){
     const proporcion = haFincaTotal > 0 ? (parseFloat(l.ha) || 0) / haFincaTotal : 0;
     const metaLote = metaFinca ? metaFinca.metaAnual * proporcion : 0;
     const real = prodPorLote.get(finca + '|' + String(l.lote||'').trim()) || 0;
-    const tonha = (parseFloat(l.ha) || 0) > 0 ? real / l.ha : 0;
-    return { finca, lote: String(l.lote||''), tipo: String(l.tipo||'—'), ha: parseFloat(l.ha)||0, metaLote, real, tonha, estado: l.estado||'activo' };
+    const ha = parseFloat(l.ha) || 0;
+    const tonha = ha > 0 ? real / ha : 0;
+    const objetivo = ha > 0 ? metaLote / ha : 0;
+    return { finca, lote: String(l.lote||''), tipo: String(l.tipo||'—'), ha, metaLote, real, tonha, objetivo, estado: l.estado||'activo' };
   });
 
   const fFinca = selFinca ? selFinca.value : '';
@@ -3997,7 +4026,7 @@ async function metasRenderLote(){
       '<td>' + r.tipo + '</td>' +
       '<td>' + impNum(r.ha,1) + '</td>' +
       '<td>' + impFmtT(r.metaLote) + '</td>' +
-      '<td>' + impNum(r.tonha,1) + '</td>' +
+      '<td>' + (r.metaLote > 0 ? impNum(r.objetivo,1) : 'N/D') + '</td>' +
       '<td>' + (r.metaLote > 0 ? impNum(cumplimiento,1) + ' %' : 'N/D') + '</td>' +
       '</tr>';
   }).join('');
@@ -4037,9 +4066,8 @@ function metasBuildComparativoChart(containerId, items){
   const tonhaVals = items.map(it => it.ha > 0 ? it.real / it.ha : 0);
   const maxTonha = Math.max.apply(null, tonhaVals.concat([1]));
   const n = items.length;
-  const W = 100, padX = 6;
   const pts = tonhaVals.map((v, i) => {
-    const x = n === 1 ? 50 : padX + (i * (W - 2*padX) / (n - 1));
+    const x = (i + 0.5) / n * 100;
     const y = 100 - (v / maxTonha) * 90;
     return x.toFixed(2) + ',' + y.toFixed(2);
   });
