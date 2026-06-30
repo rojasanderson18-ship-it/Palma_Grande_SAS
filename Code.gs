@@ -18,7 +18,10 @@ const SHEETS = {
   produccion:     'Producción Importada',
   lotes:          'Lotes',
   historialLotes: 'Historial Lotes',
+  metas:          'Metas',
 };
+
+const METAS_HEADERS = ['Anio','Finca','MetaAnual','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic','FechaActualizacion','Usuario'];
 
 const LOTES = [
   {finca:'FINCA 1',lote:'1A',ha:25,tipo:'hibrido'},
@@ -410,6 +413,41 @@ function doGet(e) {
         var errResultBulkLot = {ok:false, error: errBulkLot.toString()};
         if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultBulkLot)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
         return jsonResponse(errResultBulkLot);
+      }
+    }
+
+    if(accion === 'listarMetas'){
+      try {
+        var resultMetas = listarMetas(params.anio);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultMetas)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultMetas);
+      } catch(errMetas) {
+        var errResultMetas = {ok:false, error: errMetas.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultMetas)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultMetas);
+      }
+    }
+    if(accion === 'guardarMetas'){
+      try {
+        var dMetas = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+        var resultGuardarMetas = guardarMetas(dMetas);
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultGuardarMetas)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultGuardarMetas);
+      } catch(errGuardarMetas) {
+        var errResultGuardarMetas = {ok:false, error: errGuardarMetas.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultGuardarMetas)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultGuardarMetas);
+      }
+    }
+    if(accion === 'listarMetasHistorial'){
+      try {
+        var resultMetasHist = listarMetasHistorial();
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(resultMetasHist)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(resultMetasHist);
+      } catch(errMetasHist) {
+        var errResultMetasHist = {ok:false, error: errMetasHist.toString()};
+        if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(errResultMetasHist)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+        return jsonResponse(errResultMetasHist);
       }
     }
 
@@ -1809,6 +1847,75 @@ function eliminarLote(d) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function listarMetas(anio) {
+  var sheet = getOrCreateSheet(SHEETS.metas, METAS_HEADERS);
+  var lastRow = sheet.getLastRow();
+  if(lastRow <= 1) return {ok:true, metas:[]};
+  var data = sheet.getRange(2, 1, lastRow - 1, METAS_HEADERS.length).getValues();
+  var metas = data.filter(function(r){ return r[0] && String(r[0]) === String(anio); }).map(function(r){
+    return {
+      anio: r[0],
+      finca: String(r[1]||''),
+      metaAnual: parseFloat(r[2])||0,
+      meses: r.slice(3, 15).map(function(v){ return parseFloat(v)||0; }),
+      fechaActualizacion: String(r[15]||''),
+      usuario: String(r[16]||''),
+    };
+  });
+  return {ok:true, metas:metas};
+}
+
+function guardarMetas(d) {
+  var anio = String(d.anio||'').trim();
+  if(!anio) return {ok:false, error:'Año requerido'};
+  var usuario = String(d.usuario||'').trim() || 'sistema';
+  var fincas = Array.isArray(d.fincas) ? d.fincas : [];
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getOrCreateSheet(SHEETS.metas, METAS_HEADERS);
+    var lastRow = sheet.getLastRow();
+    var restantes = [];
+    if(lastRow > 1) {
+      var data = sheet.getRange(2, 1, lastRow - 1, METAS_HEADERS.length).getValues();
+      restantes = data.filter(function(r){ return r[0] && String(r[0]) !== anio; });
+    }
+    var fecha = formatFecha(new Date());
+    var nuevas = fincas.map(function(f){
+      var meses = Array.isArray(f.meses) ? f.meses : [];
+      var fila = [anio, String(f.finca||'').trim(), parseFloat(f.metaAnual)||0];
+      for(var i = 0; i < 12; i++) fila.push(parseFloat(meses[i])||0);
+      fila.push(fecha, usuario);
+      return fila;
+    });
+    sheet.clearContents();
+    sheet.getRange(1, 1, 1, METAS_HEADERS.length).setValues([METAS_HEADERS]);
+    var todas = restantes.concat(nuevas);
+    if(todas.length) sheet.getRange(2, 1, todas.length, METAS_HEADERS.length).setValues(todas);
+    return {ok:true};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function listarMetasHistorial() {
+  var sheet = getOrCreateSheet(SHEETS.metas, METAS_HEADERS);
+  var lastRow = sheet.getLastRow();
+  if(lastRow <= 1) return {ok:true, historial:[]};
+  var data = sheet.getRange(2, 1, lastRow - 1, METAS_HEADERS.length).getValues();
+  var porAnio = {};
+  data.filter(function(r){ return r[0]; }).forEach(function(r){
+    var anio = String(r[0]);
+    if(!porAnio[anio]) porAnio[anio] = {anio:anio, metaEmpresa:0, fincas:[], fechaActualizacion:String(r[15]||''), usuario:String(r[16]||'')};
+    var metaAnual = parseFloat(r[2])||0;
+    porAnio[anio].metaEmpresa += metaAnual;
+    porAnio[anio].fincas.push({finca:String(r[1]||''), metaAnual:metaAnual});
+    if(String(r[15]||'') > porAnio[anio].fechaActualizacion) porAnio[anio].fechaActualizacion = String(r[15]||'');
+  });
+  var historial = Object.keys(porAnio).map(function(k){ return porAnio[k]; }).sort(function(a,b){ return b.anio - a.anio; });
+  return {ok:true, historial:historial};
 }
 
 function listarHistorialLotes() {

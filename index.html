@@ -196,6 +196,7 @@ a.mtab:hover{color:#16a34a;}
 /* KPI ROW VARIANTS */
 .kpi-row.cols-8{grid-template-columns:repeat(8,1fr);}
 .kpi-row.cols-6{grid-template-columns:repeat(6,1fr);}
+.kpi-row.cols-4{grid-template-columns:repeat(4,1fr);}
 .kpi-card.sm{padding:14px;gap:6px;}
 .kpi-card.sm .kpi-num{font-size:19px;}
 .kpi-card.sm .kpi-body{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
@@ -635,6 +636,15 @@ a.mtab:hover{color:#16a34a;}
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-truck"/></svg> Flota y Combustible</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-clipboard"/></svg> Inventarios</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-cloud"/></svg> Clima</span>
+
+    <div class="sb-section">Planeación</div>
+    <a class="sb-link menu-toggle" id="sb-link-metas" href="javascript:void(0)" onclick="toggleMetasMenu()"><svg class="ic-svg"><use href="#i-target"/></svg> Configuración de Metas <svg class="ic-svg chev" id="sb-metas-chev"><use href="#i-chevron-down"/></svg></a>
+    <div id="sb-metas-sub" style="display:none;">
+      <a class="sb-sublink active" id="sbm-resumen" href="javascript:void(0)" onclick="showMetasTab('resumen')">Resumen General</a>
+      <a class="sb-sublink" id="sbm-finca" href="javascript:void(0)" onclick="showMetasTab('finca')">Meta por Finca</a>
+      <a class="sb-sublink" id="sbm-distribucion" href="javascript:void(0)" onclick="showMetasTab('distribucion')">Distribución Mensual</a>
+      <a class="sb-sublink" id="sbm-historial" href="javascript:void(0)" onclick="showMetasTab('historial')">Historial de Metas</a>
+    </div>
 
     <div class="sb-section">Reportes</div>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Informes</span>
@@ -1147,11 +1157,13 @@ a.mtab:hover{color:#16a34a;}
               <div class="panel-head"><div><div class="panel-title">Producción acumulada del año</div></div></div>
               <div class="combo-legend">
                 <span class="lg-item"><span class="lg-dot" style="background:#16a34a;"></span>Acumulado real (t)</span>
+                <span class="lg-item" id="anual-meta-legend" style="display:none;"><span class="lg-dot" style="background:#f59e0b;"></span>Meta acumulada (t)</span>
               </div>
               <div class="combo-wrap">
                 <svg class="combo-chart" id="anual-combo-svg" viewBox="0 0 260 130" width="100%" height="150" preserveAspectRatio="none"></svg>
                 <div class="as-list" style="margin-top:6px;">
                   <div class="as-item"><div class="as-lbl">Acumulado del año</div><div class="as-val green" id="anual-acum-total">—</div></div>
+                  <div class="as-item" id="anual-meta-item" style="display:none;"><div class="as-lbl">Cumplimiento meta</div><div class="as-val" id="anual-meta-pct">—</div></div>
                 </div>
               </div>
               <div class="linechart-axis" id="anual-acum-axis"></div>
@@ -1372,6 +1384,77 @@ a.mtab:hover{color:#16a34a;}
         <!-- /cosecha-tab-lotes -->
       </div>
       <!-- /section-cosecha -->
+
+      <div id="section-metas" style="display:none;">
+        <div class="imp-row" style="align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="imp-row" style="align-items:center;gap:10px;">
+            <label style="font-size:12.5px;font-weight:600;color:#475569;">Año</label>
+            <select class="imp-select" id="metas-anio-select" onchange="metasCambiarAnio()"></select>
+          </div>
+          <button class="btn-imp primary" onclick="metasGuardar()"><svg class="ic-svg"><use href="#i-check"/></svg> Guardar cambios</button>
+        </div>
+
+        <div id="metas-tab-resumen" class="cosecha-tabpanel">
+          <div class="kpi-row cols-4">
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-target"/></svg></div><div class="kpi-lbl">Meta anual de la empresa</div><div class="kpi-num" id="metas-kpi-total">0,0 t</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-map"/></svg></div><div class="kpi-lbl">Área productiva total</div><div class="kpi-num" id="metas-kpi-area">0,0 ha</div></div>
+            <div class="kpi-card"><div class="kpi-icon"><svg class="ic-svg"><use href="#i-trending-up"/></svg></div><div class="kpi-lbl">Meta promedio ton/ha</div><div class="kpi-num" id="metas-kpi-tonha">0,0</div></div>
+            <div class="kpi-card"><div class="kpi-icon blue"><svg class="ic-svg"><use href="#i-calendar"/></svg></div><div class="kpi-lbl">Última actualización</div><div class="kpi-num" style="font-size:15px;" id="metas-kpi-fecha">—</div></div>
+          </div>
+          <div class="grid-row cols-3-eq">
+            <div class="panel" style="grid-column:span 2;">
+              <div class="panel-head"><div><div class="panel-title">Distribución de la meta por finca</div></div></div>
+              <div id="metas-resumen-finca-rows"><div class="empty-panel-msg">Sin metas configuradas para este año.</div></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><div><div class="panel-title">Resumen de configuración</div></div></div>
+              <div id="metas-resumen-config"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="metas-tab-finca" class="cosecha-tabpanel" style="display:none;">
+          <div class="imp-row" style="margin-bottom:10px;">
+            <button class="btn-imp" onclick="metasDistribuirAutomatico()"><svg class="ic-svg"><use href="#i-target"/></svg> Distribuir automáticamente (según área)</button>
+          </div>
+          <table class="s-table">
+            <thead><tr><th>Finca</th><th>Área productiva (ha)</th><th>Meta anual (t)</th><th>Ton/ha</th><th>Participación %</th></tr></thead>
+            <tbody id="metas-finca-tabla"></tbody>
+          </table>
+        </div>
+
+        <div id="metas-tab-distribucion" class="cosecha-tabpanel" style="display:none;">
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Distribución mensual de la meta anual de la empresa</div></div></div>
+            <div class="imp-row" style="margin-bottom:10px;">
+              <button class="btn-imp" onclick="metasDistribucionIgualitaria()"><svg class="ic-svg"><use href="#i-target"/></svg> Distribución igualitaria (12 meses)</button>
+            </div>
+            <table class="s-table">
+              <thead><tr id="metas-dist-meses-head"></tr></thead>
+              <tbody>
+                <tr id="metas-dist-meses-inputs"></tr>
+                <tr id="metas-dist-meses-pct"></tr>
+              </tbody>
+            </table>
+            <div class="imp-row" style="margin-top:10px;gap:18px;font-size:12.5px;color:#475569;">
+              <div>Total distribuido: <b id="metas-dist-total">0,0 t</b></div>
+              <div>Meta anual: <b id="metas-dist-meta">0,0 t</b></div>
+              <div>Diferencia: <b id="metas-dist-diff">0,0 t</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="metas-tab-historial" class="cosecha-tabpanel" style="display:none;">
+          <div class="panel">
+            <div class="panel-head"><div><div class="panel-title">Historial de metas anuales</div></div></div>
+            <table class="s-table">
+              <thead><tr><th>Año</th><th>Meta empresa (t)</th><th>Fincas configuradas</th><th>Última actualización</th></tr></thead>
+              <tbody id="metas-historial-tabla"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- /section-metas -->
 
       <div id="section-importar" style="display:none;">
         <div class="imp-steps" id="imp-steps">
@@ -1831,6 +1914,7 @@ const SECTION_INFO = {
   inicio:  {title: nombre => `¡Buenos días, ${nombre}!`, sub: 'Bienvenido al Sistema de Gestión de Plantaciones de Palma de Aceite'},
   cosecha: {title: () => 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
   importar: {title: () => 'Importación de Datos', sub: 'Cargue datos de producción desde Excel o CSV'},
+  metas: {title: () => 'Configuración de Metas', sub: 'Defina las metas productivas para el año seleccionado'},
 };
 const COSECHA_TAB_INFO = {
   resumen:     {title: 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
@@ -1855,16 +1939,46 @@ function showSection(name){
   document.getElementById('section-inicio').style.display = name === 'inicio' ? '' : 'none';
   document.getElementById('section-cosecha').style.display = name === 'cosecha' ? '' : 'none';
   document.getElementById('section-importar').style.display = name === 'importar' ? '' : 'none';
+  document.getElementById('section-metas').style.display = name === 'metas' ? '' : 'none';
   document.getElementById('sb-link-inicio').classList.toggle('active', name === 'inicio');
   document.getElementById('sb-link-cosecha').classList.toggle('active', name === 'cosecha');
   document.getElementById('sb-link-importar').classList.toggle('active', name === 'importar');
+  document.getElementById('sb-link-metas').classList.toggle('active', name === 'metas');
   if (name === 'cosecha') setCosechaMenuOpen(true);
+  if (name === 'metas') setMetasMenuOpen(true);
   if (name === 'inicio' && typeof inicioRender === 'function') inicioRender();
   const info = SECTION_INFO[name];
   const nombre = document.getElementById('tb-user-name').textContent || 'Administrador';
   document.getElementById('topbar-greeting').textContent = info.title(nombre);
   document.getElementById('topbar-sub').textContent = info.sub;
   document.getElementById('sidebar').classList.remove('open');
+}
+
+function setMetasMenuOpen(open){
+  document.getElementById('sb-metas-sub').style.display = open ? '' : 'none';
+  document.getElementById('sb-link-metas').classList.toggle('expanded', open);
+}
+
+function toggleMetasMenu(){
+  const isOpen = document.getElementById('sb-metas-sub').style.display !== 'none';
+  setMetasMenuOpen(!isOpen);
+  if (!isOpen && document.getElementById('section-metas').style.display === 'none') {
+    showSection('metas');
+    showMetasTab('resumen');
+  }
+}
+
+async function showMetasTab(name){
+  showSection('metas');
+  ['resumen','finca','distribucion','historial'].forEach(t => {
+    document.getElementById('metas-tab-' + t).style.display = t === name ? '' : 'none';
+    document.getElementById('sbm-' + t).classList.toggle('active', t === name);
+  });
+  if (!metasCargado && typeof metasInit === 'function') await metasInit();
+  if (name === 'resumen' && typeof metasRenderResumen === 'function') metasRenderResumen();
+  if (name === 'finca' && typeof metasRenderFinca === 'function') metasRenderFinca();
+  if (name === 'distribucion' && typeof metasRenderDistribucion === 'function') metasRenderDistribucion();
+  if (name === 'historial' && typeof metasRenderHistorial === 'function') metasRenderHistorial();
 }
 
 function setProduccionMenuOpen(open){
@@ -2725,25 +2839,35 @@ function impBuildBarChart(containerId, axisId, items, opts){
 }
 
 function impBuildCumulativeSVG(svgId, items){
-  // items: [{value}] en orden cronológico. Dibuja línea de acumulado real, sin meta.
+  // items: [{value, meta}] en orden cronológico. meta es opcional; si viene, dibuja también la línea de meta acumulada.
   const svg = document.getElementById(svgId);
   if (!svg) return;
   if (!items.length) { svg.innerHTML = ''; return; }
-  let acc = 0;
+  let acc = 0, accMeta = 0;
+  const tieneMeta = items.some(it => it.meta !== undefined && it.meta !== null);
   const accVals = items.map(it => { acc += it.value; return acc; });
-  const maxAcc = Math.max.apply(null, accVals) || 1;
+  const accMetaVals = items.map(it => { accMeta += (it.meta || 0); return accMeta; });
+  const maxAcc = Math.max.apply(null, accVals.concat(tieneMeta ? accMetaVals : [])) || 1;
   const W = 260, H = 130, pad = 10;
   const n = accVals.length;
-  const pts = accVals.map((v, i) => {
+  const toPts = vals => vals.map((v, i) => {
     const x = n === 1 ? pad : pad + (i * (W - 2*pad) / (n - 1));
     const y = H - pad - (v / maxAcc) * (H - 2*pad);
     return [x, y];
   });
+  const pts = toPts(accVals);
   const lineStr = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
   const polyStr = lineStr + ' ' + pts[pts.length-1][0].toFixed(1) + ',' + (H-pad) + ' ' + pts[0][0].toFixed(1) + ',' + (H-pad);
   const circles = pts.map(p => '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.5" fill="#16a34a"/>').join('');
+  let metaStr = '';
+  if (tieneMeta) {
+    const ptsMeta = toPts(accMetaVals);
+    const lineMeta = ptsMeta.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const circlesMeta = ptsMeta.map(p => '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.5" fill="#f59e0b"/>').join('');
+    metaStr = '<polyline points="' + lineMeta + '" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="5,4"/>' + circlesMeta;
+  }
   svg.innerHTML = '<polygon points="' + polyStr + '" fill="rgba(22,163,74,.10)"/>' +
-    '<polyline points="' + lineStr + '" fill="none" stroke="#16a34a" stroke-width="3"/>' + circles;
+    '<polyline points="' + lineStr + '" fill="none" stroke="#16a34a" stroke-width="3"/>' + circles + metaStr;
 }
 
 function impBuildDonut(containerId, slices, totalLabel){
@@ -3122,6 +3246,19 @@ function impRenderAnual(data){
   impBuildCumulativeSVG('anual-combo-svg', monthBars.map(m => ({value: m.value})));
   impSetText('anual-acum-total', impFmtT(current.toneladas));
   document.getElementById('anual-acum-axis').innerHTML = monthBars.map(m => '<span>' + m.label + '</span>').join('');
+  document.getElementById('anual-meta-legend').style.display = 'none';
+  document.getElementById('anual-meta-item').style.display = 'none';
+  if (typeof metasFetch === 'function') {
+    metasFetch(current.year).then(metas => {
+      const metaTotal = metas.reduce((s,f) => s + (parseFloat(f.metaAnual)||0), 0);
+      if (metaTotal <= 0) return;
+      const metaMeses = Array.from({length:12}, (_, m) => metas.reduce((s,f) => s + (parseFloat(f.meses[m])||0), 0));
+      impBuildCumulativeSVG('anual-combo-svg', monthBars.map((m,i) => ({value: m.value, meta: metaMeses[i]})));
+      document.getElementById('anual-meta-legend').style.display = '';
+      document.getElementById('anual-meta-item').style.display = '';
+      impSetText('anual-meta-pct', impNum(current.toneladas / metaTotal * 100, 1) + '%');
+    });
+  }
 
   document.getElementById('anual-finca-title').textContent = 'Producción por finca (' + current.year + ')';
   impBuildDonut('anual-finca-donut', Array.from(current.fincas.entries()).map(([label,value],i) => ({label, value, color: IMP_FINCA_COLORS[i % IMP_FINCA_COLORS.length]})));
@@ -3387,6 +3524,227 @@ async function impRenderProduccionTab(name){
     impRefreshLivePanels();
   });
 })();
+
+/* ===================== METAS ===================== */
+let metasAnio = new Date().getFullYear();
+let metasData = []; // [{finca, metaAnual, meses:[12]}]
+let metasCargado = false;
+
+function metasMesesIgualesA(total){
+  const base = Math.floor((total/12)*10)/10;
+  const arr = new Array(12).fill(base);
+  const diff = Math.round((total - base*12)*10)/10;
+  arr[11] = Math.round((arr[11]+diff)*10)/10;
+  return arr;
+}
+
+async function metasFetch(anio, force){
+  if (metasCargado && !force && anio === metasAnio) return metasData;
+  metasAnio = anio;
+  const resp = await gasJSONP(GAS_URL + '?accion=listarMetas&anio=' + anio);
+  const guardadas = (resp && resp.ok && Array.isArray(resp.metas)) ? resp.metas : [];
+  let lotes = [];
+  try { lotes = (typeof lotFetchLotes === 'function') ? await lotFetchLotes() : []; } catch(e) {}
+  const fincasHa = new Map();
+  lotes.forEach(l => { if (l.estado !== 'inactivo') fincasHa.set(String(l.finca||'').trim(), (fincasHa.get(String(l.finca||'').trim())||0) + (parseFloat(l.ha)||0)); });
+  const fincas = Array.from(fincasHa.keys()).sort();
+  metasData = fincas.map(finca => {
+    const existente = guardadas.find(g => String(g.finca||'').trim() === finca);
+    return {
+      finca,
+      ha: fincasHa.get(finca) || 0,
+      metaAnual: existente ? existente.metaAnual : 0,
+      meses: existente ? existente.meses.slice() : new Array(12).fill(0),
+    };
+  });
+  metasCargado = true;
+  return metasData;
+}
+
+async function metasInit(){
+  const sel = document.getElementById('metas-anio-select');
+  if (sel && !sel.options.length) {
+    const actual = new Date().getFullYear();
+    const opciones = [];
+    for (let y = actual + 1; y >= actual - 3; y--) opciones.push(y);
+    sel.innerHTML = opciones.map(y => '<option value="' + y + '">' + y + '</option>').join('');
+    sel.value = String(actual);
+  }
+  await metasFetch(parseInt(sel.value, 10) || metasAnio);
+}
+
+async function metasCambiarAnio(){
+  const sel = document.getElementById('metas-anio-select');
+  await metasFetch(parseInt(sel.value, 10), true);
+  const activeTab = ['resumen','finca','distribucion','historial'].find(t => document.getElementById('metas-tab-' + t).style.display !== 'none') || 'resumen';
+  showMetasTab(activeTab);
+}
+
+function metasTotalAnual(){ return metasData.reduce((s,f) => s + (parseFloat(f.metaAnual)||0), 0); }
+function metasTotalHa(){ return metasData.reduce((s,f) => s + (parseFloat(f.ha)||0), 0); }
+function metasTotalPorMes(m){ return metasData.reduce((s,f) => s + (parseFloat(f.meses[m])||0), 0); }
+
+function metasRenderResumen(){
+  const total = metasTotalAnual();
+  const haTotal = metasTotalHa();
+  impSetText('metas-kpi-total', impFmtT(total));
+  impSetText('metas-kpi-area', impNum(haTotal,1) + ' ha');
+  impSetText('metas-kpi-tonha', haTotal > 0 ? impNum(total/haTotal,1) : '0,0');
+  impSetText('metas-kpi-fecha', String(metasAnio));
+
+  const cont = document.getElementById('metas-resumen-finca-rows');
+  if (cont) {
+    const conMeta = metasData.filter(f => f.metaAnual > 0);
+    if (!conMeta.length || total <= 0) {
+      cont.innerHTML = '<div class="empty-panel-msg">Sin metas configuradas para este año.</div>';
+    } else {
+      const max = Math.max(...metasData.map(f => f.metaAnual), 1);
+      cont.innerHTML = metasData.map(f => {
+        const pct = total > 0 ? f.metaAnual / total * 100 : 0;
+        const w = max > 0 ? f.metaAnual / max * 100 : 0;
+        return '<div class="hbar-row"><span class="hbar-lbl">' + f.finca + '</span>' +
+          '<div class="hbar-track"><div class="hbar-fill" style="width:' + w.toFixed(1) + '%;"></div></div>' +
+          '<span class="hbar-val">' + impFmtT(f.metaAnual) + '</span>' +
+          '<span class="hbar-pct">' + impNum(pct,1) + '%</span></div>';
+      }).join('');
+    }
+  }
+
+  const cfg = document.getElementById('metas-resumen-config');
+  if (cfg) {
+    const configuradas = metasData.filter(f => f.metaAnual > 0).length;
+    cfg.innerHTML =
+      '<div class="hbar-row"><span class="hbar-lbl">Fincas configuradas</span><span class="hbar-val">' + configuradas + ' de ' + metasData.length + '</span></div>' +
+      '<div class="hbar-row"><span class="hbar-lbl">Distribución mensual</span><span class="hbar-val">' + (Math.abs(metasTotalDistribuido() - total) < 0.5 && total > 0 ? '12 meses OK' : 'Pendiente') + '</span></div>';
+  }
+}
+
+function metasTotalDistribuido(){
+  let s = 0;
+  for (let m = 0; m < 12; m++) s += metasTotalPorMes(m);
+  return s;
+}
+
+function metasRenderFinca(){
+  const tbody = document.getElementById('metas-finca-tabla');
+  if (!tbody) return;
+  const total = metasTotalAnual();
+  if (!metasData.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-panel-msg">No hay fincas registradas en Lotes.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = metasData.map((f, i) => {
+    const tonha = f.ha > 0 ? f.metaAnual / f.ha : 0;
+    const pct = total > 0 ? f.metaAnual / total * 100 : 0;
+    return '<tr>' +
+      '<td>' + f.finca + '</td>' +
+      '<td>' + impNum(f.ha,1) + '</td>' +
+      '<td><input type="number" min="0" step="0.1" value="' + f.metaAnual + '" style="width:90px;" onchange="metasEditarFinca(' + i + ', this.value)"></td>' +
+      '<td>' + impNum(tonha,1) + '</td>' +
+      '<td>' + impNum(pct,1) + ' %</td>' +
+      '</tr>';
+  }).join('') +
+    '<tr><td><b>TOTAL</b></td><td><b>' + impNum(total > 0 ? metasTotalHa() : metasTotalHa(),1) + '</b></td><td><b>' + impFmtT(total) + '</b></td><td><b>' + impNum(metasTotalHa() > 0 ? total/metasTotalHa() : 0,1) + '</b></td><td><b>100 %</b></td></tr>';
+}
+
+function metasEditarFinca(idx, valor){
+  const v = parseFloat(valor) || 0;
+  metasData[idx].metaAnual = v;
+  if (metasData[idx].meses.every(m => !m)) metasData[idx].meses = metasMesesIgualesA(v);
+  metasRenderFinca();
+}
+
+function metasDistribuirAutomatico(){
+  const haTotal = metasTotalHa();
+  const total = metasTotalAnual();
+  if (haTotal <= 0 || total <= 0) { showToast('Defina primero la meta anual de la empresa.'); return; }
+  metasData.forEach(f => {
+    f.metaAnual = Math.round((haTotal > 0 ? (f.ha / haTotal) * total : 0) * 10) / 10;
+    f.meses = metasMesesIgualesA(f.metaAnual);
+  });
+  metasRenderFinca();
+  showToast('Meta distribuida automáticamente según área productiva.');
+}
+
+function metasRenderDistribucion(){
+  const head = document.getElementById('metas-dist-meses-head');
+  const inputsRow = document.getElementById('metas-dist-meses-inputs');
+  const pctRow = document.getElementById('metas-dist-meses-pct');
+  if (!head || !inputsRow) return;
+  const total = metasTotalAnual();
+  head.innerHTML = '<th>Mes</th>' + IMP_MES_ABR.map(m => '<th>' + m + '</th>').join('') + '<th>Total</th>';
+  inputsRow.innerHTML = '<td><b>Meta mensual (t)</b></td>' +
+    Array.from({length:12}, (_, m) => '<td><input type="number" min="0" step="0.1" value="' + metasTotalPorMes(m) + '" style="width:64px;" onchange="metasEditarMes(' + m + ', this.value)"></td>').join('') +
+    '<td><b id="metas-dist-total-cell">' + impFmtT(metasTotalDistribuido()) + '</b></td>';
+  pctRow.innerHTML = '<td>% del total</td>' +
+    Array.from({length:12}, (_, m) => '<td>' + (total > 0 ? impNum(metasTotalPorMes(m)/total*100,1) : '0,0') + '%</td>').join('') +
+    '<td>100%</td>';
+  metasActualizarTotalesDistribucion();
+}
+
+function metasEditarMes(mes, valor){
+  const total = parseFloat(valor) || 0;
+  const haTotal = metasTotalHa();
+  metasData.forEach(f => {
+    const proporcion = haTotal > 0 ? (f.ha / haTotal) : (1 / Math.max(1, metasData.length));
+    f.meses[mes] = Math.round(total * proporcion * 10) / 10;
+  });
+  metasRenderDistribucion();
+}
+
+function metasDistribucionIgualitaria(){
+  const total = metasTotalAnual();
+  if (total <= 0) { showToast('Defina primero la meta anual de la empresa.'); return; }
+  const repartoMensual = metasMesesIgualesA(total);
+  const haTotal = metasTotalHa();
+  metasData.forEach(f => {
+    const proporcion = haTotal > 0 ? (f.ha / haTotal) : (1 / Math.max(1, metasData.length));
+    f.meses = repartoMensual.map(v => Math.round(v * proporcion * 10) / 10);
+  });
+  metasRenderDistribucion();
+  showToast('Meta distribuida en partes iguales en los 12 meses.');
+}
+
+function metasActualizarTotalesDistribucion(){
+  const total = metasTotalAnual();
+  const distribuido = metasTotalDistribuido();
+  impSetText('metas-dist-total', impFmtT(distribuido));
+  impSetText('metas-dist-meta', impFmtT(total));
+  const diff = distribuido - total;
+  impSetText('metas-dist-diff', (diff >= 0 ? '+' : '') + impNum(diff,1) + ' t');
+}
+
+async function metasRenderHistorial(){
+  const tbody = document.getElementById('metas-historial-tabla');
+  if (!tbody) return;
+  const resp = await gasJSONP(GAS_URL + '?accion=listarMetasHistorial');
+  const historial = (resp && resp.ok && Array.isArray(resp.historial)) ? resp.historial : [];
+  if (!historial.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-panel-msg">Aún no hay metas guardadas en años anteriores.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = historial.map(h => {
+    const configuradas = h.fincas.filter(f => f.metaAnual > 0).length;
+    return '<tr><td>' + h.anio + '</td><td>' + impFmtT(h.metaEmpresa) + '</td><td>' + configuradas + ' de ' + h.fincas.length + '</td><td>' + (h.fechaActualizacion || '—') + '</td></tr>';
+  }).join('');
+}
+
+async function metasGuardar(){
+  const usuario = document.getElementById('tb-user-name') ? document.getElementById('tb-user-name').textContent : 'Administrador';
+  const resp = await gasJSONP(GAS_URL + '?accion=guardarMetas&data=' + encodeURIComponent(JSON.stringify({
+    anio: metasAnio,
+    usuario,
+    fincas: metasData.map(f => ({finca: f.finca, metaAnual: f.metaAnual, meses: f.meses})),
+  })));
+  if (resp && resp.ok) {
+    showToast('Metas guardadas correctamente.');
+    metasCargado = false;
+    await metasFetch(metasAnio, true);
+    metasRenderResumen();
+  } else {
+    showToast('No se pudieron guardar las metas.');
+  }
+}
 
 /* ===================== LOTES ===================== */
 let lotData = [];
