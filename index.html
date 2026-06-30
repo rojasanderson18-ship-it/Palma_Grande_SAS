@@ -3679,10 +3679,15 @@ async function metasFetch(anio, force){
       ha: fincasHa.get(finca) || 0,
       metaAnual: existente ? existente.metaAnual : 0,
       meses: existente ? existente.meses.slice() : new Array(12).fill(0),
+      fechaActualizacion: existente ? existente.fechaActualizacion : '',
     };
   });
   metasCargado = true;
   return metasData;
+}
+
+function metasUltimaActualizacion(){
+  return metasData.reduce((max, f) => (f.fechaActualizacion && f.fechaActualizacion > max) ? f.fechaActualizacion : max, '');
 }
 
 async function metasInit(){
@@ -3700,7 +3705,7 @@ async function metasInit(){
 async function metasCambiarAnio(){
   const sel = document.getElementById('metas-anio-select');
   await metasFetch(parseInt(sel.value, 10), true);
-  const activeTab = ['resumen','finca','distribucion','historial'].find(t => document.getElementById('metas-tab-' + t).style.display !== 'none') || 'resumen';
+  const activeTab = ['resumen','finca','lote','distribucion','historial'].find(t => document.getElementById('metas-tab-' + t).style.display !== 'none') || 'resumen';
   showMetasTab(activeTab);
 }
 
@@ -3736,7 +3741,7 @@ function metasRenderResumen(){
   impSetText('metas-kpi-total', impFmtT(total));
   impSetText('metas-kpi-area', impNum(haTotal,1) + ' ha');
   impSetText('metas-kpi-tonha', haTotal > 0 ? impNum(total/haTotal,1) : '0,0');
-  impSetText('metas-kpi-fecha', String(metasAnio));
+  impSetText('metas-kpi-fecha', metasUltimaActualizacion() || 'Sin guardar');
 
   const cont = document.getElementById('metas-resumen-finca-rows');
   if (cont) {
