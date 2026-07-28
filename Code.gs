@@ -451,10 +451,44 @@ function doGet(e) {
       }
     }
 
+    if(accion === 'obtenerConfigSAS'){
+      var result = obtenerConfigSAS();
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'guardarConfigSAS'){
+      var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+      var result = guardarConfigSAS(d);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+
     return jsonResponse({ok:true, msg:'API Palma Grande activa'});
   } catch(err) {
     return jsonResponse({error: err.toString()});
   }
+}
+
+// ── CONFIG SAS (cosecheros por empresa) ──
+function obtenerConfigSAS(){
+  var props = PropertiesService.getScriptProperties();
+  return {
+    ok: true,
+    sas: [
+      { nombre: props.getProperty('sas1_nombre') || 'SAS 1', n: props.getProperty('sas1_n') },
+      { nombre: props.getProperty('sas2_nombre') || 'SAS 2', n: props.getProperty('sas2_n') },
+    ]
+  };
+}
+
+function guardarConfigSAS(d){
+  var props = PropertiesService.getScriptProperties();
+  if(d.idx !== undefined){
+    var i = String(d.idx);
+    if(d.nombre !== undefined) props.setProperty('sas'+i+'_nombre', String(d.nombre));
+    if(d.n      !== undefined) props.setProperty('sas'+i+'_n',      String(d.n));
+  }
+  return {ok: true};
 }
 
 function doPost(e) {

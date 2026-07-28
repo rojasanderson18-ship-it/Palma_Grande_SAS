@@ -2215,31 +2215,51 @@ function init(){
   setTimeout(()=>{ cargarCalc(); }, 300);
 }
 /* ── COSECHEROS POR SAS ── */
-function cargarCosecherosSAS(){
+function aplicarSASUI(sas){
+  // sas = [{nombre, n}, {nombre, n}]
+  sas.forEach((s, idx) => {
+    const i = idx + 1;
+    const nom = s.nombre || 'SAS ' + i;
+    const n   = s.n != null ? s.n : '—';
+    document.getElementById('st-sas'+i+'-nom').textContent = nom;
+    document.getElementById('st-sas'+i+'-n').textContent  = n;
+    localStorage.setItem('pg_sas'+i+'_nombre', nom);
+    if(s.n != null) localStorage.setItem('pg_sas'+i+'_n', s.n);
+  });
+}
+async function cargarCosecherosSAS(){
+  // Mostrar cache local inmediatamente
   for(const i of [1,2]){
     const nom = localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
     const n   = localStorage.getItem('pg_sas'+i+'_n');
     document.getElementById('st-sas'+i+'-nom').textContent = nom;
-    document.getElementById('st-sas'+i+'-n').textContent  = n !== null ? n : '—';
+    document.getElementById('st-sas'+i+'-n').textContent  = n != null ? n : '—';
   }
+  // Luego sincronizar con GAS
+  try {
+    const res = await enviarGAS({accion:'obtenerConfigSAS'});
+    if(res && res.ok && res.sas) aplicarSASUI(res.sas);
+  } catch(e){}
 }
-function editarSASNombre(i){
+async function editarSASNombre(i){
   const actual = localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
   const nuevo  = prompt('Nombre de la SAS '+ i +':', actual);
   if(nuevo === null) return;
   const val = nuevo.trim() || 'SAS '+i;
-  localStorage.setItem('pg_sas'+i+'_nombre', val);
   document.getElementById('st-sas'+i+'-nom').textContent = val;
+  localStorage.setItem('pg_sas'+i+'_nombre', val);
+  await enviarGAS({accion:'guardarConfigSAS', data: JSON.stringify({idx:i, nombre:val})});
 }
-function editarSASNumero(i){
+async function editarSASNumero(i){
   const nom    = localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
   const actual = localStorage.getItem('pg_sas'+i+'_n') || '';
   const nuevo  = prompt('Cosecheros · ' + nom + ':', actual);
   if(nuevo === null) return;
   const v = parseInt(nuevo);
   if(isNaN(v) || v < 0){ alert('Ingresa un número válido.'); return; }
-  localStorage.setItem('pg_sas'+i+'_n', v);
   document.getElementById('st-sas'+i+'-n').textContent = v;
+  localStorage.setItem('pg_sas'+i+'_n', v);
+  await enviarGAS({accion:'guardarConfigSAS', data: JSON.stringify({idx:i, n:v})});
 }
 
 document.addEventListener('DOMContentLoaded', () => { init(); cargarCosecherosSAS(); });
