@@ -21,6 +21,7 @@
   --azul:#2563eb;--azul-cell:rgba(37,99,235,.22);
   --rojo:#dc2626;--rojo-cell:rgba(220,38,38,.22);
   --negro-cell:#1e3a5f;
+  --hibrido:#92400e;--hibrido-cell:rgba(251,191,36,.13);--hibrido-border:rgba(251,191,36,.35);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
@@ -118,6 +119,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .di-verde{background:var(--verde-cell);color:#14532d;font-weight:700;}
 .di-azul{background:var(--azul-cell);color:#1e3a8a;font-weight:700;}
 .di-rojo{background:var(--rojo-cell);color:#7f1d1d;font-weight:700;}
+
+/* Filas de lotes híbridos */
+.row-hibrido td.col-finca,
+.row-hibrido td.col-lote,
+.row-hibrido td.col-ha,
+.row-hibrido td.col-freq,
+.row-hibrido td.col-estado{background:var(--hibrido-cell) !important;border-left:2px solid var(--hibrido-border);}
+.row-hibrido .td-lote{color:var(--hibrido);font-weight:700;}
+.lb-hibrido{background:rgba(251,191,36,.18);border-color:rgba(251,191,36,.55);}
 
 .finca-row td{background:linear-gradient(90deg,rgba(184,134,11,.08),transparent) !important;padding:5px 10px;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;border-top:2px solid rgba(184,134,11,.25);}
 
@@ -293,6 +303,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="leg-item"><div class="leg-box lb-verde"></div>En ciclo (cumplimiento)</div>
   <div class="leg-item"><div class="leg-box lb-azul"></div>Tolerancia</div>
   <div class="leg-item"><div class="leg-box lb-rojo"></div>Incumplimiento</div>
+  <div class="leg-item"><div class="leg-box lb-hibrido"></div>Palma híbrida</div>
 </div>
 
 <!-- TABS -->
@@ -841,7 +852,7 @@ function render(){
     else if(eH==='rojo'){bCls='b-inc';bTxt='INCUMPLIMIENTO';}
     else{bCls='b-sin';bTxt='SIN REGISTRO';}
 
-    html+='<tr>';
+    html+=`<tr${l.tipo==='hibrido'?' class="row-hibrido"':''}>`;
     html+=`<td class="td-finca col-finca">${l.finca.replace('FINCA ','F')}</td>`;
     html+=`<td class="td-lote col-lote">${l.lote}</td>`;
     html+=`<td class="td-ha col-ha">${l.ha}</td>`;
