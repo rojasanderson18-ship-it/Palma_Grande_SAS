@@ -47,7 +47,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .stat-c.editable-kpi{cursor:pointer;position:relative;}
 .stat-c.editable-kpi:hover{background:#f9f5ff;}
 .stat-c.editable-kpi::after{content:'✎';position:absolute;top:6px;right:8px;font-size:9px;color:#c4b5fd;}
-.stat-sas-lbl{font-size:9px;color:#7c3aed;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-sas-lbl{font-size:9px;color:#7c3aed;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:3px;padding:1px 3px;transition:background .15s;}
+.stat-sas-lbl:hover{background:rgba(124,58,237,.1);}
+.sn-cosecheros{border-radius:4px;padding:1px 4px;transition:background .15s;}
+.sn-cosecheros:hover{background:rgba(124,58,237,.08);}
 .stat-c{background:var(--surface);padding:10px 16px;text-align:center;}
 .stat-n{font-family:'Bebas Neue',sans-serif;font-size:26px;}
 .stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
@@ -334,15 +337,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="stat-c"><div class="stat-n sn-verde" id="st-verde">0</div><div class="stat-l">En Ciclo</div></div>
   <div class="stat-c"><div class="stat-n sn-azul" id="st-azul">0</div><div class="stat-l">Tolerancia</div></div>
   <div class="stat-c"><div class="stat-n sn-rojo" id="st-rojo">0</div><div class="stat-l">Incumplimiento</div></div>
-  <div class="stat-c editable-kpi" title="Clic para editar" onclick="editarSAS(1)">
-    <div class="stat-n sn-cosecheros" id="st-sas1-n">—</div>
+  <div class="stat-c" style="cursor:default;">
+    <div class="stat-n sn-cosecheros" id="st-sas1-n" title="Clic para editar número" onclick="editarSASNumero(1)" style="cursor:pointer;" >—</div>
     <div class="stat-l">Cosecheros</div>
-    <div class="stat-sas-lbl" id="st-sas1-nom">SAS 1</div>
+    <div class="stat-sas-lbl" id="st-sas1-nom" title="Clic para editar nombre" onclick="editarSASNombre(1)" style="cursor:pointer;">SAS 1</div>
   </div>
-  <div class="stat-c editable-kpi" title="Clic para editar" onclick="editarSAS(2)">
-    <div class="stat-n sn-cosecheros" id="st-sas2-n">—</div>
+  <div class="stat-c" style="cursor:default;">
+    <div class="stat-n sn-cosecheros" id="st-sas2-n" title="Clic para editar número" onclick="editarSASNumero(2)" style="cursor:pointer;">—</div>
     <div class="stat-l">Cosecheros</div>
-    <div class="stat-sas-lbl" id="st-sas2-nom">SAS 2</div>
+    <div class="stat-sas-lbl" id="st-sas2-nom" title="Clic para editar nombre" onclick="editarSASNombre(2)" style="cursor:pointer;">SAS 2</div>
   </div>
 </div>
 
@@ -2220,19 +2223,23 @@ function cargarCosecherosSAS(){
     document.getElementById('st-sas'+i+'-n').textContent  = n !== null ? n : '—';
   }
 }
-function editarSAS(i){
-  const nomActual = localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
-  const nActual   = localStorage.getItem('pg_sas'+i+'_n') || '';
-  const nuevoNom  = prompt('Nombre de esta SAS:', nomActual);
-  if(nuevoNom === null) return;
-  const nuevoN = prompt('Número de cosecheros ('+nuevoNom+'):', nActual);
-  if(nuevoN === null) return;
-  const v = parseInt(nuevoN);
+function editarSASNombre(i){
+  const actual = localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
+  const nuevo  = prompt('Nombre de la SAS '+ i +':', actual);
+  if(nuevo === null) return;
+  const val = nuevo.trim() || 'SAS '+i;
+  localStorage.setItem('pg_sas'+i+'_nombre', val);
+  document.getElementById('st-sas'+i+'-nom').textContent = val;
+}
+function editarSASNumero(i){
+  const nom    = localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
+  const actual = localStorage.getItem('pg_sas'+i+'_n') || '';
+  const nuevo  = prompt('Cosecheros · ' + nom + ':', actual);
+  if(nuevo === null) return;
+  const v = parseInt(nuevo);
   if(isNaN(v) || v < 0){ alert('Ingresa un número válido.'); return; }
-  localStorage.setItem('pg_sas'+i+'_nombre', nuevoNom.trim() || 'SAS '+i);
   localStorage.setItem('pg_sas'+i+'_n', v);
-  document.getElementById('st-sas'+i+'-nom').textContent = nuevoNom.trim() || 'SAS '+i;
-  document.getElementById('st-sas'+i+'-n').textContent  = v;
+  document.getElementById('st-sas'+i+'-n').textContent = v;
 }
 
 document.addEventListener('DOMContentLoaded', () => { init(); cargarCosecherosSAS(); });
