@@ -42,7 +42,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .lb-azul{background:rgba(37,99,235,.2);border-color:rgba(37,99,235,.5);}
 .lb-rojo{background:rgba(220,38,38,.2);border-color:rgba(220,38,38,.5);}
 
-.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);}
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);}
+.sn-cosecheros{color:#7c3aed;}
+.stat-c.editable-kpi{cursor:pointer;position:relative;}
+.stat-c.editable-kpi:hover{background:#f9f5ff;}
+.stat-c.editable-kpi::after{content:'✎';position:absolute;top:6px;right:8px;font-size:9px;color:#c4b5fd;}
 .stat-c{background:var(--surface);padding:10px 16px;text-align:center;}
 .stat-n{font-family:'Bebas Neue',sans-serif;font-size:26px;}
 .stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
@@ -329,6 +333,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="stat-c"><div class="stat-n sn-verde" id="st-verde">0</div><div class="stat-l">En Ciclo</div></div>
   <div class="stat-c"><div class="stat-n sn-azul" id="st-azul">0</div><div class="stat-l">Tolerancia</div></div>
   <div class="stat-c"><div class="stat-n sn-rojo" id="st-rojo">0</div><div class="stat-l">Incumplimiento</div></div>
+  <div class="stat-c editable-kpi" title="Clic para editar" onclick="editarCosecheros()">
+    <div class="stat-n sn-cosecheros" id="st-cosecheros">—</div>
+    <div class="stat-l">Cosecheros SAS</div>
+  </div>
 </div>
 
 
@@ -2175,7 +2183,22 @@ function init(){
   }, 30*1000);
   setTimeout(()=>{ cargarCalc(); }, 300);
 }
-document.addEventListener('DOMContentLoaded',init);
+/* ── COSECHEROS ── */
+function cargarCosecheros(){
+  const n = localStorage.getItem('pg_cosecheros');
+  document.getElementById('st-cosecheros').textContent = n !== null ? n : '—';
+}
+function editarCosecheros(){
+  const actual = localStorage.getItem('pg_cosecheros') || '';
+  const nuevo = prompt('Número de cosecheros en Palma Grande S.A.S.:', actual);
+  if (nuevo === null) return;
+  const v = parseInt(nuevo);
+  if (isNaN(v) || v < 0) { alert('Ingresa un número válido.'); return; }
+  localStorage.setItem('pg_cosecheros', v);
+  document.getElementById('st-cosecheros').textContent = v;
+}
+
+document.addEventListener('DOMContentLoaded', () => { init(); cargarCosecheros(); });
 </script>
 </body>
 </html>
