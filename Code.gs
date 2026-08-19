@@ -6,11 +6,12 @@
 const SHEET_ID = '1s8f_zb5fJbKi0_x1QF1vleevzNzxt8aZyhS60ZcuVNo';
 
 const SHEETS = {
-  cosecha:        'Cosecha',
-  tablero:        'Tablero Cosecha',
-  mantenimiento:  'Mantenimiento',
-  sanidad:        'Sanidad',
-  tableroSanidad: 'Tablero Sanidad',
+  cosecha:             'Cosecha',
+  tablero:             'Tablero Cosecha',
+  mantenimiento:       'Mantenimiento',
+  tableroMantenimiento:'Tablero Mantenimiento',
+  sanidad:             'Sanidad',
+  tableroSanidad:      'Tablero Sanidad',
   trampas:        'Trampas',
   trampasCfg:     'Trampas Config',
   anilloRojo:     'Anillo Rojo',
@@ -108,6 +109,16 @@ const CICLOS_SANIDAD = {
 };
 const TOLERANCIAS_SANIDAD = {trampas:2, censo:3, controlpc:3};
 const LABOR_LABELS = {trampas:'🪤 TRAMPAS', censo:'🔍 CENSO', controlpc:'🦠 CONTROL PC'};
+
+const CICLOS_MANTTO = {
+  poda:      {guineensis:335, hibrido:244},
+  roceria:   {guineensis: 90, hibrido: 90},
+  rotospeed: {guineensis: 90, hibrido: 90},
+  rolo:      {guineensis:180, hibrido:180},
+};
+const TOLERANCIA_MANTTO = 15;
+const LABORES_MANTTO = ['poda','roceria','rotospeed','rolo'];
+const LABELS_MANTTO  = {poda:'PODA', roceria:'ROCERÍA', rotospeed:'ROTOSPEED', rolo:'ROLO'};
 
 // =============================================
 // ENTRY POINTS
@@ -1152,9 +1163,115 @@ function crearTriggers() {
 }
 
 function actualizarTodo() {
-  generarTableroCosecha();   // solo lee Cosecha y pinta el tablero
-  generarTableroSanidad();   // solo lee Sanidad y pinta el tablero
+  generarTableroCosecha();         // solo lee Cosecha y pinta el tablero
+  generarTableroSanidad();         // solo lee Sanidad y pinta el tablero
+  generarTableroMantenimiento();   // solo lee Mantenimiento y pinta el tablero
   Logger.log('Actualizacion completa: ' + new Date());
+}
+
+// =============================================
+// TABLERO MANTENIMIENTO (vista consolidada)
+// =============================================
+// Una fila por lote, una columna por labor.
+// Cada celda muestra los días del ciclo actual y el color de estado.
+function generarTableroMantenimiento() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var marcasData = obtenerMarcasMantenimiento();
+  var marcas = marcasData.marcas;
+
+  var hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  var hoyISO = Utilities.formatDate(hoy, 'America/Bogota', 'yyyy-MM-dd');
+
+  var sheet = ss.getSheetByName(SHEETS.tableroMantenimiento);
+  if(!sheet) sheet = ss.insertSheet(SHEETS.tableroMantenimiento);
+  sheet.clearContents();
+  sheet.clearFormats();
+
+  // Fila 1: título
+  var totalCols = 3 + LABORES_MANTTO.length;
+  var titulo = 'TABLERO MANTENIMIENTO - PALMA GRANDE S.A.S. | Generado: ' +
+    Utilities.formatDate(hoy, 'America/Bogota', 'dd/MM/yyyy HH:mm');
+  sheet.getRange(1, 1).setValue(titulo);
+  sheet.getRange(1, 1, 1, totalCols).setBackground('#0f1117').setFontColor('#f0c96a').setFontWeight('bold').setFontSize(11);
+
+  // Fila 2: encabezados
+  sheet.getRange(2, 1).setValue('FINCA');
+  sheet.getRange(2, 2).setValue('LOTE');
+  sheet.getRange(2, 3).setValue('HA');
+  LABORES_MANTTO.forEach(function(lab, i) {
+    sheet.getRange(2, 4 + i).setValue(LABELS_MANTTO[lab]);
+  });
+  sheet.getRange(2, 1, 1, totalCols).setBackground(COLOR.tableHeader.bg).setFontColor(COLOR.tableHeader.text).setFontWeight('bold').setFontSize(9).setHorizontalAlignment('center');
+
+  var fila = 3;
+  var fincaActual = '';
+
+  LOTES.forEach(function(l) {
+    if(l.finca !== fincaActual) {
+      fincaActual = l.finca;
+      sheet.getRange(fila, 1).setValue('🌴 ' + l.finca);
+      sheet.getRange(fila, 1, 1, totalCols).setBackground(COLOR.fincaHeader.bg).setFontColor(COLOR.fincaHeader.text).setFontWeight('bold').setFontSize(9);
+      fila++;
+    }
+
+    sheet.getRange(fila, 1).setValue(l.finca.replace('FINCA ', 'F'));
+    sheet.getRange(fila, 2).setValue(l.lote);
+    sheet.getRange(fila, 3).setValue(l.ha);
+
+    LABORES_MANTTO.forEach(function(lab, i) {
+      var key = l.finca + '_' + l.lote;
+      var marcasLote = (marcas[lab] && marcas[lab][key]) || {};
+      var ciclo = CICLOS_MANTTO[lab][l.tipo] || CICLOS_MANTTO[lab]['guineensis'];
+      var tol = TOLERANCIA_MANTTO;
+
+      // Encontrar el último marca <= hoy
+      var todasMarks = Object.keys(marcasLote).filter(function(iso){ return iso <= hoyISO; }).sort().reverse();
+      var celda = sheet.getRange(fila, 4 + i);
+
+      if(todasMarks.length === 0) {
+        celda.setValue('SIN REG').setBackground('#f9fafb').setFontColor('#9ca3af').setFontSize(8).setHorizontalAlignment('center');
+      } else {
+        // Buscar inicio del ciclo actual (retroceder hasta 'nuevo' o el primero)
+        var cicloInicio = todasMarks[0];
+        for(var j = 0; j < todasMarks.length; j++) {
+          cicloInicio = todasMarks[j];
+          if(marcasLote[todasMarks[j]] === 'nuevo') break;
+        }
+        var inicioDate = new Date(cicloInicio);
+        var diasCiclo = Math.round((hoy - inicioDate) / 86400000) + 1;
+        var displayDias = diasCiclo + 'd';
+
+        var bgColor, txtColor;
+        // Hoy es día de trabajo?
+        if(marcasLote[hoyISO]) {
+          bgColor = COLOR.entrada.bg; txtColor = COLOR.entrada.text;
+        } else if(diasCiclo <= ciclo - tol) {
+          bgColor = COLOR.verde.bg;   txtColor = COLOR.verde.text;
+        } else if(diasCiclo <= ciclo) {
+          bgColor = COLOR.azul.bg;    txtColor = COLOR.azul.text;
+        } else {
+          bgColor = COLOR.rojo.bg;    txtColor = COLOR.rojo.text;
+        }
+        celda.setValue(displayDias).setBackground(bgColor).setFontColor(txtColor).setFontSize(9).setHorizontalAlignment('center').setFontWeight('bold');
+      }
+    });
+
+    sheet.getRange(fila, 1, 1, 3).setFontSize(8).setVerticalAlignment('middle');
+    sheet.setRowHeight(fila, 20);
+    fila++;
+  });
+
+  // Anchos de columna
+  sheet.setColumnWidth(1, 45);
+  sheet.setColumnWidth(2, 50);
+  sheet.setColumnWidth(3, 35);
+  LABORES_MANTTO.forEach(function(lab, i) { sheet.setColumnWidth(4 + i, 80); });
+  sheet.setFrozenColumns(3);
+  sheet.setFrozenRows(2);
+
+  SpreadsheetApp.flush();
+  Logger.log('Tablero mantenimiento generado.');
 }
 
 // =============================================
