@@ -1872,6 +1872,34 @@ function exportarPDF(){
       })()}
 
     </div>
+      <!-- CONVENCIÓN DE COLORES -->
+      <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #e5e7eb;">
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Convención de colores</div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+          <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Estado del ciclo:</div>
+          ${[
+            {bg:'#1e3a5f',txt:'#fff',label:'Cosechando'},
+            {bg:'#d1fae5',txt:'#065f46',label:'En ciclo'},
+            {bg:'#dbeafe',txt:'#1e3a8a',label:'Tolerancia'},
+            {bg:'#fee2e2',txt:'#7f1d1d',label:'Incumplimiento'},
+          ].map(c=>`<div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:${c.bg};flex-shrink:0;"></div>
+            <span style="font-size:10px;color:#374151;">${c.label}</span>
+          </div>`).join('')}
+          <div style="width:1px;height:18px;background:#d1d5db;flex-shrink:0;"></div>
+          <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Tipo de palma:</div>
+          ${[
+            {bg:'#fff',border:'#d1d5db',label:'Guineensis · ciclo 12 días'},
+            {bg:'rgba(251,191,36,.25)',border:'rgba(251,191,36,.6)',label:'Híbrida · ciclo 22 días'},
+            {bg:'rgba(134,239,172,.25)',border:'rgba(134,239,172,.6)',label:'Joven · ciclo 12 días'},
+          ].map(c=>`<div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:${c.bg};border:1px solid ${c.border};flex-shrink:0;"></div>
+            <span style="font-size:10px;color:#374151;">${c.label}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+
+    </div>
     <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:8px 22px;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
       <span>Palma Grande S.A.S. · Dpto. Agronomico</span>
       <span>Sistema de Gestion Agricola · Generado automaticamente</span>
