@@ -22,6 +22,7 @@
   --rojo:#dc2626;--rojo-cell:rgba(220,38,38,.22);
   --negro-cell:#1e3a5f;
   --hibrido:#92400e;--hibrido-cell:rgba(251,191,36,.13);--hibrido-border:rgba(251,191,36,.35);
+  --joven:#166534;--joven-cell:rgba(134,239,172,.13);--joven-border:rgba(134,239,172,.45);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
@@ -136,6 +137,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .row-hibrido td.col-estado{background:var(--hibrido-cell) !important;border-left:2px solid var(--hibrido-border);}
 .row-hibrido .td-lote{color:var(--hibrido);font-weight:700;}
 .lb-hibrido{background:rgba(251,191,36,.18);border-color:rgba(251,191,36,.55);}
+
+.row-joven td.col-finca,
+.row-joven td.col-lote,
+.row-joven td.col-ha,
+.row-joven td.col-freq,
+.row-joven td.col-estado{background:var(--joven-cell) !important;border-left:2px solid var(--joven-border);}
+.row-joven .td-lote{color:var(--joven);font-weight:700;}
+.lb-joven{background:rgba(134,239,172,.18);border-color:rgba(134,239,172,.55);}
 
 .finca-row td{background:linear-gradient(90deg,rgba(184,134,11,.08),transparent) !important;padding:5px 10px;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;border-top:2px solid rgba(184,134,11,.25);}
 
@@ -312,6 +321,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="leg-item"><div class="leg-box lb-azul"></div>Tolerancia</div>
   <div class="leg-item"><div class="leg-box lb-rojo"></div>Incumplimiento</div>
   <div class="leg-item"><div class="leg-box lb-hibrido"></div>Palma híbrida</div>
+  <div class="leg-item"><div class="leg-box lb-joven"></div>Palma joven</div>
 </div>
 
 <!-- TABS -->
@@ -612,7 +622,7 @@ const LOTES = [
   {finca:'FINCA 1',lote:'9',ha:15,tipo:'guineensis'},
   {finca:'FINCA 1',lote:'10',ha:14,tipo:'guineensis'},
   {finca:'FINCA 1',lote:'11',ha:10,tipo:'guineensis'},
-  {finca:'FINCA 1',lote:'11A',ha:3,tipo:'guineensis'},
+  {finca:'FINCA 1',lote:'11A',ha:3,tipo:'joven'},
   {finca:'FINCA 1',lote:'12',ha:12,tipo:'guineensis'},
   {finca:'FINCA 1',lote:'13',ha:14,tipo:'guineensis'},
   {finca:'FINCA 1',lote:'14',ha:17,tipo:'guineensis'},
@@ -620,7 +630,7 @@ const LOTES = [
   {finca:'FINCA 1',lote:'16',ha:20,tipo:'guineensis'},
   {finca:'FINCA 1',lote:'17',ha:23,tipo:'guineensis'},
   {finca:'FINCA 1',lote:'18',ha:10,tipo:'guineensis'},
-  {finca:'FINCA 1',lote:'18A',ha:4,tipo:'guineensis'},
+  {finca:'FINCA 1',lote:'18A',ha:4,tipo:'joven'},
   {finca:'FINCA 2',lote:'19',ha:24,tipo:'guineensis'},
   {finca:'FINCA 2',lote:'20',ha:19,tipo:'guineensis'},
   {finca:'FINCA 2',lote:'21',ha:16,tipo:'guineensis'},
@@ -662,7 +672,7 @@ const LOTES = [
   {finca:'FINCA 3',lote:'55',ha:15,tipo:'guineensis'},
   {finca:'FINCA 3',lote:'56',ha:21,tipo:'guineensis'},
   {finca:'FINCA 3',lote:'57',ha:11,tipo:'guineensis'},
-  {finca:'FINCA 3',lote:'58',ha:9,tipo:'guineensis'},
+  {finca:'FINCA 3',lote:'58',ha:9,tipo:'joven'},
 ];
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxzrPbQx5Sx4Q4G7e9CCEGqovZc-b3qTosmNhr51bQYbKqSe3-JqnhND0-mE9xb3cry/exec';
@@ -723,7 +733,6 @@ function getCicloMax(tipo){
 }
 
 function getCicloOptimo(tipo){
-  // Día hasta el cual se considera dentro del ciclo normal (antes de tolerancia)
   return tipo==='hibrido' ? 20 : 10;
 }
 
@@ -870,7 +879,8 @@ function render(){
     else if(eH==='rojo'){bCls='b-inc';bTxt='INCUMPLIMIENTO';}
     else{bCls='b-sin';bTxt='SIN REGISTRO';}
 
-    html+=`<tr${l.tipo==='hibrido'?' class="row-hibrido"':''}>`;
+    const rowCls = l.tipo==='hibrido' ? ' class="row-hibrido"' : l.tipo==='joven' ? ' class="row-joven"' : '';
+    html+=`<tr${rowCls}>`;
     html+=`<td class="td-finca col-finca">${l.finca.replace('FINCA ','F')}</td>`;
     html+=`<td class="td-lote col-lote">${l.lote}</td>`;
     html+=`<td class="td-ha col-ha">${l.ha}</td>`;
