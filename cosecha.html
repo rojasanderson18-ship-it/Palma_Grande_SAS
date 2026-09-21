@@ -379,8 +379,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       <div class="kpi-card kpi-verde"><div class="kpi-val kv-verde" id="k-ciclo">—</div><div class="kpi-label">En ciclo</div><div class="kpi-sub ks-verde" id="k-ciclo-pct">—</div></div>
       <div class="kpi-card kpi-azul"><div class="kpi-val kv-azul" id="k-tol">—</div><div class="kpi-label">Tolerancia</div><div class="kpi-sub ks-azul" id="k-tol-pct">—</div></div>
       <div class="kpi-card kpi-rojo"><div class="kpi-val kv-rojo" id="k-inc">—</div><div class="kpi-label">Incumplimiento</div><div class="kpi-sub ks-rojo" id="k-inc-pct">—</div></div>
-      <div class="kpi-card kpi-rojo"><div class="kpi-val kv-rojo" id="k-ha-fuera">—</div><div class="kpi-label">HA fuera de ciclo</div><div class="kpi-sub ks-rojo" id="k-ha-fuera-pct">—</div></div>
-      <div class="kpi-card kpi-verde"><div class="kpi-val kv-verde" id="k-ha-ciclo">—</div><div class="kpi-label">HA en ciclo</div><div class="kpi-sub ks-verde" id="k-ha-ciclo-pct">—</div></div>
+      <div class="kpi-card kpi-rojo"><div class="kpi-val kv-rojo" id="k-ha-fuera">—</div><div class="kpi-label">HA incumplimiento</div><div class="kpi-sub ks-rojo" id="k-ha-fuera-pct">—</div></div>
+      <div class="kpi-card kpi-verde"><div class="kpi-val kv-verde" id="k-ha-ciclo">—</div><div class="kpi-label">HA en ciclo + tolerancia</div><div class="kpi-sub ks-verde" id="k-ha-ciclo-pct">—</div></div>
       <div class="kpi-card kpi-gold"><div class="kpi-val kv-gold" id="k-ha-total">—</div><div class="kpi-label">Total HA</div></div>
     </div>
 
@@ -1223,7 +1223,7 @@ function calcularIndicadores(){
 
     if(estado==='cosechando'){ lotesCos++; haEnCiclo+=l.ha; }
     else if(estado==='verde'){ lotesVerde++; haEnCiclo+=l.ha; }
-    else if(estado==='azul'){ lotesAzul++; haFuera+=l.ha; }
+    else if(estado==='azul'){ lotesAzul++; haEnCiclo+=l.ha; }
     else if(estado==='rojo'){ lotesRojo++; haFuera+=l.ha; }
 
     // Rangos: incluir todos los lotes con registro (cualquier estado excepto vacio)
@@ -1561,8 +1561,8 @@ function generarMensajeWA(){
     const dias=cs.num||0;
     haTotal+=l.ha;
 
-    if(cs.tipo==='verde'||cs.tipo==='cosechando'){ lotesEnCiclo++; haEnCiclo+=l.ha; }
-    else if(cs.tipo==='azul'||cs.tipo==='rojo'){ lotesFuera++; haFuera+=l.ha; }
+    if(cs.tipo==='verde'||cs.tipo==='cosechando'||cs.tipo==='azul'){ lotesEnCiclo++; haEnCiclo+=l.ha; }
+    else if(cs.tipo==='rojo'){ lotesFuera++; haFuera+=l.ha; }
 
     if(dias>0){
       for(const r of rangos){
@@ -1695,7 +1695,7 @@ function exportarPDF(){
     haTotal+=l.ha;
     if(cs.tipo==='cosechando'){nC++;haEn+=l.ha;}
     else if(cs.tipo==='verde'){nV++;haEn+=l.ha;}
-    else if(cs.tipo==='azul'){nA++;haFuera+=l.ha;}
+    else if(cs.tipo==='azul'){nA++;haEn+=l.ha;}
     else if(cs.tipo==='rojo'){nR++;haFuera+=l.ha;criticos.push({lote:l.lote,finca:l.finca,dias,ha:l.ha});}
     if(dias>0) for(const r of rangos){if(dias>=r.min&&dias<=r.max){r.ha+=l.ha;break;}}
     const lim=l.tipo==='hibrido'?[19,20]:[9,10];
@@ -1792,11 +1792,11 @@ function exportarPDF(){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;border-left:4px solid #16a34a;">
             <div style="font-size:20px;font-weight:900;color:#15803d;">${fmt(haEn)} HA</div>
-            <div style="font-size:10px;color:#6b7280;">HA en ciclo · <strong style="color:#15803d;">${pct(haEn,haTotal)} del total</strong></div>
+            <div style="font-size:10px;color:#6b7280;">HA en ciclo (incl. tolerancia) · <strong style="color:#15803d;">${pct(haEn,haTotal)} del total</strong></div>
           </div>
           <div style="background:#fef2f2;border-radius:8px;padding:8px 12px;border-left:4px solid #dc2626;">
             <div style="font-size:20px;font-weight:900;color:#b91c1c;">${fmt(haFuera)} HA</div>
-            <div style="font-size:10px;color:#6b7280;">HA fuera de ciclo · <strong style="color:#b91c1c;">${pct(haFuera,haTotal)} del total</strong></div>
+            <div style="font-size:10px;color:#6b7280;">HA en incumplimiento · <strong style="color:#b91c1c;">${pct(haFuera,haTotal)} del total</strong></div>
           </div>
         </div>
       </div>
