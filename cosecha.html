@@ -1757,8 +1757,11 @@ function exportarPDF(){
   const MESES_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const labelMes=m=>{const[y,mo]=m.split('-');return MESES_ES[+mo-1]+' '+y;};
 
-  // Reorganizar: por año y mes
-  const aniosDisp=[...new Set(Object.keys(ciclosPorMes).map(k=>k.split('-')[0]))].sort();
+  // Mínimo de ciclos para considerar un mes completo (mes con menos = incompleto, se excluye)
+  const MIN_CICLOS_MES = 5;
+
+  // Reorganizar: por año y mes (solo meses con datos suficientes)
+  const aniosDisp=[...new Set(Object.keys(ciclosPorMes).filter(k=>ciclosPorMes[k].gaps.length>=MIN_CICLOS_MES).map(k=>k.split('-')[0]))].sort();
   const avg=arr=>arr&&arr.length>0?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length*10)/10:null;
   // Tabla[anio][mes01-12] = {avg, avgG, avgH, n}
   const tabla={};
@@ -1767,7 +1770,8 @@ function exportarPDF(){
     for(let m=1;m<=12;m++){
       const key=y+'-'+String(m).padStart(2,'0');
       const d=ciclosPorMes[key];
-      tabla[y][m]=d?{avg:avg(d.gaps),avgG:avg(d.guineensis),avgH:avg(d.hibrido),n:d.gaps.length}:null;
+      // Solo incluir si tiene suficientes ciclos (mes completo)
+      tabla[y][m]=(d&&d.gaps.length>=MIN_CICLOS_MES)?{avg:avg(d.gaps),avgG:avg(d.guineensis),avgH:avg(d.hibrido),n:d.gaps.length}:null;
     }
   });
   // Promedio anual
