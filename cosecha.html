@@ -1724,6 +1724,39 @@ function exportarPDF(){
     fincaStats[f]={v:fV+fC,a:fA,r:fR,tot,haEn:fHAen,haF:fHAf,ha:fHA};
   });
 
+  // ── CICLO PROMEDIO POR MES (últimos 6 meses) ──
+  const ciclosPorMes = {}; // 'YYYY-MM' -> {gaps:[],tipo:{guineensis:[],hibrido:[]}}
+  LOTES.forEach(l=>{
+    const key=l.finca+'_'+l.lote;
+    const m=marcas[key]||{};
+    // Todas las marcas ordenadas, incluyendo 'nuevo' y 'continuidad'
+    const todasFechas=Object.keys(m).filter(iso=>m[iso]).sort();
+    if(todasFechas.length<2) return;
+    // Buscar inicios de ciclo (marca 'nuevo', o primera marca si no hay 'nuevo')
+    const inicios=todasFechas.filter(iso=>m[iso]==='nuevo');
+    if(inicios.length<1) return;
+    for(let i=1;i<inicios.length;i++){
+      const prev=new Date(inicios[i-1]); const curr=new Date(inicios[i]);
+      const gap=Math.round((curr-prev)/86400000);
+      if(gap<1||gap>120) continue; // ignorar outliers
+      const mes=inicios[i].substring(0,7);
+      if(!ciclosPorMes[mes]) ciclosPorMes[mes]={gaps:[],guineensis:[],hibrido:[]};
+      ciclosPorMes[mes].gaps.push(gap);
+      if(l.tipo==='hibrido') ciclosPorMes[mes].hibrido.push(gap);
+      else ciclosPorMes[mes].guineensis.push(gap);
+    }
+  });
+  // Últimos 6 meses con datos, ordenados
+  const mesesConDatos=Object.keys(ciclosPorMes).sort().slice(-6);
+  const promediosMes=mesesConDatos.map(m=>{
+    const d=ciclosPorMes[m];
+    const avg=arr=>arr.length>0?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length*10)/10:null;
+    return {mes:m, avg:avg(d.gaps), avgG:avg(d.guineensis), avgH:avg(d.hibrido), n:d.gaps.length};
+  });
+  // Label bonito p. ej. '2026-08' → 'Ago 2026'
+  const MESES_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const labelMes=m=>{const[y,mo]=m.split('-');return MESES_ES[+mo-1]+' '+y;};
+
   // ── HTML GERENCIA ──
   const fincaColors={
     'FINCA 1':{hdr:'#052e16',txt:'#4ade80',name:'FINCA 1'},
@@ -1849,6 +1882,30 @@ function exportarPDF(){
           ${!proxH&&!proxM?`<div style="font-size:11px;color:#9ca3af;font-style:italic;padding:8px;">Sin entradas programadas</div>`:''}
         </div>
       </div>
+
+      <!-- CICLO PROMEDIO POR MES -->
+      ${promediosMes.length>=2 ? `<div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Ciclo promedio por mes (días entre cosechas)</div>
+        <div style="display:grid;grid-template-columns:repeat(${promediosMes.length},1fr);gap:6px;">
+          ${promediosMes.map((d,i)=>{
+            const prev=i>0?promediosMes[i-1].avg:null;
+            const delta=prev!=null&&d.avg!=null?+(d.avg-prev).toFixed(1):null;
+            const deltaStr=delta!=null?(delta>0?`↑ +${delta}d`:`↓ ${delta}d`):'—';
+            const deltaCol=delta==null?'#9ca3af':delta>2?'#b91c1c':delta<-2?'#15803d':'#6b7280';
+            // Color del promedio: guineensis referencia 12d, híbrido 22d → general ~12-22
+            const ref=12; // simplificado al guineensis (mayoría)
+            const bg=d.avg==null?'#f9fafb':d.avg<=ref+1?'#f0fdf4':d.avg<=ref+3?'#eff6ff':'#fef2f2';
+            const numCol=d.avg==null?'#9ca3af':d.avg<=ref+1?'#15803d':d.avg<=ref+3?'#1d4ed8':'#b91c1c';
+            return `<div style="background:${bg};border-radius:8px;padding:8px 10px;border:1px solid #e5e7eb;text-align:center;">
+              <div style="font-size:9px;color:#6b7280;margin-bottom:4px;">${labelMes(d.mes)}</div>
+              <div style="font-size:22px;font-weight:900;color:${numCol};line-height:1;">${d.avg!=null?d.avg+'d':'—'}</div>
+              <div style="font-size:9px;color:#9ca3af;margin-top:1px;">${d.n} ciclos</div>
+              <div style="font-size:10px;font-weight:700;color:${deltaCol};margin-top:4px;">${deltaStr}</div>
+              ${d.avgG!=null?`<div style="font-size:8px;color:#6b7280;margin-top:3px;">G: ${d.avgG}d${d.avgH!=null?' · H: '+d.avgH+'d':''}</div>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
 
       <!-- COSECHEROS POR SAS -->
       ${(()=>{
