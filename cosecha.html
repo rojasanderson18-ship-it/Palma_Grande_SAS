@@ -2105,9 +2105,9 @@ function exportarPDF(){
         const gW=W-padL-padR, gH=H-padT-padB;
 
         const todosVals=serieGen.map(x=>x.v);
-        const yRaw=Math.max(0,Math.min(objetivo*0.75,...todosVals)-1);
-        const yMin=Math.floor(yRaw);
-        const yMax=Math.ceil(Math.max(objetivo*1.25,...todosVals)+1);
+        // yMin siempre incluye al menos 20% por debajo del objetivo para mostrar zona verde
+        const yMin=Math.max(0,Math.floor(Math.min(objetivo*0.8,...todosVals)-1));
+        const yMax=Math.ceil(Math.max(objetivo*1.2,...todosVals)+2);
         const yRange=yMax-yMin;
         const xPos=i=>padL+i*(gW/(meses.length-1||1));
         const yPos=v=>padT+gH-(v-yMin)/yRange*gH;
@@ -2157,13 +2157,12 @@ function exportarPDF(){
             if(arr.length<min)return null;
             return{x:xPos(i),y:yPos(avg(arr)),v:avg(arr)};
           });
-          let pathD='';
+          let pathD='', lastIdx=-1;
           pts.forEach((p,i)=>{
             if(!p)return;
-            // conectar solo si el gap es ≤ 2 posiciones vacías
-            const prevIdx=pts.slice(0,i).map((x,j)=>x?j:-1).filter(j=>j>=0).pop();
-            if(prevIdx==null||i-prevIdx>2)pathD+=`M${p.x},${p.y}`;
+            if(lastIdx<0||i-lastIdx>2) pathD+=`M${p.x},${p.y}`;
             else pathD+=`L${p.x},${p.y}`;
+            lastIdx=i;
           });
           if(pathD)lineasSVG+=`<path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
           pts.forEach(p=>{
@@ -2176,12 +2175,12 @@ function exportarPDF(){
           </g>`;
         });
 
-        // Línea objetivo
+        // Línea objetivo (verde = meta a alcanzar)
         const yObj=yPos(objetivo);
         const lineaObj=`
-          <line x1="${padL}" x2="${padL+gW}" y1="${yObj}" y2="${yObj}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.8"/>
-          <rect x="${padL+gW+2}" y="${yObj-8}" width="44" height="12" rx="3" fill="#fef2f2"/>
-          <text x="${padL+gW+5}" y="${yObj+2}" font-size="8" fill="#dc2626" font-weight="700">OBJ ${objetivo}d</text>`;
+          <line x1="${padL}" x2="${padL+gW}" y1="${yObj}" y2="${yObj}" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="6,4" opacity="0.9"/>
+          <rect x="${padL+gW+2}" y="${yObj-8}" width="44" height="12" rx="3" fill="#f0fdf4"/>
+          <text x="${padL+gW+5}" y="${yObj+2}" font-size="8" fill="#15803d" font-weight="700">OBJ ${objetivo}d</text>`;
 
         return `
           <div style="margin-bottom:16px;">
@@ -2208,7 +2207,7 @@ function exportarPDF(){
               <svg width="${W}" height="20" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-top:2px;">
                 <g transform="translate(${padL},2)">${legSVG}
                   <g transform="translate(${fincasConDatos.length*100},0)">
-                    <line x1="0" y1="6" x2="18" y2="6" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4"/>
+                    <line x1="0" y1="6" x2="18" y2="6" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="6,4"/>
                     <text x="22" y="10" font-size="8.5" fill="#6b7280">Objetivo (${objetivo}d)</text>
                   </g>
                 </g>
