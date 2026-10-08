@@ -1729,23 +1729,25 @@ function exportarPDF(){
   // Gap = días reales entre el inicio de un ciclo y el siguiente.
   // Se separa guineensis/joven (objetivo 12d) e híbrido (objetivo 22d).
   // El mes asignado al ciclo es el mes en que TERMINÓ (fecha del nuevo siguiente).
-  const ciclosPorMes = {}; // 'YYYY-MM' -> {guineensis:[], hibrido:[]}
+  // ciclosPorMes['YYYY-MM'][finca][tipo] = [gaps...]
+  const FINCAS_LIST = [...new Set(LOTES.map(l=>l.finca))].sort();
+  const ciclosPorMes = {};
   LOTES.forEach(l=>{
     const key=l.finca+'_'+l.lote;
     const m=marcas[key]||{};
     const esHibrido = l.tipo==='hibrido';
-    // Límites razonables por tipo para filtrar outliers
     const gapMin = esHibrido ? 10 : 5;
     const gapMax = esHibrido ? 60 : 30;
+    const tipo = esHibrido ? 'hibrido' : 'guineensis';
     const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
     if(inicios.length<2) return;
     for(let i=1;i<inicios.length;i++){
       const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
       if(gap<gapMin||gap>gapMax) continue;
       const mes=inicios[i].substring(0,7);
-      if(!ciclosPorMes[mes]) ciclosPorMes[mes]={guineensis:[],hibrido:[]};
-      if(esHibrido) ciclosPorMes[mes].hibrido.push(gap);
-      else          ciclosPorMes[mes].guineensis.push(gap);
+      if(!ciclosPorMes[mes]) ciclosPorMes[mes]={};
+      if(!ciclosPorMes[mes][l.finca]) ciclosPorMes[mes][l.finca]={guineensis:[],hibrido:[]};
+      ciclosPorMes[mes][l.finca][tipo].push(gap);
     }
   });
 
@@ -1764,28 +1766,60 @@ function exportarPDF(){
   // Reorganizar por año y mes — tablas separadas para G e H
   // Un mes entra en la tabla si es cerrado Y tiene suficientes ciclos de ese tipo
   const mesesValidos=k=>k<mesActualISO;
-  const aniosTieneG=y=>Array.from({length:12},(_,i)=>y+'-'+String(i+1).padStart(2,'0')).some(k=>mesesValidos(k)&&ciclosPorMes[k]&&ciclosPorMes[k].guineensis.length>=MIN_G);
-  const aniosTieneH=y=>Array.from({length:12},(_,i)=>y+'-'+String(i+1).padStart(2,'0')).some(k=>mesesValidos(k)&&ciclosPorMes[k]&&ciclosPorMes[k].hibrido.length>=MIN_H);
   const todosAnios=[...new Set(Object.keys(ciclosPorMes).map(k=>k.split('-')[0]))].sort();
-  const aniosG=todosAnios.filter(aniosTieneG);
-  const aniosH=todosAnios.filter(aniosTieneH);
 
-  // tablaG[anio][mes] = {avg, n} | null
-  const buildTabla=(anios,tipo,min)=>{
+  // tablaFinca[finca][anio][mes] = {avg,n} | null, por tipo
+  const buildTablaFinca=(finca,tipo,min)=>{
     const t={};
-    anios.forEach(y=>{
+    todosAnios.forEach(y=>{
       t[y]={};
-      for(let m=1;m<=12;m++){
-        const key=y+'-'+String(m).padStart(2,'0');
+      for(let mo=1;mo<=12;mo++){
+        const key=y+'-'+String(mo).padStart(2,'0');
         const d=ciclosPorMes[key];
-        const arr=d?d[tipo]:[];
-        t[y][m]=(mesesValidos(key)&&arr.length>=min)?{avg:avg(arr),n:arr.length}:null;
+        const arr=(d&&d[finca])?d[finca][tipo]:[];
+        t[y][mo]=(mesesValidos(key)&&arr.length>=min)?{avg:avg(arr),n:arr.length}:null;
       }
     });
     return t;
   };
-  const tablaG=buildTabla(aniosG,'guineensis',MIN_G);
-  const tablaH=buildTabla(aniosH,'hibrido',MIN_H);
+
+  // Determinar qué años tiene datos para cada finca+tipo
+  const fincaTieneAnio=(finca,tipo,min,y)=>
+    Array.from({length:12},(_,i)=>y+'-'+String(i+1).padStart(2,'0'))
+      .some(k=>{const d=ciclosPorMes[k];const arr=(d&&d[finca])?d[finca][tipo]:[];return mesesValidos(k)&&arr.length>=min;});
+
+  // Construir tablas por finca para cada tipo
+  const tablasPorFinca={guineensis:{},hibrido:{}};
+  const aniosPorFinca={guineensis:{},hibrido:{}};
+  FINCAS_LIST.forEach(f=>{
+    ['guineensis','hibrido'].forEach(tipo=>{
+      const min=tipo==='hibrido'?MIN_H:MIN_G;
+      const anios=todosAnios.filter(y=>fincaTieneAnio(f,tipo,min,y));
+      aniosPorFinca[tipo][f]=anios;
+      tablasPorFinca[tipo][f]=buildTablaFinca(f,tipo,min);
+    });
+  });
+
+  // Para compatibilidad con código anterior (KPIs gerencia)
+  const aniosG=todosAnios.filter(y=>FINCAS_LIST.some(f=>fincaTieneAnio(f,'guineensis',MIN_G,y)));
+  const aniosH=todosAnios.filter(y=>FINCAS_LIST.some(f=>fincaTieneAnio(f,'hibrido',MIN_H,y)));
+  // tablaG/tablaH agregada (suma de todas las fincas) para KPIs generales
+  const buildTablaAgregada=(tipo,min)=>{
+    const t={};
+    todosAnios.forEach(y=>{
+      t[y]={};
+      for(let mo=1;mo<=12;mo++){
+        const key=y+'-'+String(mo).padStart(2,'0');
+        if(!mesesValidos(key)){t[y][mo]=null;continue;}
+        const todos=[];
+        FINCAS_LIST.forEach(f=>{const d=ciclosPorMes[key];if(d&&d[f])todos.push(...d[f][tipo]);});
+        t[y][mo]=todos.length>=min?{avg:avg(todos),n:todos.length}:null;
+      }
+    });
+    return t;
+  };
+  const tablaG=buildTablaAgregada('guineensis',MIN_G);
+  const tablaH=buildTablaAgregada('hibrido',MIN_H);
 
   // Promedio anual de una tabla
   const promedioAnioT=(t,y)=>{const v=Object.values(t[y]||{}).filter(c=>c).map(c=>c.avg);return avg(v);};
@@ -1807,7 +1841,7 @@ function exportarPDF(){
     const s=fincaStats[f];
     const fc=fincaColors[f];
     return `<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;flex:1;">
-      <div style="background:${fc.hdr};padding:10px 14px;font-size:14px;font-weight:900;color:${fc.txt};letter-spacing:2px;">🌴 ${fc.name}</div>
+      <div style="background:${fc.hdr};padding:10px 14px;font-size:14px;font-weight:900;color:${fc.txt};letter-spacing:2px;">${fc.name}</div>
       <div style="padding:10px 12px;display:flex;flex-direction:column;gap:5px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#f0fdf4;border-radius:6px;">
           <span style="font-size:11px;color:#6b7280;">En ciclo</span>
@@ -2004,43 +2038,28 @@ function exportarPDF(){
       const analisisHTML=document.createElement('div');
       analisisHTML.style.cssText='position:fixed;left:-9999px;top:0;z-index:-999;background:#fff;width:794px;';
 
-      // Helper: construir tabla HTML Mes×Año para un tipo
-      const buildTablaHTML=(t,anios,colorFn,titulo,objetivo,bgHdr,txtHdr)=>{
+      // Helper: tabla Mes×Año para una finca+tipo
+      const buildTablaFincaHTML=(t,anios,colorFn,finca,objetivo,bgHdr,txtHdr)=>{
         if(!anios.length) return '';
-        // KPIs del tipo
-        const celdas=[];
-        anios.forEach(y=>{for(let m=1;m<=12;m++){const c=t[y][m];if(c)celdas.push({y,m,...c});}});
-        const mejor=celdas.length?celdas.reduce((a,b)=>a.avg<b.avg?a:b):null;
-        const peor=celdas.length?celdas.reduce((a,b)=>a.avg>b.avg?a:b):null;
-        const colW=Math.min(75,Math.floor(530/anios.length));
-        // Tendencia A/A
-        const pA=y=>promedioAnioT(t,y);
+        const pA=y=>{const v=Object.values(t[y]||{}).filter(c=>c).map(c=>c.avg);return avg(v);};
+        const colW=Math.min(72,Math.floor(500/anios.length));
         const ult=anios[anios.length-1], ant=anios.length>1?anios[anios.length-2]:null;
         const deltaAA=ant&&pA(ult)!=null&&pA(ant)!=null?+(pA(ult)-pA(ant)).toFixed(1):null;
-
-        return `<div>
-          <div style="background:${bgHdr};padding:8px 14px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:12px;font-weight:900;color:${txtHdr};letter-spacing:1px;">${titulo}</div>
-            <div style="font-size:10px;color:${txtHdr};opacity:.8;">Objetivo: ${objetivo}d · ${celdas.reduce((s,c)=>s+c.n,0)} ciclos medidos</div>
+        const celdas=[];
+        anios.forEach(y=>{for(let mo=1;mo<=12;mo++){const c=t[y][mo];if(c)celdas.push({y,mo,...c});}});
+        const totalCiclos=celdas.reduce((s,c)=>s+c.n,0);
+        return `<div style="margin-bottom:10px;">
+          <div style="background:${bgHdr};padding:5px 12px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:11px;font-weight:900;color:${txtHdr};letter-spacing:1px;">${finca}</div>
+            <div style="font-size:9px;color:${txtHdr};opacity:.8;">Objetivo: ${objetivo}d · ${totalCiclos} ciclos</div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 0;">
-            ${[
-              mejor?{v:mejor.avg+'d',l:'Mejor mes',sub:MESES_ES[mejor.m-1]+' '+mejor.y,c:'#15803d',bg:'#f0fdf4',bc:'#16a34a'}:{v:'—',l:'Mejor mes',sub:'sin datos',c:'#9ca3af',bg:'#f9fafb',bc:'#d1d5db'},
-              peor?{v:peor.avg+'d',l:'Mes más largo',sub:MESES_ES[peor.m-1]+' '+peor.y,c:'#b91c1c',bg:'#fef2f2',bc:'#dc2626'}:{v:'—',l:'Mes más largo',sub:'sin datos',c:'#9ca3af',bg:'#f9fafb',bc:'#d1d5db'},
-              deltaAA!=null?{v:(deltaAA>0?'+':'')+deltaAA+'d',l:'Tendencia A/A',sub:(deltaAA>0?'Ciclos alargándose':'Ciclos acortándose'),c:deltaAA>0?'#b91c1c':'#15803d',bg:deltaAA>0?'#fef2f2':'#f0fdf4',bc:deltaAA>0?'#dc2626':'#16a34a'}:{v:'—',l:'Tendencia A/A',sub:'1 año de datos',c:'#9ca3af',bg:'#f9fafb',bc:'#d1d5db'},
-            ].map(k=>`<div style="background:${k.bg};border-radius:6px;padding:8px 10px;border-left:3px solid ${k.bc};">
-              <div style="font-size:20px;font-weight:900;color:${k.c};">${k.v}</div>
-              <div style="font-size:9px;color:#6b7280;">${k.l}</div>
-              <div style="font-size:9px;color:${k.c};font-weight:700;">${k.sub}</div>
-            </div>`).join('')}
-          </div>
-          <table style="width:100%;border-collapse:collapse;font-size:9px;">
+          <table style="width:100%;border-collapse:collapse;font-size:8.5px;">
             <thead>
               <tr style="background:#374151;">
-                <th style="padding:5px 8px;text-align:left;color:#fff;width:38px;">MES</th>
-                ${anios.map(y=>`<th style="padding:5px;text-align:center;color:#f0c96a;width:${colW}px;">${y}</th>`).join('')}
-                <th style="padding:5px;text-align:center;color:#94a3b8;width:${colW}px;">PROM MES</th>
-                ${anios.length>1?`<th style="padding:5px;text-align:center;color:#94a3b8;width:48px;">VAR A/A</th>`:''}
+                <th style="padding:4px 8px;text-align:left;color:#fff;width:36px;">MES</th>
+                ${anios.map(y=>`<th style="padding:4px;text-align:center;color:#f0c96a;width:${colW}px;">${y}</th>`).join('')}
+                <th style="padding:4px;text-align:center;color:#94a3b8;width:${colW}px;">PROM</th>
+                ${anios.length>1?`<th style="padding:4px;text-align:center;color:#94a3b8;width:40px;">VAR A/A</th>`:''}
               </tr>
             </thead>
             <tbody>
@@ -2051,60 +2070,69 @@ function exportarPDF(){
                 const cc=colorFn(promMes);
                 const disp=anios.filter(y=>t[y][mo]);
                 let varAA=null;
-                if(disp.length>=2){varAA=+(t[disp[disp.length-1]][mo].avg-t[disp[disp.length-2]][mo].avg).toFixed(1);}
+                if(disp.length>=2) varAA=+(t[disp[disp.length-1]][mo].avg-t[disp[disp.length-2]][mo].avg).toFixed(1);
                 return `<tr style="background:${mi%2===0?'#fff':'#f9fafb'};">
-                  <td style="padding:4px 8px;font-weight:700;color:#374151;border-bottom:1px solid #f3f4f6;">${MESES_ES[mi]}</td>
+                  <td style="padding:3px 8px;font-weight:700;color:#374151;border-bottom:1px solid #f3f4f6;">${MESES_ES[mi]}</td>
                   ${anios.map(y=>{const c=t[y][mo];const cv=colorFn(c?c.avg:null);
-                    return `<td style="padding:3px;text-align:center;border-bottom:1px solid #f3f4f6;">
-                      ${c?`<div style="background:${cv.bg};color:${cv.txt};font-weight:700;border-radius:3px;padding:2px 3px;">${c.avg}d</div>
-                      <div style="font-size:7px;color:#9ca3af;">${c.n} ciclos</div>`:'<span style="color:#d1d5db;">—</span>'}
-                    </td>`;}).join('')}
-                  <td style="padding:3px;text-align:center;border-bottom:1px solid #f3f4f6;">
-                    ${promMes!=null?`<div style="background:${cc.bg};color:${cc.txt};font-weight:700;border-radius:3px;padding:2px 3px;">${promMes}d</div>`:'<span style="color:#d1d5db;">—</span>'}
-                  </td>
-                  ${anios.length>1?`<td style="padding:3px;text-align:center;border-bottom:1px solid #f3f4f6;font-weight:700;color:${varAA==null?'#d1d5db':varAA>0?'#b91c1c':'#15803d'};">
-                    ${varAA==null?'—':varAA>0?'↑+'+varAA:'↓'+varAA}
-                  </td>`:''}
+                    return `<td style="padding:2px 3px;text-align:center;border-bottom:1px solid #f3f4f6;">${c?`<div style="background:${cv.bg};color:${cv.txt};font-weight:700;border-radius:3px;padding:1px 3px;">${c.avg}d</div><div style="font-size:7px;color:#9ca3af;">${c.n} ciclos</div>`:'<span style="color:#d1d5db;">—</span>'}</td>`;}).join('')}
+                  <td style="padding:2px 3px;text-align:center;border-bottom:1px solid #f3f4f6;">${promMes!=null?`<div style="background:${cc.bg};color:${cc.txt};font-weight:700;border-radius:3px;padding:1px 3px;">${promMes}d</div>`:'<span style="color:#d1d5db;">—</span>'}</td>
+                  ${anios.length>1?`<td style="padding:2px 3px;text-align:center;border-bottom:1px solid #f3f4f6;font-size:8px;font-weight:700;color:${varAA==null?'#d1d5db':varAA>0?'#b91c1c':'#15803d'};">${varAA==null?'—':varAA>0?'+'+varAA+'d':varAA+'d'}</td>`:''}
                 </tr>`;
               }).join('')}
               <tr style="background:#374151;">
-                <td style="padding:5px 8px;font-weight:700;color:#f0c96a;font-size:9px;">PROM AÑO</td>
-                ${anios.map(y=>{const p=pA(y);const cv=colorFn(p);
-                  return `<td style="padding:3px;text-align:center;">${p!=null?`<div style="background:${cv.bg};color:${cv.txt};font-weight:900;border-radius:3px;padding:2px 5px;">${p}d</div>`:'<span style="color:#64748b;">—</span>'}</td>`;}).join('')}
+                <td style="padding:4px 8px;font-weight:700;color:#f0c96a;font-size:8px;">PROM AÑO</td>
+                ${anios.map(y=>{const p=pA(y);const cv=colorFn(p);return `<td style="padding:2px 3px;text-align:center;">${p!=null?`<div style="background:${cv.bg};color:${cv.txt};font-weight:900;border-radius:3px;padding:2px 4px;">${p}d</div>`:'<span style="color:#64748b;">—</span>'}</td>`;}).join('')}
                 <td></td>
-                ${anios.length>1?`<td style="padding:3px;text-align:center;font-weight:700;color:${deltaAA==null?'#64748b':deltaAA>0?'#fca5a5':'#86efac'};">${deltaAA==null?'—':deltaAA>0?'↑+'+deltaAA:'↓'+deltaAA}</td>`:''}
+                ${anios.length>1?`<td style="padding:2px 3px;text-align:center;font-weight:700;font-size:8px;color:${deltaAA==null?'#64748b':deltaAA>0?'#fca5a5':'#86efac'};">${deltaAA==null?'—':deltaAA>0?'+'+deltaAA+'d':deltaAA+'d'}</td>`:''}
               </tr>
             </tbody>
           </table>
         </div>`;
       };
 
+      // Construir sección por tipo: encabezado de tipo + tabla por finca
+      const buildSeccionTipo=(tipo,colorFn,titulo,objetivo,bgTipo,txtTipo)=>{
+        const fincasConDatos=FINCAS_LIST.filter(f=>aniosPorFinca[tipo][f].length>0);
+        if(!fincasConDatos.length) return '';
+        const bgFincas={'FINCA 1':'#052e16','FINCA 2':'#1e3a5f','FINCA 3':'#3b0764'};
+        const txtFincas={'FINCA 1':'#4ade80','FINCA 2':'#93c5fd','FINCA 3':'#c084fc'};
+        return `<div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:12px;">
+          <div style="background:${bgTipo};padding:7px 14px;">
+            <div style="font-size:12px;font-weight:900;color:${txtTipo};letter-spacing:2px;">${titulo}</div>
+            <div style="font-size:9px;color:${txtTipo};opacity:.7;margin-top:1px;">Objetivo: ${objetivo} días entre cosechas · Solo meses cerrados</div>
+          </div>
+          <div style="padding:10px 12px;display:flex;flex-direction:column;gap:0;">
+            ${fincasConDatos.map(f=>{
+              const t=tablasPorFinca[tipo][f];
+              const anios=aniosPorFinca[tipo][f];
+              return buildTablaFincaHTML(t,anios,colorFn,f,objetivo,bgFincas[f]||'#374151',txtFincas[f]||'#fff');
+            }).join('')}
+          </div>
+        </div>`;
+      };
+
       analisisHTML.innerHTML=`<div style="width:794px;font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;">
-        <div style="background:#0f1117;padding:14px 28px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="background:#0f1117;padding:12px 28px;display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-size:16px;font-weight:900;color:#f0c96a;letter-spacing:3px;">ANÁLISIS HISTÓRICO DE CICLOS</div>
-            <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Palma Grande S.A.S. · Días entre cosechas (inicio a inicio de ciclo)</div>
+            <div style="font-size:15px;font-weight:900;color:#f0c96a;letter-spacing:3px;">ANALISIS HISTORICO DE CICLOS</div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">Palma Grande S.A.S. · Dias entre cosechas (inicio a inicio de ciclo) · Por finca</div>
           </div>
           <div style="font-size:11px;color:#f0c96a;font-weight:700;">${fecha} · Semana ${sn}</div>
         </div>
-        <div style="padding:12px 20px;display:flex;flex-direction:column;gap:16px;">
+        <div style="padding:10px 18px;display:flex;flex-direction:column;">
 
-          ${buildTablaHTML(tablaG,aniosG,colorG,'🌿 GUINEENSIS + JÓVENES','12','#052e16','#4ade80')}
-          ${buildTablaHTML(tablaH,aniosH,colorH,'🌴 HÍBRIDAS','22','#1e3a5f','#93c5fd')}
+          ${buildSeccionTipo('guineensis',colorG,'GUINEENSIS + JOVENES','12','#052e16','#4ade80')}
+          ${buildSeccionTipo('hibrido',colorH,'HIBRIDAS','22','#1e3a5f','#93c5fd')}
 
-          <!-- Leyenda -->
-          <div style="display:flex;gap:20px;flex-wrap:wrap;padding:6px 0;border-top:1px solid #e5e7eb;">
-            <span style="font-size:9px;color:#9ca3af;">Verde = en ciclo · Azul = tolerancia · Rojo = incumplimiento · VAR A/A = vs mismo mes año anterior</span>
-            <div style="display:flex;gap:10px;">
-              <span style="font-size:9px;color:#374151;">Guineensis: ≤12d ✅  13-14d ⚠️  >14d ❌</span>
-              <span style="font-size:9px;color:#374151;">Híbrida: ≤22d ✅  23-25d ⚠️  >25d ❌</span>
-            </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #e5e7eb;margin-top:4px;">
+            <span style="font-size:8px;color:#9ca3af;">Verde = en ciclo · Azul = tolerancia · Rojo = incumplimiento · VAR A/A = variacion vs mismo mes año anterior</span>
+            <span style="font-size:8px;color:#6b7280;">Guineensis: ≤12d | 13-14d | >14d &nbsp;&nbsp; Hibrida: ≤22d | 23-25d | >25d</span>
           </div>
         </div>
-        <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:6px 22px;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;">
+        <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:5px 22px;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;">
           <span>Palma Grande S.A.S. · Dpto. Agronomico</span>
           <span>Solo meses cerrados con datos suficientes</span>
-          <span>Pag. 2 · Análisis histórico</span>
+          <span>Pag. 2 · Analisis historico</span>
         </div>
       </div>`;
 
