@@ -1757,6 +1757,32 @@ function exportarPDF(){
   const MESES_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const labelMes=m=>{const[y,mo]=m.split('-');return MESES_ES[+mo-1]+' '+y;};
 
+  // Reorganizar: por año y mes
+  const aniosDisp=[...new Set(Object.keys(ciclosPorMes).map(k=>k.split('-')[0]))].sort();
+  const avg=arr=>arr&&arr.length>0?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length*10)/10:null;
+  // Tabla[anio][mes01-12] = {avg, avgG, avgH, n}
+  const tabla={};
+  aniosDisp.forEach(y=>{
+    tabla[y]={};
+    for(let m=1;m<=12;m++){
+      const key=y+'-'+String(m).padStart(2,'0');
+      const d=ciclosPorMes[key];
+      tabla[y][m]=d?{avg:avg(d.gaps),avgG:avg(d.guineensis),avgH:avg(d.hibrido),n:d.gaps.length}:null;
+    }
+  });
+  // Promedio anual
+  const promedioAnio=y=>{
+    const vals=Object.values(tabla[y]).filter(v=>v&&v.avg!=null).map(v=>v.avg);
+    return avg(vals);
+  };
+  // Color celda
+  const colorCelda=(v,ref=12)=>{
+    if(v==null) return {bg:'#f9fafb',txt:'#d1d5db'};
+    if(v<=ref+1)  return {bg:'#dcfce7',txt:'#15803d'};
+    if(v<=ref+3)  return {bg:'#dbeafe',txt:'#1d4ed8'};
+    return {bg:'#fee2e2',txt:'#b91c1c'};
+  };
+
   // ── HTML GERENCIA ──
   const fincaColors={
     'FINCA 1':{hdr:'#052e16',txt:'#4ade80',name:'FINCA 1'},
@@ -1883,30 +1909,6 @@ function exportarPDF(){
         </div>
       </div>
 
-      <!-- CICLO PROMEDIO POR MES -->
-      ${promediosMes.length>=2 ? `<div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Ciclo promedio por mes (días entre cosechas)</div>
-        <div style="display:grid;grid-template-columns:repeat(${promediosMes.length},1fr);gap:6px;">
-          ${promediosMes.map((d,i)=>{
-            const prev=i>0?promediosMes[i-1].avg:null;
-            const delta=prev!=null&&d.avg!=null?+(d.avg-prev).toFixed(1):null;
-            const deltaStr=delta!=null?(delta>0?`↑ +${delta}d`:`↓ ${delta}d`):'—';
-            const deltaCol=delta==null?'#9ca3af':delta>2?'#b91c1c':delta<-2?'#15803d':'#6b7280';
-            // Color del promedio: guineensis referencia 12d, híbrido 22d → general ~12-22
-            const ref=12; // simplificado al guineensis (mayoría)
-            const bg=d.avg==null?'#f9fafb':d.avg<=ref+1?'#f0fdf4':d.avg<=ref+3?'#eff6ff':'#fef2f2';
-            const numCol=d.avg==null?'#9ca3af':d.avg<=ref+1?'#15803d':d.avg<=ref+3?'#1d4ed8':'#b91c1c';
-            return `<div style="background:${bg};border-radius:8px;padding:8px 10px;border:1px solid #e5e7eb;text-align:center;">
-              <div style="font-size:9px;color:#6b7280;margin-bottom:4px;">${labelMes(d.mes)}</div>
-              <div style="font-size:22px;font-weight:900;color:${numCol};line-height:1;">${d.avg!=null?d.avg+'d':'—'}</div>
-              <div style="font-size:9px;color:#9ca3af;margin-top:1px;">${d.n} ciclos</div>
-              <div style="font-size:10px;font-weight:700;color:${deltaCol};margin-top:4px;">${deltaStr}</div>
-              ${d.avgG!=null?`<div style="font-size:8px;color:#6b7280;margin-top:3px;">G: ${d.avgG}d${d.avgH!=null?' · H: '+d.avgH+'d':''}</div>`:''}
-            </div>`;
-          }).join('')}
-        </div>
-      </div>` : ''}
-
       <!-- COSECHEROS POR SAS -->
       ${(()=>{
         const dat = [1,2].map(i=>({
@@ -1982,6 +1984,163 @@ function exportarPDF(){
     const imgData=canvas.toDataURL('image/jpeg',0.95);
     const imgH=(canvas.height*210)/canvas.width;
     doc.addImage(imgData,'JPEG',0,0,210,Math.min(imgH,297));
+
+    // ── PÁGINA 2: ANÁLISIS HISTÓRICO DE CICLOS ──
+    if(aniosDisp.length>0){
+      doc.addPage('a4','portrait');
+      const analisisHTML=document.createElement('div');
+      analisisHTML.style.cssText='position:fixed;left:-9999px;top:0;z-index:-999;background:#fff;width:794px;';
+
+      // Mejores y peores meses globales
+      const todasCeldas=[];
+      aniosDisp.forEach(y=>{for(let m=1;m<=12;m++){const c=tabla[y][m];if(c&&c.avg!=null)todasCeldas.push({y,m,avg:c.avg,n:c.n});}});
+      const mejorMes=todasCeldas.length?todasCeldas.reduce((a,b)=>a.avg<b.avg?a:b):null;
+      const peorMes=todasCeldas.length?todasCeldas.reduce((a,b)=>a.avg>b.avg?a:b):null;
+      // Tendencia año actual vs año anterior
+      const ultimoAnio=aniosDisp[aniosDisp.length-1];
+      const anioAnt=aniosDisp.length>1?aniosDisp[aniosDisp.length-2]:null;
+      const avgUltimo=promedioAnio(ultimoAnio);
+      const avgAnt=anioAnt?promedioAnio(anioAnt):null;
+      const tendDelta=avgUltimo!=null&&avgAnt!=null?+(avgUltimo-avgAnt).toFixed(1):null;
+
+      // Columnas: años + "Prom mes"
+      const colAnios=[...aniosDisp,'PROM'];
+      const colW=Math.min(70, Math.floor(520/colAnios.length));
+
+      analisisHTML.innerHTML=`<div style="width:794px;font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;">
+        <!-- Encabezado -->
+        <div style="background:#0f1117;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:18px;font-weight:900;color:#f0c96a;letter-spacing:3px;">ANÁLISIS DE CICLOS</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Palma Grande S.A.S. · Departamento Agronomico</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;color:#f0c96a;font-weight:700;">${fecha} · Semana ${sn}</div>
+            <div style="font-size:10px;color:#64748b;margin-top:2px;">Promedio de días entre cosechas por lote</div>
+          </div>
+        </div>
+
+        <div style="padding:16px 22px;display:flex;flex-direction:column;gap:14px;">
+
+          <!-- KPIs superiores -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            ${[
+              {v:aniosDisp.length,l:'Años con datos',sub:aniosDisp.join(' · '),c:'#1d4ed8',bg:'#eff6ff',bc:'#2563eb'},
+              {v:todasCeldas.length,l:'Meses registrados',sub:todasCeldas.reduce((s,c)=>s+c.n,0)+' ciclos totales',c:'#15803d',bg:'#f0fdf4',bc:'#16a34a'},
+              mejorMes?{v:mejorMes.avg+'d',l:'Mejor mes',sub:MESES_ES[mejorMes.m-1]+' '+mejorMes.y+' · '+mejorMes.n+' ciclos',c:'#15803d',bg:'#f0fdf4',bc:'#16a34a'}:{v:'—',l:'Mejor mes',sub:'',c:'#9ca3af',bg:'#f9fafb',bc:'#d1d5db'},
+              peorMes?{v:peorMes.avg+'d',l:'Mes más largo',sub:MESES_ES[peorMes.m-1]+' '+peorMes.y+' · '+peorMes.n+' ciclos',c:'#b91c1c',bg:'#fef2f2',bc:'#dc2626'}:{v:'—',l:'Mes más largo',sub:'',c:'#9ca3af',bg:'#f9fafb',bc:'#d1d5db'},
+            ].map(k=>`<div style="background:${k.bg};border-radius:8px;padding:10px 12px;border-left:4px solid ${k.bc};">
+              <div style="font-size:24px;font-weight:900;color:${k.c};line-height:1.1;">${k.v}</div>
+              <div style="font-size:9px;color:#6b7280;margin-top:3px;">${k.l}</div>
+              <div style="font-size:9px;color:${k.c};font-weight:700;margin-top:1px;">${k.sub}</div>
+            </div>`).join('')}
+          </div>
+
+          <!-- Tendencia interanual -->
+          ${tendDelta!=null?`<div style="background:${tendDelta>0?'#fef2f2':tendDelta<0?'#f0fdf4':'#f9fafb'};border-radius:8px;padding:10px 16px;border:1px solid ${tendDelta>0?'#fca5a5':tendDelta<0?'#86efac':'#e5e7eb'};display:flex;align-items:center;gap:12px;">
+            <div style="font-size:28px;">${tendDelta>0?'⚠️':tendDelta<0?'✅':'➡️'}</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:${tendDelta>0?'#b91c1c':tendDelta<0?'#15803d':'#374151'};">
+                ${tendDelta>0?'Los ciclos se están alargando':tendDelta<0?'Los ciclos se están acortando':'Sin variación interanual'}
+              </div>
+              <div style="font-size:11px;color:#6b7280;">
+                Promedio ${ultimoAnio}: <strong>${avgUltimo}d</strong> vs ${anioAnt}: <strong>${avgAnt}d</strong>
+                · Diferencia: <strong style="color:${tendDelta>0?'#b91c1c':'#15803d'};">${tendDelta>0?'+':''}${tendDelta}d</strong>
+              </div>
+            </div>
+          </div>`:''}
+
+          <!-- Tabla Mes × Año -->
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Promedio días por mes y año</div>
+            <table style="width:100%;border-collapse:collapse;font-size:10px;">
+              <thead>
+                <tr style="background:#1e3a5f;">
+                  <th style="padding:6px 8px;text-align:left;color:#fff;font-size:9px;width:45px;">MES</th>
+                  ${aniosDisp.map(y=>`<th style="padding:6px 4px;text-align:center;color:#f0c96a;font-size:9px;width:${colW}px;">${y}</th>`).join('')}
+                  <th style="padding:6px 4px;text-align:center;color:#94a3b8;font-size:9px;width:${colW}px;">PROM MES</th>
+                  ${aniosDisp.length>1?`<th style="padding:6px 4px;text-align:center;color:#94a3b8;font-size:9px;width:52px;">VAR A/A</th>`:''}
+                </tr>
+              </thead>
+              <tbody>
+                ${Array.from({length:12},(_,mi)=>{
+                  const mo=mi+1;
+                  const valsAnio=aniosDisp.map(y=>tabla[y][mo]);
+                  const valsNum=valsAnio.filter(v=>v&&v.avg!=null).map(v=>v.avg);
+                  const promMes=avg(valsNum);
+                  const cc=colorCelda(promMes);
+                  // Variación año a año: último vs penúltimo disponibles en ese mes
+                  const disponibles=aniosDisp.filter(y=>tabla[y][mo]&&tabla[y][mo].avg!=null);
+                  let varAA=null;
+                  if(disponibles.length>=2){
+                    const last=tabla[disponibles[disponibles.length-1]][mo].avg;
+                    const prev2=tabla[disponibles[disponibles.length-2]][mo].avg;
+                    varAA=+(last-prev2).toFixed(1);
+                  }
+                  const rowBg=mi%2===0?'#ffffff':'#f9fafb';
+                  return `<tr style="background:${rowBg};">
+                    <td style="padding:5px 8px;font-weight:700;color:#374151;border-bottom:1px solid #f3f4f6;">${MESES_ES[mi]}</td>
+                    ${aniosDisp.map(y=>{
+                      const c=tabla[y][mo];
+                      const cv=colorCelda(c?c.avg:null);
+                      return `<td style="padding:4px;text-align:center;border-bottom:1px solid #f3f4f6;">
+                        ${c&&c.avg!=null?`<div style="background:${cv.bg};color:${cv.txt};font-weight:700;border-radius:4px;padding:3px 4px;font-size:10px;">${c.avg}d</div>
+                        <div style="font-size:8px;color:#9ca3af;">${c.n} ciclos</div>`
+                        :`<div style="color:#d1d5db;font-size:10px;">—</div>`}
+                      </td>`;
+                    }).join('')}
+                    <td style="padding:4px;text-align:center;border-bottom:1px solid #f3f4f6;">
+                      ${promMes!=null?`<div style="background:${cc.bg};color:${cc.txt};font-weight:700;border-radius:4px;padding:3px 4px;font-size:10px;">${promMes}d</div>`:`<div style="color:#d1d5db;">—</div>`}
+                    </td>
+                    ${aniosDisp.length>1?`<td style="padding:4px;text-align:center;border-bottom:1px solid #f3f4f6;font-size:10px;font-weight:700;color:${varAA==null?'#d1d5db':varAA>0?'#b91c1c':'#15803d'};">
+                      ${varAA==null?'—':varAA>0?'↑ +'+varAA+'d':'↓ '+varAA+'d'}
+                    </td>`:''}
+                  </tr>`;
+                }).join('')}
+                <!-- Fila de promedios anuales -->
+                <tr style="background:#1e3a5f;">
+                  <td style="padding:6px 8px;font-weight:700;color:#f0c96a;font-size:9px;">PROM AÑO</td>
+                  ${aniosDisp.map(y=>{
+                    const p=promedioAnio(y);
+                    const cv=colorCelda(p);
+                    return `<td style="padding:4px;text-align:center;">
+                      ${p!=null?`<div style="background:${cv.bg};color:${cv.txt};font-weight:900;border-radius:4px;padding:3px 6px;font-size:11px;">${p}d</div>`:'<div style="color:#64748b;">—</div>'}
+                    </td>`;
+                  }).join('')}
+                  <td style="padding:4px;text-align:center;">
+                    ${avg(aniosDisp.map(y=>promedioAnio(y)).filter(v=>v!=null))!=null?
+                      `<div style="color:#94a3b8;font-weight:700;font-size:10px;">${avg(aniosDisp.map(y=>promedioAnio(y)).filter(v=>v!=null))}d</div>`:''}
+                  </td>
+                  ${aniosDisp.length>1?`<td style="padding:4px;text-align:center;font-size:10px;font-weight:700;color:${tendDelta==null?'#64748b':tendDelta>0?'#fca5a5':'#86efac'};">
+                    ${tendDelta==null?'—':tendDelta>0?'↑ +'+tendDelta+'d':'↓ '+tendDelta+'d'}
+                  </td>`:''}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Leyenda -->
+          <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;">Referencia guineensis (ciclo 12 días):</span>
+            ${[{bg:'#dcfce7',txt:'#15803d',l:'≤ 13d · En ciclo'},{bg:'#dbeafe',txt:'#1d4ed8',l:'14-15d · Tolerancia'},{bg:'#fee2e2',txt:'#b91c1c',l:'> 15d · Incumplimiento'}]
+              .map(c=>`<div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:2px;background:${c.bg};flex-shrink:0;"></div><span style="font-size:9px;color:#374151;">${c.l}</span></div>`).join('')}
+          </div>
+
+        </div>
+        <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:7px 22px;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;">
+          <span>Palma Grande S.A.S. · Dpto. Agronomico</span>
+          <span>Var A/A = variación del promedio vs mismo mes del año anterior</span>
+          <span>Pag. 2 · Análisis histórico</span>
+        </div>
+      </div>`;
+
+      document.body.appendChild(analisisHTML);
+      const analisisCanvas=await new Promise(r=>window.html2canvas(analisisHTML.firstChild,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false}).then(r));
+      document.body.removeChild(analisisHTML);
+      const aImg=analisisCanvas.toDataURL('image/jpeg',0.92);
+      const aH=(analisisCanvas.height*210)/analisisCanvas.width;
+      doc.addImage(aImg,'JPEG',0,0,210,Math.min(aH,297));
+    }
 
     // ── PÁGINA MAPA (un mapa por finca, ya que están geográficamente separadas) ──
     if(typeof L !== 'undefined' && typeof LOTES_GEOJSON !== 'undefined'){
