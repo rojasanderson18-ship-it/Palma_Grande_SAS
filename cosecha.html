@@ -2038,180 +2038,214 @@ function exportarPDF(){
       const analisisHTML=document.createElement('div');
       analisisHTML.style.cssText='position:fixed;left:-9999px;top:0;z-index:-999;background:#fff;width:794px;';
 
-      // ── Generador de gráfica SVG de líneas ──
-      // Produce un SVG con: bandas de umbral, línea por finca, línea punteada del objetivo
-      const buildGraficaSVG=(tipo,objetivo,titulo,bgHdr,txtHdr)=>{
-        const FINCA_COLORS={'FINCA 1':'#16a34a','FINCA 2':'#2563eb','FINCA 3':'#9333ea'};
+      // ── Generador de bloque: KPIs + gráfica SVG de líneas ──
+      const buildGraficaSVG=(tipo,objetivo,titulo,accentColor,accentLight)=>{
+        const FINCA_STROKES={'FINCA 1':'#0ea5e9','FINCA 2':'#f59e0b','FINCA 3':'#a855f7'};
+        const FINCA_FILLS  ={'FINCA 1':'#e0f2fe','FINCA 2':'#fef3c7','FINCA 3':'#f3e8ff'};
         const fincasConDatos=FINCAS_LIST.filter(f=>aniosPorFinca[tipo][f].length>0);
         if(!fincasConDatos.length) return '';
 
-        // Recopilar todos los meses cerrados con datos para cualquier finca de este tipo
         const min=tipo==='hibrido'?MIN_H:MIN_G;
         const mesesSet=new Set();
         fincasConDatos.forEach(f=>{
-          const anios=aniosPorFinca[tipo][f];
-          anios.forEach(y=>{
+          aniosPorFinca[tipo][f].forEach(y=>{
             for(let mo=1;mo<=12;mo++){
               const k=y+'-'+String(mo).padStart(2,'0');
-              if(mesesValidos(k)){
-                const d=ciclosPorMes[k];
-                const arr=(d&&d[f])?d[f][tipo]:[];
-                if(arr.length>=min) mesesSet.add(k);
-              }
+              if(mesesValidos(k)){const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];if(arr.length>=min)mesesSet.add(k);}
             }
           });
         });
         const meses=[...mesesSet].sort();
         if(!meses.length) return '';
 
-        const W=718, H=200, padL=36, padR=12, padT=16, padB=32;
+        // Calcular promedio general (todas fincas) por mes para KPIs
+        const promGeneral=k=>{
+          const todos=[];
+          fincasConDatos.forEach(f=>{const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];if(arr.length>=min)todos.push(...arr);});
+          return todos.length?avg(todos):null;
+        };
+        const serieGen=meses.map(k=>({k,v:promGeneral(k)})).filter(x=>x.v!=null);
+        const mejor=serieGen.length?serieGen.reduce((a,b)=>a.v<b.v?a:b):null;
+        const peor =serieGen.length?serieGen.reduce((a,b)=>a.v>b.v?a:b):null;
+        const totalC=fincasConDatos.reduce((s,f)=>s+meses.reduce((ss,k)=>{const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];return ss+(arr.length>=min?arr.length:0);},0),0);
+
+        // Tendencia: comparar promedio último año vs penúltimo año
+        const todosAniosTipo=[...new Set(meses.map(k=>k.slice(0,4)))].sort();
+        let tendencia=null, tendLabel='';
+        if(todosAniosTipo.length>=2){
+          const yU=todosAniosTipo[todosAniosTipo.length-1], yA=todosAniosTipo[todosAniosTipo.length-2];
+          const vU=avg(meses.filter(k=>k.startsWith(yU)).map(k=>promGeneral(k)).filter(v=>v!=null));
+          const vA=avg(meses.filter(k=>k.startsWith(yA)).map(k=>promGeneral(k)).filter(v=>v!=null));
+          if(vU!=null&&vA!=null){tendencia=+(vU-vA).toFixed(1);tendLabel=yA+' → '+yU;}
+        }
+
+        // KPI cards HTML
+        const kpiCard=(valor,lbl,sub,bgC,bdC,txtC)=>`
+          <div style="flex:1;background:${bgC};border-radius:8px;padding:10px 14px;border-left:4px solid ${bdC};min-width:0;">
+            <div style="font-size:22px;font-weight:900;color:${txtC};line-height:1;">${valor}</div>
+            <div style="font-size:9px;font-weight:700;color:#6b7280;margin-top:3px;text-transform:uppercase;letter-spacing:.5px;">${lbl}</div>
+            <div style="font-size:8px;color:${txtC};margin-top:1px;">${sub}</div>
+          </div>`;
+
+        const kpisMejor=mejor?kpiCard(mejor.v+'d','Mejor mes',MESES_ES[+mejor.k.slice(5)-1]+' '+mejor.k.slice(0,4),'#f0fdf4','#16a34a','#15803d')
+          :kpiCard('—','Mejor mes','sin datos','#f9fafb','#d1d5db','#9ca3af');
+        const kpisPeor=peor?kpiCard(peor.v+'d','Mes mas largo',MESES_ES[+peor.k.slice(5)-1]+' '+peor.k.slice(0,4),'#fef2f2','#dc2626','#b91c1c')
+          :kpiCard('—','Mes mas largo','sin datos','#f9fafb','#d1d5db','#9ca3af');
+        const tendBg=tendencia==null?'#f9fafb':tendencia>0?'#fef2f2':'#f0fdf4';
+        const tendBd=tendencia==null?'#d1d5db':tendencia>0?'#dc2626':'#16a34a';
+        const tendTxt=tendencia==null?'#9ca3af':tendencia>0?'#b91c1c':'#15803d';
+        const tendVal=tendencia==null?'—':(tendencia>0?'+':'')+tendencia+'d';
+        const tendSub=tendencia==null?'1 año de datos':tendLabel;
+        const kpisTend=kpiCard(tendVal,'Tendencia A/A',tendSub,tendBg,tendBd,tendTxt);
+        const kpisTotal=kpiCard(totalC,'Ciclos medidos',meses.length+' meses','#f8fafc','#94a3b8','#475569');
+
+        // SVG chart
+        const W=718, H=220, padL=38, padR=50, padT=14, padB=36;
         const gW=W-padL-padR, gH=H-padT-padB;
 
-        // Rango Y: incluir objetivo con margen
-        const todosVals=[];
-        fincasConDatos.forEach(f=>{
-          meses.forEach(k=>{
-            const d=ciclosPorMes[k];
-            const arr=(d&&d[f])?d[f][tipo]:[];
-            if(arr.length>=min) todosVals.push(avg(arr));
-          });
-        });
-        const yMin=Math.max(0,Math.floor(Math.min(objetivo*0.7,...todosVals)-2));
-        const yMax=Math.ceil(Math.max(objetivo*1.3,...todosVals)+2);
+        const todosVals=serieGen.map(x=>x.v);
+        const yRaw=Math.max(0,Math.min(objetivo*0.75,...todosVals)-1);
+        const yMin=Math.floor(yRaw);
+        const yMax=Math.ceil(Math.max(objetivo*1.25,...todosVals)+1);
         const yRange=yMax-yMin;
-
         const xPos=i=>padL+i*(gW/(meses.length-1||1));
         const yPos=v=>padT+gH-(v-yMin)/yRange*gH;
 
-        // Bandas de umbral (fondo)
-        const tol1=tipo==='hibrido'?22:12, tol2=tipo==='hibrido'?25:14;
-        const bandas=[
-          {y1:yMin,y2:tol1,fill:'rgba(220,252,231,.5)'},   // verde
-          {y1:tol1,y2:tol2,fill:'rgba(219,234,254,.5)'},   // azul
-          {y1:tol2,y2:yMax,fill:'rgba(254,226,226,.5)'},   // rojo
-        ];
-        const bandasSVG=bandas.map(b=>{
+        // Bandas
+        const tol1=objetivo, tol2=tipo==='hibrido'?25:14;
+        const bandasSVG=[
+          {y1:yMin,y2:tol1,fill:'rgba(187,247,208,.45)'},
+          {y1:tol1,y2:tol2,fill:'rgba(191,219,254,.45)'},
+          {y1:tol2,y2:yMax,fill:'rgba(254,202,202,.45)'},
+        ].map(b=>{
           const by1=Math.min(yPos(Math.min(b.y2,yMax)),yPos(Math.max(b.y1,yMin)));
           const by2=Math.max(yPos(Math.min(b.y2,yMax)),yPos(Math.max(b.y1,yMin)));
           return `<rect x="${padL}" y="${by1}" width="${gW}" height="${by2-by1}" fill="${b.fill}"/>`;
         }).join('');
 
-        // Rejilla Y y etiquetas
+        // Grid Y
         const ticks=5;
-        let gridSVG='', yLabelsSVG='';
+        let gridSVG='',yLblSVG='';
         for(let i=0;i<=ticks;i++){
           const v=yMin+(yRange/ticks)*i;
           const y=yPos(v);
-          gridSVG+=`<line x1="${padL}" x2="${padL+gW}" y1="${y}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>`;
-          yLabelsSVG+=`<text x="${padL-3}" y="${y+3}" text-anchor="end" font-size="7" fill="#9ca3af">${Math.round(v)}</text>`;
+          gridSVG+=`<line x1="${padL}" x2="${padL+gW}" y1="${y}" y2="${y}" stroke="#e2e8f0" stroke-width="0.6"/>`;
+          yLblSVG+=`<text x="${padL-5}" y="${y+3.5}" text-anchor="end" font-size="8" fill="#94a3b8">${Math.round(v)}</text>`;
         }
 
-        // Etiquetas X (cada mes o cada N meses si hay muchos)
+        // Eje X etiquetas
         const step=meses.length>24?3:meses.length>12?2:1;
-        let xLabelsSVG='', xTicksSVG='';
+        let xLblSVG='',xTickSVG='';
         meses.forEach((k,i)=>{
           const x=xPos(i);
-          xTicksSVG+=`<line x1="${x}" x2="${x}" y1="${padT+gH}" y2="${padT+gH+3}" stroke="#d1d5db" stroke-width="0.5"/>`;
+          xTickSVG+=`<line x1="${x}" x2="${x}" y1="${padT+gH}" y2="${padT+gH+4}" stroke="#cbd5e1" stroke-width="0.8"/>`;
           if(i%step===0){
-            const [y,mo]=k.split('-');
-            const lbl=MESES_ES[+mo-1]+(i===0||mo==='01'?` ${y}`:'');
-            xLabelsSVG+=`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="7" fill="#6b7280">${lbl}</text>`;
+            const mo=k.slice(5);
+            const lbl=MESES_ES[+mo-1]+(i===0||mo==='01'?' '+k.slice(0,4):'');
+            xLblSVG+=`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="8" fill="#64748b">${lbl}</text>`;
           }
         });
 
         // Líneas por finca
-        let lineasSVG='', puntosSVG='', legendaSVG='';
+        let lineasSVG='',puntosSVG='',legSVG='';
         fincasConDatos.forEach((f,fi)=>{
-          const color=FINCA_COLORS[f]||'#374151';
+          const stroke=FINCA_STROKES[f]||'#334155';
+          const fill=FINCA_FILLS[f]||'#f1f5f9';
           const pts=meses.map((k,i)=>{
-            const d=ciclosPorMes[k];
-            const arr=(d&&d[f])?d[f][tipo]:[];
-            if(arr.length<min) return null;
-            return {x:xPos(i),y:yPos(avg(arr)),v:avg(arr)};
+            const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];
+            if(arr.length<min)return null;
+            return{x:xPos(i),y:yPos(avg(arr)),v:avg(arr)};
           });
-          // polyline (solo segmentos donde hay datos consecutivos)
           let pathD='';
           pts.forEach((p,i)=>{
-            if(!p) return;
-            const prev=pts.slice(0,i).reverse().find(x=>x);
-            if(!prev||i-pts.indexOf(prev)>3) pathD+=`M${p.x},${p.y}`;
+            if(!p)return;
+            // conectar solo si el gap es ≤ 2 posiciones vacías
+            const prevIdx=pts.slice(0,i).map((x,j)=>x?j:-1).filter(j=>j>=0).pop();
+            if(prevIdx==null||i-prevIdx>2)pathD+=`M${p.x},${p.y}`;
             else pathD+=`L${p.x},${p.y}`;
           });
-          if(pathD) lineasSVG+=`<path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+          if(pathD)lineasSVG+=`<path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
           pts.forEach(p=>{
-            if(p) puntosSVG+=`<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="${color}" stroke="#fff" stroke-width="1"/>`;
+            if(p)puntosSVG+=`<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${stroke}" stroke="#fff" stroke-width="1.5"/>`;
           });
-          legendaSVG+=`<g transform="translate(${fi*90},0)"><line x1="0" y1="6" x2="14" y2="6" stroke="${color}" stroke-width="2"/><circle cx="7" cy="6" r="2.5" fill="${color}"/><text x="18" y="10" font-size="8" fill="#374151">${f}</text></g>`;
+          legSVG+=`<g transform="translate(${fi*100},0)">
+            <rect x="0" y="1" width="18" height="10" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+            <line x1="0" y1="6" x2="18" y2="6" stroke="${stroke}" stroke-width="2"/>
+            <text x="22" y="10" font-size="8.5" fill="#374151" font-weight="600">${f}</text>
+          </g>`;
         });
 
-        // Línea objetivo punteada
+        // Línea objetivo
         const yObj=yPos(objetivo);
-        const lineaObj=`<line x1="${padL}" x2="${padL+gW}" y1="${yObj}" y2="${yObj}" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4,3"/>
-          <text x="${padL+gW+2}" y="${yObj+3}" font-size="7" fill="#dc2626" font-weight="bold">obj ${objetivo}d</text>`;
+        const lineaObj=`
+          <line x1="${padL}" x2="${padL+gW}" y1="${yObj}" y2="${yObj}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.8"/>
+          <rect x="${padL+gW+2}" y="${yObj-8}" width="44" height="12" rx="3" fill="#fef2f2"/>
+          <text x="${padL+gW+5}" y="${yObj+2}" font-size="8" fill="#dc2626" font-weight="700">OBJ ${objetivo}d</text>`;
 
-        // Total ciclos para el subtítulo
-        const totalC=fincasConDatos.reduce((s,f)=>{
-          const min2=tipo==='hibrido'?MIN_H:MIN_G;
-          return s+meses.reduce((ss,k)=>{const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];return ss+(arr.length>=min2?arr.length:0);},0);
-        },0);
-
-        return `<div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:14px;">
-          <div style="background:${bgHdr};padding:7px 14px;display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:12px;font-weight:900;color:${txtHdr};letter-spacing:2px;">${titulo}</div>
-            <div style="font-size:9px;color:${txtHdr};opacity:.75;">Objetivo: ${objetivo}d · ${totalC} ciclos registrados</div>
-          </div>
-          <div style="padding:8px 12px 4px;">
-            <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;">
-              ${bandasSVG}
-              <rect x="${padL}" y="${padT}" width="${gW}" height="${gH}" fill="none" stroke="#e5e7eb" stroke-width="0.8"/>
-              ${gridSVG}${xTicksSVG}${yLabelsSVG}${xLabelsSVG}
-              ${lineasSVG}${puntosSVG}
-              ${lineaObj}
-            </svg>
-            <svg width="${W}" height="18" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-top:-2px;">
-              <g transform="translate(${padL},0)">${legendaSVG}
-                <g transform="translate(${fincasConDatos.length*90},0)">
-                  <line x1="0" y1="6" x2="14" y2="6" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4,3"/>
-                  <text x="18" y="10" font-size="8" fill="#6b7280">Objetivo (${objetivo}d)</text>
+        return `
+          <div style="margin-bottom:16px;">
+            <!-- Encabezado tipo -->
+            <div style="background:${accentColor};padding:8px 16px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:13px;font-weight:900;color:${accentLight};letter-spacing:2px;">${titulo}</div>
+              <div style="font-size:9px;color:${accentLight};opacity:.8;">Dias promedio entre cosechas · Solo meses cerrados</div>
+            </div>
+            <!-- KPIs -->
+            <div style="background:#f8fafc;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;padding:10px 14px;display:flex;gap:10px;">
+              ${kpisMejor}${kpisPeor}${kpisTend}${kpisTotal}
+            </div>
+            <!-- Grafica -->
+            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:10px 14px 6px;background:#fff;">
+              <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+                <rect x="${padL}" y="${padT}" width="${gW}" height="${gH}" fill="#fafafa" rx="2"/>
+                ${bandasSVG}
+                <rect x="${padL}" y="${padT}" width="${gW}" height="${gH}" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                ${gridSVG}${xTickSVG}${yLblSVG}${xLblSVG}
+                ${lineasSVG}${puntosSVG}
+                ${lineaObj}
+              </svg>
+              <!-- Leyenda fincas -->
+              <svg width="${W}" height="20" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-top:2px;">
+                <g transform="translate(${padL},2)">${legSVG}
+                  <g transform="translate(${fincasConDatos.length*100},0)">
+                    <line x1="0" y1="6" x2="18" y2="6" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,4"/>
+                    <text x="22" y="10" font-size="8.5" fill="#6b7280">Objetivo (${objetivo}d)</text>
+                  </g>
                 </g>
-              </g>
-            </svg>
-          </div>
-        </div>`;
+              </svg>
+            </div>
+          </div>`;
       };
 
-      analisisHTML.innerHTML=`<div style="width:794px;font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;">
-        <div style="background:#0f1117;padding:12px 28px;display:flex;justify-content:space-between;align-items:center;">
+      analisisHTML.innerHTML=`<div style="width:794px;font-family:'Helvetica Neue',Arial,sans-serif;background:#f1f5f9;color:#1a1a1a;">
+        <!-- Encabezado página -->
+        <div style="background:#0f172a;padding:14px 28px;display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-size:15px;font-weight:900;color:#f0c96a;letter-spacing:3px;">ANALISIS HISTORICO DE CICLOS</div>
-            <div style="font-size:9px;color:#94a3b8;margin-top:2px;">Palma Grande S.A.S. · Promedio de dias entre cosechas por mes, por finca</div>
+            <div style="font-size:16px;font-weight:900;color:#f0c96a;letter-spacing:3px;">ANALISIS HISTORICO DE CICLOS</div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:3px;letter-spacing:.5px;">PALMA GRANDE S.A.S. · DPTO. AGRONOMICO</div>
           </div>
-          <div style="font-size:11px;color:#f0c96a;font-weight:700;">${fecha} · Semana ${sn}</div>
+          <div style="text-align:right;">
+            <div style="font-size:13px;font-weight:700;color:#f0c96a;">${fecha}</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px;">Semana ${sn}</div>
+          </div>
         </div>
-        <div style="padding:14px 20px;display:flex;flex-direction:column;">
-
-          ${buildGraficaSVG('guineensis',12,'GUINEENSIS + JOVENES','#052e16','#4ade80')}
+        <!-- Contenido -->
+        <div style="padding:14px 18px 10px;">
+          ${buildGraficaSVG('guineensis',12,'GUINEENSIS + JOVENES','#052e16','#86efac')}
           ${buildGraficaSVG('hibrido',22,'HIBRIDAS','#1e3a5f','#93c5fd')}
-
-          <div style="display:flex;gap:16px;padding:5px 0;border-top:1px solid #e5e7eb;margin-top:2px;flex-wrap:wrap;">
-            <div style="display:flex;gap:6px;align-items:center;">
-              <div style="width:12px;height:8px;background:rgba(220,252,231,.8);border:1px solid #16a34a;border-radius:1px;"></div>
-              <span style="font-size:8px;color:#374151;">En ciclo</span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <div style="width:12px;height:8px;background:rgba(219,234,254,.8);border:1px solid #2563eb;border-radius:1px;"></div>
-              <span style="font-size:8px;color:#374151;">Tolerancia</span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <div style="width:12px;height:8px;background:rgba(254,226,226,.8);border:1px solid #dc2626;border-radius:1px;"></div>
-              <span style="font-size:8px;color:#374151;">Incumplimiento</span>
-            </div>
-            <span style="font-size:8px;color:#9ca3af;margin-left:auto;">Solo meses cerrados con datos suficientes · Guineensis ≥${MIN_G} ciclos/mes · Hibridas ≥${MIN_H} ciclos/mes</span>
+          <!-- Leyenda bandas -->
+          <div style="background:#fff;border-radius:6px;padding:8px 14px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;">Zonas:</span>
+            ${[['rgba(187,247,208,.7)','#16a34a','En ciclo'],['rgba(191,219,254,.7)','#2563eb','Tolerancia'],['rgba(254,202,202,.7)','#dc2626','Incumplimiento']].map(([bg,bd,lbl])=>
+              `<div style="display:flex;gap:6px;align-items:center;">
+                <div style="width:14px;height:10px;background:${bg};border:1.5px solid ${bd};border-radius:2px;"></div>
+                <span style="font-size:8px;color:#374151;">${lbl}</span>
+              </div>`).join('')}
+            <span style="font-size:8px;color:#94a3b8;margin-left:auto;">G ≥${MIN_G} ciclos/mes · H ≥${MIN_H} ciclos/mes para inclusion</span>
           </div>
         </div>
-        <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:5px 22px;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;">
-          <span>Palma Grande S.A.S. · Dpto. Agronomico</span>
-          <span>Ciclo = dias entre inicio de cosecha y siguiente inicio</span>
+        <div style="background:#e2e8f0;border-top:1px solid #cbd5e1;padding:5px 22px;display:flex;justify-content:space-between;font-size:8px;color:#64748b;">
+          <span>Palma Grande S.A.S.</span>
+          <span>Ciclo = dias entre inicio de cosecha y siguiente inicio · Solo meses cerrados</span>
           <span>Pag. 2 · Analisis historico</span>
         </div>
       </div>`;
