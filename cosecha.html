@@ -1735,10 +1735,9 @@ function exportarPDF(){
   LOTES.forEach(l=>{
     const key=l.finca+'_'+l.lote;
     const m=marcas[key]||{};
-    const esHibrido = l.tipo==='hibrido';
-    const gapMin = esHibrido ? 10 : 5;
-    const gapMax = esHibrido ? 60 : 30;
-    const tipo = esHibrido ? 'hibrido' : 'guineensis';
+    const tipo = l.tipo==='hibrido' ? 'hibrido' : l.tipo==='joven' ? 'joven' : 'guineensis';
+    const gapMin = tipo==='hibrido' ? 10 : 5;
+    const gapMax = tipo==='hibrido' ? 60 : 45;
     const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
     if(inicios.length<2) return;
     for(let i=1;i<inicios.length;i++){
@@ -1746,7 +1745,7 @@ function exportarPDF(){
       if(gap<gapMin||gap>gapMax) continue;
       const mes=inicios[i].substring(0,7);
       if(!ciclosPorMes[mes]) ciclosPorMes[mes]={};
-      if(!ciclosPorMes[mes][l.finca]) ciclosPorMes[mes][l.finca]={guineensis:[],hibrido:[]};
+      if(!ciclosPorMes[mes][l.finca]) ciclosPorMes[mes][l.finca]={guineensis:[],hibrido:[],joven:[]};
       ciclosPorMes[mes][l.finca][tipo].push(gap);
     }
   });
@@ -1760,6 +1759,7 @@ function exportarPDF(){
   // Mínimo de ciclos por tipo para que el mes cuente como cerrado con datos
   const MIN_G = 3; // al menos 3 ciclos guineensis medidos en el mes
   const MIN_H = 1; // híbridos son pocos lotes, basta 1
+  const MIN_J = 1; // jóvenes son muy pocos lotes
 
   const avg=arr=>arr&&arr.length>0?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length*10)/10:null;
 
@@ -1789,11 +1789,12 @@ function exportarPDF(){
       .some(k=>{const d=ciclosPorMes[k];const arr=(d&&d[finca])?d[finca][tipo]:[];return mesesValidos(k)&&arr.length>=min;});
 
   // Construir tablas por finca para cada tipo
-  const tablasPorFinca={guineensis:{},hibrido:{}};
-  const aniosPorFinca={guineensis:{},hibrido:{}};
+  const MIN_POR_TIPO={guineensis:MIN_G,hibrido:MIN_H,joven:MIN_J};
+  const tablasPorFinca={guineensis:{},hibrido:{},joven:{}};
+  const aniosPorFinca={guineensis:{},hibrido:{},joven:{}};
   FINCAS_LIST.forEach(f=>{
-    ['guineensis','hibrido'].forEach(tipo=>{
-      const min=tipo==='hibrido'?MIN_H:MIN_G;
+    ['guineensis','hibrido','joven'].forEach(tipo=>{
+      const min=MIN_POR_TIPO[tipo];
       const anios=todosAnios.filter(y=>fincaTieneAnio(f,tipo,min,y));
       aniosPorFinca[tipo][f]=anios;
       tablasPorFinca[tipo][f]=buildTablaFinca(f,tipo,min);
@@ -2045,7 +2046,7 @@ function exportarPDF(){
         const fincasConDatos=FINCAS_LIST.filter(f=>aniosPorFinca[tipo][f].length>0);
         if(!fincasConDatos.length) return '';
 
-        const min=tipo==='hibrido'?MIN_H:MIN_G;
+        const min=MIN_POR_TIPO[tipo]||MIN_G;
         const mesesSet=new Set();
         fincasConDatos.forEach(f=>{
           aniosPorFinca[tipo][f].forEach(y=>{
@@ -2100,7 +2101,7 @@ function exportarPDF(){
         const kpisTotal=kpiCard(totalC,'Ciclos medidos',meses.length+' meses','#f8fafc','#94a3b8','#475569');
 
         // SVG chart
-        const W=718, H=220, padL=38, padR=50, padT=14, padB=36;
+        const W=718, H=170, padL=38, padR=50, padT=12, padB=32;
         const gW=W-padL-padR, gH=H-padT-padB;
 
         const todosVals=serieGen.map(x=>x.v);
@@ -2230,7 +2231,8 @@ function exportarPDF(){
         </div>
         <!-- Contenido -->
         <div style="padding:14px 18px 10px;">
-          ${buildGraficaSVG('guineensis',12,'GUINEENSIS + JOVENES','#052e16','#86efac')}
+          ${buildGraficaSVG('guineensis',12,'GUINEENSIS','#052e16','#86efac')}
+          ${buildGraficaSVG('joven',12,'PALMA JOVEN','#14532d','#bbf7d0')}
           ${buildGraficaSVG('hibrido',22,'HIBRIDAS','#1e3a5f','#93c5fd')}
           <!-- Leyenda bandas -->
           <div style="background:#fff;border-radius:6px;padding:8px 14px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
@@ -2240,7 +2242,7 @@ function exportarPDF(){
                 <div style="width:14px;height:10px;background:${bg};border:1.5px solid ${bd};border-radius:2px;"></div>
                 <span style="font-size:8px;color:#374151;">${lbl}</span>
               </div>`).join('')}
-            <span style="font-size:8px;color:#94a3b8;margin-left:auto;">G ≥${MIN_G} ciclos/mes · H ≥${MIN_H} ciclos/mes para inclusion</span>
+            <span style="font-size:8px;color:#94a3b8;margin-left:auto;">Guineensis ≥${MIN_G} · Jovenes ≥${MIN_J} · Hibridas ≥${MIN_H} ciclos/mes para inclusion</span>
           </div>
         </div>
         <div style="background:#e2e8f0;border-top:1px solid #cbd5e1;padding:5px 22px;display:flex;justify-content:space-between;font-size:8px;color:#64748b;">
