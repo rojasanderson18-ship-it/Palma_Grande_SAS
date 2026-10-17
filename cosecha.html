@@ -1724,6 +1724,46 @@ function exportarPDF(){
     fincaStats[f]={v:fV+fC,a:fA,r:fR,tot,haEn:fHAen,haF:fHAf,ha:fHA};
   });
 
+  // ── CÁLCULO HISTÓRICO DE CICLOS ──
+  // ciclosPorMes['YYYY-MM'][finca][tipo] = [días...]
+  const FINCAS_LIST=[...new Set(LOTES.map(l=>l.finca))].sort();
+  const ciclosPorMes={};
+  LOTES.forEach(l=>{
+    const key=l.finca+'_'+l.lote;
+    const m=marcas[key]||{};
+    const tipo=l.tipo==='hibrido'?'hibrido':l.tipo==='joven'?'joven':'guineensis';
+    const gapMin=tipo==='hibrido'?10:5;
+    const gapMax=tipo==='hibrido'?60:45;
+    const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
+    if(inicios.length<2)return;
+    for(let i=1;i<inicios.length;i++){
+      const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
+      if(gap<gapMin||gap>gapMax)continue;
+      const mes=inicios[i].substring(0,7);
+      if(!ciclosPorMes[mes])ciclosPorMes[mes]={};
+      if(!ciclosPorMes[mes][l.finca])ciclosPorMes[mes][l.finca]={guineensis:[],hibrido:[],joven:[]};
+      ciclosPorMes[mes][l.finca][tipo].push(gap);
+    }
+  });
+  const MESES_ES_C=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesActualISO=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+  const MIN_G=3,MIN_H=1,MIN_J=1;
+  const MIN_POR_TIPO={guineensis:MIN_G,hibrido:MIN_H,joven:MIN_J};
+  const avgC=arr=>arr&&arr.length>0?Math.round(arr.reduce((s,v)=>s+v,0)/arr.length*10)/10:null;
+  const todosAniosC=[...new Set(Object.keys(ciclosPorMes).map(k=>k.split('-')[0]))].sort();
+  const mesesValidos=k=>k<mesActualISO;
+
+  const fincaTieneAnio=(finca,tipo,min,y)=>
+    Array.from({length:12},(_,i)=>y+'-'+String(i+1).padStart(2,'0'))
+      .some(k=>{const d=ciclosPorMes[k];const arr=(d&&d[finca])?d[finca][tipo]:[];return mesesValidos(k)&&arr.length>=min;});
+
+  const aniosPorFinca={guineensis:{},hibrido:{},joven:{}};
+  FINCAS_LIST.forEach(f=>{
+    ['guineensis','hibrido','joven'].forEach(tipo=>{
+      aniosPorFinca[tipo][f]=todosAniosC.filter(y=>fincaTieneAnio(f,tipo,MIN_POR_TIPO[tipo],y));
+    });
+  });
+
   // ── HTML GERENCIA ──
   const fincaColors={
     'FINCA 1':{hdr:'#052e16',txt:'#4ade80',name:'FINCA 1'},
@@ -1925,6 +1965,258 @@ function exportarPDF(){
     const imgData=canvas.toDataURL('image/jpeg',0.95);
     const imgH=(canvas.height*210)/canvas.width;
     doc.addImage(imgData,'JPEG',0,0,210,Math.min(imgH,297));
+
+    // ── PÁGINA 2: ANÁLISIS HISTÓRICO DE CICLOS (canvas, no SVG) ──
+    const tiposDef=[
+      {tipo:'guineensis',objetivo:12,titulo:'GUINEENSIS',bgHdr:'#052e16',txtHdr:'#86efac'},
+      {tipo:'joven',     objetivo:12,titulo:'PALMA JOVEN',bgHdr:'#14532d',txtHdr:'#bbf7d0'},
+      {tipo:'hibrido',   objetivo:22,titulo:'HIBRIDAS',   bgHdr:'#1e3a5f',txtHdr:'#93c5fd'},
+    ];
+    // Verificar si hay algún dato para mostrar
+    const hayDatosCiclos=tiposDef.some(td=>FINCAS_LIST.some(f=>aniosPorFinca[td.tipo][f].length>0));
+    if(hayDatosCiclos){
+      // Dibujar cada grafica en canvas y convertir a dataURL
+      const FINCA_STROKES={'FINCA 1':'#0ea5e9','FINCA 2':'#f59e0b','FINCA 3':'#a855f7'};
+      const buildGraficaCanvas=async(tipo,objetivo,titulo,bgHdr,txtHdr)=>{
+        const min=MIN_POR_TIPO[tipo]||1;
+        const fincasConDatos=FINCAS_LIST.filter(f=>aniosPorFinca[tipo][f].length>0);
+        if(!fincasConDatos.length)return null;
+
+        // Recopilar todos los meses con datos de cualquier finca
+        const mesesSet=new Set();
+        fincasConDatos.forEach(f=>{
+          aniosPorFinca[tipo][f].forEach(y=>{
+            for(let mo=1;mo<=12;mo++){
+              const k=y+'-'+String(mo).padStart(2,'0');
+              if(!mesesValidos(k))continue;
+              const d=ciclosPorMes[k];
+              const arr=(d&&d[f])?d[f][tipo]:[];
+              if(arr.length>=min)mesesSet.add(k);
+            }
+          });
+        });
+        const meses=[...mesesSet].sort();
+        if(!meses.length)return null;
+
+        // KPIs: promedio general por mes
+        const promGen=k=>{
+          const t=[];
+          fincasConDatos.forEach(f=>{const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];if(arr.length>=min)t.push(...arr);});
+          return t.length?avgC(t):null;
+        };
+        const serieG=meses.map(k=>({k,v:promGen(k)})).filter(x=>x.v!=null);
+        const mejor=serieG.length?serieG.reduce((a,b)=>a.v<b.v?a:b):null;
+        const peor =serieG.length?serieG.reduce((a,b)=>a.v>b.v?a:b):null;
+        const totalC=fincasConDatos.reduce((s,f)=>s+meses.reduce((ss,k)=>{const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];return ss+(arr.length>=min?arr.length:0);},0),0);
+        const aniosTipo=[...new Set(meses.map(k=>k.slice(0,4)))].sort();
+        let tendencia=null,tendLabel='';
+        if(aniosTipo.length>=2){
+          const yU=aniosTipo[aniosTipo.length-1],yA=aniosTipo[aniosTipo.length-2];
+          const vU=avgC(meses.filter(k=>k.startsWith(yU)).map(k=>promGen(k)).filter(v=>v!=null));
+          const vA=avgC(meses.filter(k=>k.startsWith(yA)).map(k=>promGen(k)).filter(v=>v!=null));
+          if(vU!=null&&vA!=null){tendencia=+(vU-vA).toFixed(1);tendLabel=yA+' → '+yU;}
+        }
+
+        // Dimensiones canvas
+        const CW=756,CH_KPI=80,CH_CHART=190,CH_LEG=24,CH_TOTAL=CH_KPI+CH_CHART+CH_LEG;
+        const c=document.createElement('canvas');
+        c.width=CW;c.height=CH_TOTAL;
+        const ctx=c.getContext('2d');
+        const dpr=1;// sin devicePixelRatio para consistencia
+
+        // ── Encabezado ──
+        ctx.fillStyle=bgHdr;
+        ctx.fillRect(0,0,CW,30);
+        ctx.fillStyle=txtHdr;
+        ctx.font='bold 13px Arial';
+        ctx.fillText(titulo,14,20);
+        ctx.font='9px Arial';
+        ctx.fillStyle=txtHdr;
+        ctx.globalAlpha=0.8;
+        ctx.fillText('Dias promedio entre cosechas  ·  Solo meses cerrados',14,26);
+        ctx.globalAlpha=1;
+
+        // ── KPI row ──
+        const kpiY=32;
+        const kpis=[
+          mejor?{v:mejor.v+'d',l:'MEJOR MES',sub:MESES_ES_C[+mejor.k.slice(5)-1]+' '+mejor.k.slice(0,4),bg:'#f0fdf4',bd:'#16a34a',txt:'#15803d'}
+               :{v:'—',l:'MEJOR MES',sub:'sin datos',bg:'#f9fafb',bd:'#d1d5db',txt:'#9ca3af'},
+          peor ?{v:peor.v+'d', l:'MES MAS LARGO',sub:MESES_ES_C[+peor.k.slice(5)-1]+' '+peor.k.slice(0,4),bg:'#fef2f2',bd:'#dc2626',txt:'#b91c1c'}
+               :{v:'—',l:'MES MAS LARGO',sub:'sin datos',bg:'#f9fafb',bd:'#d1d5db',txt:'#9ca3af'},
+          tendencia!=null?{v:(tendencia>0?'+':'')+tendencia+'d',l:'TENDENCIA A/A',sub:tendLabel,bg:tendencia>0?'#fef2f2':'#f0fdf4',bd:tendencia>0?'#dc2626':'#16a34a',txt:tendencia>0?'#b91c1c':'#15803d'}
+                        :{v:'—',l:'TENDENCIA A/A',sub:'1 año de datos',bg:'#f9fafb',bd:'#d1d5db',txt:'#9ca3af'},
+          {v:totalC+'',l:'CICLOS MEDIDOS',sub:meses.length+' meses',bg:'#f8fafc',bd:'#94a3b8',txt:'#475569'},
+        ];
+        const kpiW=(CW-16)/4, kpiH=CH_KPI-6;
+        kpis.forEach((k,i)=>{
+          const kx=8+i*(kpiW+2), ky=kpiY;
+          ctx.fillStyle=k.bg; roundRect(ctx,kx,ky,kpiW,kpiH,5);
+          ctx.fillStyle=k.bd; ctx.fillRect(kx,ky,4,kpiH);
+          ctx.fillStyle=k.txt; ctx.font='bold 20px Arial'; ctx.fillText(k.v,kx+10,ky+24);
+          ctx.fillStyle='#6b7280'; ctx.font='bold 8px Arial'; ctx.fillText(k.l,kx+10,ky+36);
+          ctx.fillStyle=k.txt; ctx.font='8px Arial'; ctx.fillText(k.sub,kx+10,ky+47);
+        });
+
+        // ── Área gráfica ──
+        const pL=42,pR=52,pT=CH_KPI+10,pB=CH_KPI+CH_CHART-26;
+        const gW=CW-pL-pR, gH=pB-pT;
+        const todosVals=serieG.map(x=>x.v);
+        const yMin=Math.max(0,Math.floor(Math.min(objetivo*0.8,...todosVals)-1));
+        const yMax=Math.ceil(Math.max(objetivo*1.2,...todosVals)+2);
+        const yRange=yMax-yMin;
+        const xPos=i=>pL+i*(gW/(meses.length-1||1));
+        const yPos=v=>pT+gH-(v-yMin)/yRange*gH;
+
+        // Bandas de umbral
+        const tol2=tipo==='hibrido'?25:14;
+        [[yMin,objetivo,'#bbf7d0'],[objetivo,tol2,'#bfdbfe'],[tol2,yMax,'#fecaca']].forEach(([y1,y2,fill])=>{
+          const by1=yPos(Math.min(y2,yMax)), by2=yPos(Math.max(y1,yMin));
+          ctx.fillStyle=fill; ctx.globalAlpha=0.45;
+          ctx.fillRect(pL,Math.min(by1,by2),gW,Math.abs(by2-by1));
+          ctx.globalAlpha=1;
+        });
+
+        // Borde área
+        ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=0.8;
+        ctx.strokeRect(pL,pT,gW,gH);
+
+        // Grid Y y etiquetas
+        for(let i=0;i<=5;i++){
+          const v=yMin+(yRange/5)*i, y=yPos(v);
+          ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=0.5;
+          ctx.beginPath(); ctx.moveTo(pL,y); ctx.lineTo(pL+gW,y); ctx.stroke();
+          ctx.fillStyle='#94a3b8'; ctx.font='8px Arial'; ctx.textAlign='right';
+          ctx.fillText(Math.round(v),pL-4,y+3);
+        }
+
+        // Eje X etiquetas
+        const step=meses.length>24?3:meses.length>12?2:1;
+        meses.forEach((k,i)=>{
+          if(i%step!==0)return;
+          const x=xPos(i), mo=k.slice(5);
+          const lbl=MESES_ES_C[+mo-1]+(i===0||mo==='01'?' '+k.slice(0,4):'');
+          ctx.fillStyle='#64748b'; ctx.font='8px Arial'; ctx.textAlign='center';
+          ctx.fillText(lbl,x,pB+16);
+          ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=0.6;
+          ctx.beginPath(); ctx.moveTo(x,pB); ctx.lineTo(x,pB+4); ctx.stroke();
+        });
+
+        // Línea objetivo (verde punteada)
+        const yObj=yPos(objetivo);
+        ctx.strokeStyle='#16a34a'; ctx.lineWidth=1.8; ctx.setLineDash([6,4]);
+        ctx.beginPath(); ctx.moveTo(pL,yObj); ctx.lineTo(pL+gW,yObj); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle='#f0fdf4'; roundRect(ctx,pL+gW+2,yObj-8,46,13,3);
+        ctx.fillStyle='#15803d'; ctx.font='bold 8px Arial'; ctx.textAlign='left';
+        ctx.fillText('OBJ '+objetivo+'d',pL+gW+5,yObj+2);
+
+        // Líneas por finca
+        fincasConDatos.forEach((f,fi)=>{
+          const stroke=FINCA_STROKES[f]||'#334155';
+          const pts=meses.map((k,i)=>{
+            const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];
+            if(arr.length<min)return null;
+            return{x:xPos(i),y:yPos(avgC(arr))};
+          });
+          ctx.strokeStyle=stroke; ctx.lineWidth=2.2;
+          ctx.lineJoin='round'; ctx.lineCap='round';
+          let lastIdx=-1;
+          pts.forEach((p,i)=>{
+            if(!p){
+              if(lastIdx>=0)ctx.stroke();
+              lastIdx=-1; return;
+            }
+            if(lastIdx<0||i-lastIdx>2){ctx.beginPath();ctx.moveTo(p.x,p.y);}
+            else ctx.lineTo(p.x,p.y);
+            lastIdx=i;
+          });
+          if(lastIdx>=0)ctx.stroke();
+          // Puntos
+          pts.forEach(p=>{
+            if(!p)return;
+            ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+            ctx.fillStyle=stroke;ctx.fill();
+            ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+          });
+        });
+
+        // ── Leyenda ──
+        const legY=CH_KPI+CH_CHART+2;
+        let legX=pL;
+        fincasConDatos.forEach((f,fi)=>{
+          const stroke=FINCA_STROKES[f]||'#334155';
+          ctx.strokeStyle=stroke;ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(legX,legY+7);ctx.lineTo(legX+18,legY+7);ctx.stroke();
+          ctx.beginPath();ctx.arc(legX+9,legY+7,3,0,Math.PI*2);
+          ctx.fillStyle=stroke;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+          ctx.fillStyle='#374151';ctx.font='8.5px Arial';ctx.textAlign='left';
+          ctx.fillText(f,legX+22,legY+11);
+          legX+=100;
+        });
+        // Objetivo en leyenda
+        ctx.strokeStyle='#16a34a';ctx.lineWidth=1.8;ctx.setLineDash([6,4]);
+        ctx.beginPath();ctx.moveTo(legX,legY+7);ctx.lineTo(legX+18,legY+7);ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle='#6b7280';ctx.font='8.5px Arial';ctx.textAlign='left';
+        ctx.fillText('Objetivo ('+objetivo+'d)',legX+22,legY+11);
+
+        return{dataURL:c.toDataURL('image/jpeg',0.95),w:CW,h:CH_TOTAL};
+      };
+
+      // roundRect helper
+      function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();}
+
+      // Generar todas las gráficas
+      const graficas=[];
+      for(const td of tiposDef){
+        const g=await buildGraficaCanvas(td.tipo,td.objetivo,td.titulo,td.bgHdr,td.txtHdr);
+        if(g)graficas.push(g);
+      }
+
+      if(graficas.length){
+        doc.addPage('a4','portrait');
+        // Encabezado
+        doc.setFillColor(15,23,42);
+        doc.rect(0,0,210,14,'F');
+        doc.setTextColor(240,201,106);
+        doc.setFontSize(12);
+        doc.setFont('helvetica','bold');
+        doc.text('ANALISIS HISTORICO DE CICLOS',105,9,{align:'center'});
+        doc.setFontSize(7);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(148,163,184);
+        doc.text('PALMA GRANDE S.A.S.  ·  DIAS PROMEDIO ENTRE COSECHAS  ·  '+fecha+'  ·  SEM '+sn,105,13,{align:'center'});
+
+        // Distribuir gráficas en la página (A4=210mm, usable ~280mm alto desde y=15)
+        const pageH=297, topY=15, bottomY=290, usable=bottomY-topY;
+        const totalGH=graficas.reduce((s,g)=>s+g.h,0);
+        let curY=topY;
+        graficas.forEach(g=>{
+          const mmH=g.h*(210/g.w); // escalar a ancho de página
+          if(curY+mmH>bottomY){doc.addPage('a4','portrait');curY=topY;}
+          doc.addImage(g.dataURL,'JPEG',0,curY,210,mmH);
+          curY+=mmH+3;
+        });
+
+        // Leyenda de zonas al pie
+        const pieY=curY+2;
+        doc.setFontSize(7);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(100,116,139);
+        doc.text('Zonas:',8,pieY);
+        [[0.73,0.97,0.56,'En ciclo'],[0.75,0.86,0.99,'Tolerancia'],[0.99,0.79,0.79,'Incumplimiento']].forEach(([r,g,b,lbl],i)=>{
+          const bx=22+i*42;
+          doc.setFillColor(Math.round(r*255),Math.round(g*255),Math.round(b*255));
+          doc.rect(bx,pieY-3,5,4,'F');
+          doc.setDrawColor(150,150,150);
+          doc.rect(bx,pieY-3,5,4,'S');
+          doc.setTextColor(55,65,81);
+          doc.text(lbl,bx+6,pieY);
+        });
+        doc.setTextColor(148,163,184);
+        doc.text('Solo meses cerrados  ·  G ≥'+MIN_G+' ciclos/mes  ·  H ≥'+MIN_H+' ciclos/mes',210,pieY,{align:'right'});
+      }
+    }
 
     // ── PÁGINA MAPA (un mapa por finca, ya que están geográficamente separadas) ──
     if(typeof L !== 'undefined' && typeof LOTES_GEOJSON !== 'undefined'){
