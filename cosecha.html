@@ -200,6 +200,59 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .rb1{background:#16a34a;}.rb2{background:#84cc16;}.rb3{background:#eab308;}.rb4{background:#f97316;}.rb5{background:#dc2626;}
 .rv1{color:#15803d;}.rv2{color:#4d7c0f;}.rv3{color:#854d0e;}.rv4{color:#9a3412;}.rv5{color:#b91c1c;}
 .ind-divider{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;font-weight:500;margin:0 0 8px;}
+.ind-sub-title{font-size:9px;font-weight:700;letter-spacing:.07em;color:#6b7280;text-transform:uppercase;margin-bottom:4px;}
+.ind-sub-note{font-size:9px;color:#9ca3af;}
+
+/* ── Semáforo tipo palma ── */
+.tipo-palma-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.tipo-card{background:#f8f9fa;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.tipo-hdr{padding:7px 11px;font-size:10px;font-weight:700;letter-spacing:.05em;}
+.tipo-hdr-g{background:#052e16;color:#86efac;}
+.tipo-hdr-j{background:#14532d;color:#bbf7d0;}
+.tipo-hdr-h{background:#1e3a5f;color:#93c5fd;}
+.tipo-body{padding:9px 11px;display:flex;flex-direction:column;gap:4px;}
+.tipo-fila{display:flex;align-items:center;justify-content:space-between;}
+.tipo-lft{display:flex;align-items:center;gap:5px;font-size:10px;color:#6b7280;}
+.tipo-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.tipo-rgt{display:flex;align-items:baseline;gap:3px;}
+.tipo-n{font-family:'Bebas Neue',sans-serif;font-size:18px;}
+.tipo-n-v{color:#16a34a;}.tipo-n-a{color:#2563eb;}.tipo-n-r{color:#dc2626;}
+.tipo-p{font-size:9px;color:#9ca3af;}
+.tipo-bar-w{height:3px;background:#e5e7eb;border-radius:2px;overflow:hidden;margin-top:1px;}
+.tipo-bar{height:100%;border-radius:2px;transition:width .5s;}
+
+/* ── Ciclo promedio por finca ── */
+.ciclo-finca-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.ciclo-finca-card{background:#f8f9fa;border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.ciclo-finca-nom{font-size:9px;font-weight:700;letter-spacing:.07em;color:#9ca3af;text-transform:uppercase;margin-bottom:7px;}
+.ciclo-tipo-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f1f5f9;}
+.ciclo-tipo-row:last-child{border-bottom:none;padding-bottom:0;}
+.ciclo-tipo-lbl{font-size:9px;color:#9ca3af;}
+.ciclo-tipo-rgt{display:flex;align-items:baseline;gap:4px;}
+.ciclo-val{font-family:'Bebas Neue',sans-serif;font-size:20px;}
+.ciclo-obj{font-size:9px;color:#9ca3af;}
+.ciclo-chip{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;}
+.chip-v{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;}
+.chip-a{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.chip-r{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
+.ciclo-sin{font-size:10px;color:#d1d5db;font-style:italic;}
+
+/* ── Velocidad + Racha ── */
+.recup-racha-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vel-row-w{display:flex;flex-direction:column;gap:5px;margin-top:6px;}
+.vel-row-item{display:flex;align-items:center;gap:6px;}
+.vel-lbl{font-size:9px;width:50px;flex-shrink:0;}
+.vel-bar-bg{flex:1;height:7px;background:#e5e7eb;border-radius:4px;overflow:hidden;}
+.vel-bar-fill{height:100%;border-radius:4px;transition:width .5s;}
+.vel-num{font-family:'DM Mono',monospace;font-size:9px;color:#6b7280;width:18px;text-align:right;}
+.racha-heat{display:flex;gap:3px;flex-wrap:wrap;}
+.racha-dot-cell{width:12px;height:12px;border-radius:2px;}
+.racha-legend-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:3px;vertical-align:middle;}
+
+@media(max-width:600px){
+  .tipo-palma-grid,.ciclo-finca-grid{grid-template-columns:1fr;}
+  .recup-racha-grid{grid-template-columns:1fr;}
+}
 
 /* ===== TABS ===== */
 .tabs-bar{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;padding:0 20px;position:sticky;top:0;z-index:190;}
@@ -371,20 +424,112 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   </div>
   <div class="ind-body" id="ind-body">
 
-    <!-- FILA 1: KPI CARDS -->
+    <!-- FILA 1: KPI CARDS (sin Total lotes y Total HA — duplicados) -->
     <p class="ind-divider">Estado general</p>
     <div class="kpi-row" id="kpi-row">
-      <div class="kpi-card kpi-gold"><div class="kpi-val kv-gold" id="k-total">—</div><div class="kpi-label">Total lotes</div></div>
       <div class="kpi-card kpi-negro"><div class="kpi-val kv-negro" id="k-cos">—</div><div class="kpi-label">Cosechando hoy</div><div class="kpi-sub ks-muted" id="k-cos-pct">—</div></div>
       <div class="kpi-card kpi-verde"><div class="kpi-val kv-verde" id="k-ciclo">—</div><div class="kpi-label">En ciclo</div><div class="kpi-sub ks-verde" id="k-ciclo-pct">—</div></div>
       <div class="kpi-card kpi-azul"><div class="kpi-val kv-azul" id="k-tol">—</div><div class="kpi-label">Tolerancia</div><div class="kpi-sub ks-azul" id="k-tol-pct">—</div></div>
       <div class="kpi-card kpi-rojo"><div class="kpi-val kv-rojo" id="k-inc">—</div><div class="kpi-label">Incumplimiento</div><div class="kpi-sub ks-rojo" id="k-inc-pct">—</div></div>
       <div class="kpi-card kpi-rojo"><div class="kpi-val kv-rojo" id="k-ha-fuera">—</div><div class="kpi-label">HA incumplimiento</div><div class="kpi-sub ks-rojo" id="k-ha-fuera-pct">—</div></div>
       <div class="kpi-card kpi-verde"><div class="kpi-val kv-verde" id="k-ha-ciclo">—</div><div class="kpi-label">HA en ciclo + tolerancia</div><div class="kpi-sub ks-verde" id="k-ha-ciclo-pct">—</div></div>
-      <div class="kpi-card kpi-gold"><div class="kpi-val kv-gold" id="k-ha-total">—</div><div class="kpi-label">Total HA</div></div>
     </div>
 
-    <!-- FILA 2: RANGOS DE DÍAS -->
+    <!-- FILA 2: SEMÁFORO POR TIPO DE PALMA -->
+    <p class="ind-divider" style="margin-top:14px;">Por tipo de palma</p>
+    <div class="tipo-palma-grid" id="tipo-palma-grid">
+      <div class="tipo-card">
+        <div class="tipo-hdr tipo-hdr-g">GUINEENSIS · Obj 12d</div>
+        <div class="tipo-body">
+          <div class="tipo-fila"><div class="tipo-lft"><span class="tipo-dot" style="background:#16a34a"></span>En ciclo</div><div class="tipo-rgt"><span class="tipo-n tipo-n-v" id="tp-g-v">—</span><span class="tipo-p" id="tp-g-v-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-g-v-b" style="background:#16a34a;width:0%"></div></div>
+          <div class="tipo-fila" style="margin-top:4px;"><div class="tipo-lft"><span class="tipo-dot" style="background:#2563eb"></span>Tolerancia</div><div class="tipo-rgt"><span class="tipo-n tipo-n-a" id="tp-g-a">—</span><span class="tipo-p" id="tp-g-a-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-g-a-b" style="background:#2563eb;width:0%"></div></div>
+          <div class="tipo-fila" style="margin-top:4px;"><div class="tipo-lft"><span class="tipo-dot" style="background:#dc2626"></span>Incumplimiento</div><div class="tipo-rgt"><span class="tipo-n tipo-n-r" id="tp-g-r">—</span><span class="tipo-p" id="tp-g-r-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-g-r-b" style="background:#dc2626;width:0%"></div></div>
+        </div>
+      </div>
+      <div class="tipo-card">
+        <div class="tipo-hdr tipo-hdr-j">PALMA JOVEN · Obj 12d</div>
+        <div class="tipo-body">
+          <div class="tipo-fila"><div class="tipo-lft"><span class="tipo-dot" style="background:#16a34a"></span>En ciclo</div><div class="tipo-rgt"><span class="tipo-n tipo-n-v" id="tp-j-v">—</span><span class="tipo-p" id="tp-j-v-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-j-v-b" style="background:#16a34a;width:0%"></div></div>
+          <div class="tipo-fila" style="margin-top:4px;"><div class="tipo-lft"><span class="tipo-dot" style="background:#2563eb"></span>Tolerancia</div><div class="tipo-rgt"><span class="tipo-n tipo-n-a" id="tp-j-a">—</span><span class="tipo-p" id="tp-j-a-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-j-a-b" style="background:#2563eb;width:0%"></div></div>
+          <div class="tipo-fila" style="margin-top:4px;"><div class="tipo-lft"><span class="tipo-dot" style="background:#dc2626"></span>Incumplimiento</div><div class="tipo-rgt"><span class="tipo-n tipo-n-r" id="tp-j-r">—</span><span class="tipo-p" id="tp-j-r-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-j-r-b" style="background:#dc2626;width:0%"></div></div>
+        </div>
+      </div>
+      <div class="tipo-card">
+        <div class="tipo-hdr tipo-hdr-h">HÍBRIDAS · Obj 22d</div>
+        <div class="tipo-body">
+          <div class="tipo-fila"><div class="tipo-lft"><span class="tipo-dot" style="background:#16a34a"></span>En ciclo</div><div class="tipo-rgt"><span class="tipo-n tipo-n-v" id="tp-h-v">—</span><span class="tipo-p" id="tp-h-v-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-h-v-b" style="background:#16a34a;width:0%"></div></div>
+          <div class="tipo-fila" style="margin-top:4px;"><div class="tipo-lft"><span class="tipo-dot" style="background:#2563eb"></span>Tolerancia</div><div class="tipo-rgt"><span class="tipo-n tipo-n-a" id="tp-h-a">—</span><span class="tipo-p" id="tp-h-a-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-h-a-b" style="background:#2563eb;width:0%"></div></div>
+          <div class="tipo-fila" style="margin-top:4px;"><div class="tipo-lft"><span class="tipo-dot" style="background:#dc2626"></span>Incumplimiento</div><div class="tipo-rgt"><span class="tipo-n tipo-n-r" id="tp-h-r">—</span><span class="tipo-p" id="tp-h-r-p">—</span></div></div>
+          <div class="tipo-bar-w"><div class="tipo-bar" id="tp-h-r-b" style="background:#dc2626;width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 3: CICLO PROMEDIO VS OBJETIVO POR FINCA -->
+    <p class="ind-divider" style="margin-top:14px;">Ciclo promedio vs objetivo — mes actual</p>
+    <div class="ciclo-finca-grid" id="ciclo-finca-grid">
+      <div class="ciclo-finca-card">
+        <div class="ciclo-finca-nom">Finca 1</div>
+        <div id="cf-f1"></div>
+      </div>
+      <div class="ciclo-finca-card">
+        <div class="ciclo-finca-nom">Finca 2</div>
+        <div id="cf-f2"></div>
+      </div>
+      <div class="ciclo-finca-card">
+        <div class="ciclo-finca-nom">Finca 3</div>
+        <div id="cf-f3"></div>
+      </div>
+    </div>
+
+    <!-- FILA 4: VELOCIDAD DE RECUPERACIÓN + RACHA -->
+    <p class="ind-divider" style="margin-top:14px;">Recuperación y desempeño</p>
+    <div class="recup-racha-grid">
+      <div class="kpi-card" style="padding:12px;">
+        <div class="ind-sub-title">Velocidad de recuperación · esta semana</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px;">
+          <span class="kpi-val kv-verde" id="recup-n" style="font-size:36px;">—</span>
+          <span style="font-size:11px;color:var(--text-muted);" id="recup-desc">de — lotes críticos recuperados</span>
+        </div>
+        <div class="vel-row-w">
+          <div class="vel-row-item">
+            <span class="vel-lbl" style="color:#16a34a;">Recuperado</span>
+            <div class="vel-bar-bg"><div id="vel-bar-v" class="vel-bar-fill" style="background:#16a34a;width:0%"></div></div>
+            <span class="vel-num" id="vel-n-v">0</span>
+          </div>
+          <div class="vel-row-item">
+            <span class="vel-lbl" style="color:#dc2626;">Aún crítico</span>
+            <div class="vel-bar-bg"><div id="vel-bar-r" class="vel-bar-fill" style="background:#dc2626;width:0%"></div></div>
+            <span class="vel-num" id="vel-n-r">0</span>
+          </div>
+        </div>
+        <div class="ind-sub-note" id="recup-nota" style="margin-top:6px;"></div>
+      </div>
+      <div class="kpi-card" style="padding:12px;">
+        <div class="ind-sub-title">Racha de cumplimiento</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin:6px 0 2px;">
+          <span class="kpi-val kv-verde" id="racha-n" style="font-size:36px;">—</span>
+          <span style="font-size:11px;color:var(--text-muted);">semanas consecutivas ≥70%</span>
+        </div>
+        <div class="ind-sub-note" id="racha-mejor" style="margin-bottom:8px;"></div>
+        <div class="racha-heat" id="racha-heat"></div>
+        <div style="display:flex;gap:10px;margin-top:6px;font-size:9px;color:var(--text-muted);">
+          <span><span class="racha-legend-dot" style="background:#16a34a;"></span>Cumplió</span>
+          <span><span class="racha-legend-dot" style="background:#2563eb;opacity:.5;"></span>Tolerancia</span>
+          <span><span class="racha-legend-dot" style="background:#dc2626;"></span>Incumplió</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 5: RANGOS DE DÍAS -->
     <p class="ind-divider" style="margin-top:14px;">HA por rango de días del ciclo</p>
     <div class="rangos-row" id="rangos-row">
       <div class="rango-card"><div class="rango-label">Menores 13 días</div><div class="rango-val rv1" id="r1-val">—</div><div class="rango-pct" id="r1-pct">—</div><div class="rango-bar rb1" id="r1-bar" style="width:0%"></div></div>
@@ -1239,8 +1384,7 @@ function calcularIndicadores(){
   const pct = (a,b) => b>0 ? Math.round(a/b*100)+'%' : '0%';
   const fmt = n => n.toLocaleString('es-CO');
 
-  // KPI cards
-  document.getElementById('k-total').textContent = lotesTotal;
+  // KPI cards (sin k-total ni k-ha-total — eliminados por duplicados)
   document.getElementById('k-cos').textContent = lotesCos;
   document.getElementById('k-cos-pct').textContent = pct(lotesCos,lotesTotalActivo);
   document.getElementById('k-ciclo').textContent = lotesVerde;
@@ -1253,7 +1397,125 @@ function calcularIndicadores(){
   document.getElementById('k-ha-fuera-pct').textContent = pct(haFuera,haTotalActivo);
   document.getElementById('k-ha-ciclo').textContent = fmt(haEnCiclo);
   document.getElementById('k-ha-ciclo-pct').textContent = pct(haEnCiclo,haTotalActivo);
-  document.getElementById('k-ha-total').textContent = fmt(haTotal);
+
+  // ── SEMÁFORO POR TIPO DE PALMA ──
+  const tipoMap={guineensis:{ids:'g'},joven:{ids:'j'},hibrido:{ids:'h'}};
+  const tipoStats={guineensis:{v:0,a:0,r:0},joven:{v:0,a:0,r:0},hibrido:{v:0,a:0,r:0}};
+  LOTES.forEach(l=>{
+    const tipo=l.tipo==='hibrido'?'hibrido':l.tipo==='joven'?'joven':'guineensis';
+    const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+    if(cs.tipo==='cosechando'||cs.tipo==='verde') tipoStats[tipo].v++;
+    else if(cs.tipo==='azul') tipoStats[tipo].a++;
+    else if(cs.tipo==='rojo') tipoStats[tipo].r++;
+  });
+  Object.entries(tipoStats).forEach(([tipo,s])=>{
+    const id=tipoMap[tipo].ids;
+    const tot=s.v+s.a+s.r||1;
+    const setBar=(sfx,n)=>{
+      const el=document.getElementById('tp-'+id+'-'+sfx);
+      const elp=document.getElementById('tp-'+id+'-'+sfx+'-p');
+      const elb=document.getElementById('tp-'+id+'-'+sfx+'-b');
+      if(el) el.textContent=n;
+      if(elp) elp.textContent=Math.round(n/tot*100)+'%';
+      if(elb) elb.style.width=Math.round(n/tot*100)+'%';
+    };
+    setBar('v',s.v); setBar('a',s.a); setBar('r',s.r);
+  });
+
+  // ── CICLO PROMEDIO VS OBJETIVO POR FINCA ──
+  const mesActual=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+  const tiposInfo={guineensis:{lbl:'Guineensis',obj:12},hibrido:{lbl:'Híbridas',obj:22},joven:{lbl:'Palma joven',obj:12}};
+  ['FINCA 1','FINCA 2','FINCA 3'].forEach((finca,fi)=>{
+    const elId='cf-f'+(fi+1);
+    const el=document.getElementById(elId);
+    if(!el) return;
+    let html='';
+    // Calcular ciclo promedio del mes actual por tipo (usar últimas 4 semanas si mes actual vacío)
+    const periodos=[0,1,2,3].map(d=>{const dt=new Date(hoy);dt.setDate(dt.getDate()-d*7);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');});
+    Object.entries(tiposInfo).forEach(([tipo,info])=>{
+      const lotesT=LOTES.filter(l=>l.finca===finca&&(l.tipo==='hibrido'?'hibrido':l.tipo==='joven'?'joven':'guineensis')===tipo);
+      if(!lotesT.length) return;
+      // Calcular gaps del mes actual (o las últimas 4 semanas)
+      const gapMin=tipo==='hibrido'?10:5, gapMax=tipo==='hibrido'?60:45;
+      const gaps=[];
+      lotesT.forEach(l=>{
+        const m=marcas[l.finca+'_'+l.lote]||{};
+        const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
+        for(let i=1;i<inicios.length;i++){
+          const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
+          if(gap<gapMin||gap>gapMax) continue;
+          const mes=inicios[i].substring(0,7);
+          if(mes===mesActual) gaps.push(gap);
+        }
+      });
+      if(!gaps.length){html+='<div class="ciclo-tipo-row"><span class="ciclo-tipo-lbl">'+info.lbl+'</span><span class="ciclo-sin">sin datos</span></div>';return;}
+      const avg=Math.round(gaps.reduce((s,v)=>s+v,0)/gaps.length*10)/10;
+      const diff=Math.round((avg-info.obj)*10)/10;
+      const chipCls=diff<=-0?'chip-v':diff<=2?'chip-a':'chip-r';
+      const diffTxt=(diff>0?'+':'')+diff+'d';
+      const valCol=diff<=0?'#16a34a':diff<=2?'#2563eb':'#dc2626';
+      html+='<div class="ciclo-tipo-row"><span class="ciclo-tipo-lbl">'+info.lbl+'</span><div class="ciclo-tipo-rgt"><span class="ciclo-val" style="color:'+valCol+'">'+avg+'</span><span class="ciclo-obj">d · obj '+info.obj+'</span><span class="ciclo-chip '+chipCls+'">'+diffTxt+'</span></div></div>';
+    });
+    el.innerHTML=html||'<span class="ciclo-sin">sin datos este mes</span>';
+  });
+
+  // ── VELOCIDAD DE RECUPERACIÓN ──
+  // Comparar lotes en rojo hace 7 días vs hoy
+  const hace7=new Date(hoy); hace7.setDate(hace7.getDate()-7);
+  let rojosAntes=0, recupHoy=0, rojosAun=0;
+  LOTES.forEach(l=>{
+    const key=l.finca+'_'+l.lote;
+    const csAntes=getCellState(key,l.tipo,hace7);
+    const csAhora=getCellState(key,l.tipo,hoy);
+    if(csAntes.tipo==='rojo'){
+      rojosAntes++;
+      if(csAhora.tipo==='rojo') rojosAun++;
+      else recupHoy++;
+    }
+  });
+  document.getElementById('recup-n').textContent=recupHoy;
+  document.getElementById('recup-desc').textContent='de '+rojosAntes+' lotes críticos recuperados';
+  document.getElementById('vel-n-v').textContent=recupHoy;
+  document.getElementById('vel-n-r').textContent=rojosAun;
+  document.getElementById('vel-bar-v').style.width=(rojosAntes>0?Math.round(recupHoy/rojosAntes*100):0)+'%';
+  document.getElementById('vel-bar-r').style.width=(rojosAntes>0?Math.round(rojosAun/rojosAntes*100):0)+'%';
+  document.getElementById('recup-nota').textContent='Hace 7 días: '+rojosAntes+' lotes en rojo · Hoy quedan '+rojosAun;
+
+  // ── RACHA DE CUMPLIMIENTO (semanas con ≥70% lotes en verde/tolerancia) ──
+  const UMBRAL_RACHA=0.70, SEMANAS_HIST=16;
+  let rachaActual=0, mejorRacha=0, rachaTemp=0;
+  const rachaHeat=[];
+  for(let w=SEMANAS_HIST-1;w>=0;w--){
+    const fechaSem=new Date(hoy); fechaSem.setDate(fechaSem.getDate()-w*7);
+    let sv=0,sa=0,sr=0;
+    LOTES.forEach(l=>{
+      const cs=getCellState(l.finca+'_'+l.lote,l.tipo,fechaSem);
+      if(cs.tipo==='cosechando'||cs.tipo==='verde') sv++;
+      else if(cs.tipo==='azul') sa++;
+      else if(cs.tipo==='rojo') sr++;
+    });
+    const tot=sv+sa+sr||1;
+    const cumple=(sv/tot)>=UMBRAL_RACHA;
+    const enTol=((sv+sa)/tot)>=UMBRAL_RACHA;
+    const color=cumple?'#16a34a':enTol?'#2563eb':'#dc2626';
+    rachaHeat.push({color,cumple,enTol});
+    if(cumple){rachaTemp++;if(rachaTemp>mejorRacha)mejorRacha=rachaTemp;}
+    else rachaTemp=0;
+  }
+  // Racha actual = racha desde el final
+  for(let i=rachaHeat.length-1;i>=0;i--){
+    if(rachaHeat[i].cumple) rachaActual++;
+    else break;
+  }
+  document.getElementById('racha-n').textContent=rachaActual;
+  document.getElementById('racha-mejor').textContent='Mejor racha: '+mejorRacha+' semanas (últimas '+SEMANAS_HIST+' sem)';
+  const heatEl=document.getElementById('racha-heat');
+  if(heatEl){
+    heatEl.innerHTML=rachaHeat.map((s,i)=>{
+      const outline=i===rachaHeat.length-1?'outline:2px solid '+s.color+';outline-offset:1px;':'';
+      return '<div class="racha-dot-cell" style="background:'+s.color+';'+(s.enTol&&!s.cumple?'opacity:.5;':'')+outline+'"></div>';
+    }).join('');
+  }
 
   // Rangos
   const haTotalRangos = rangosUnif.reduce((s,r)=>s+r.ha,0);
