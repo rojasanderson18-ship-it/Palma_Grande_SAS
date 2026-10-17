@@ -473,6 +473,17 @@ function doGet(e) {
       if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
       return jsonResponse(result);
     }
+    if(accion === 'obtenerCalcConfig'){
+      var result = obtenerCalcConfig();
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
+    if(accion === 'guardarCalcConfig'){
+      var d = params.data ? JSON.parse(decodeURIComponent(params.data)) : {};
+      var result = guardarCalcConfig(d);
+      if(callback) return ContentService.createTextOutput(callback+'('+JSON.stringify(result)+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+      return jsonResponse(result);
+    }
 
     return jsonResponse({ok:true, msg:'API Palma Grande activa'});
   } catch(err) {
@@ -499,6 +510,23 @@ function guardarConfigSAS(d){
     if(d.nombre !== undefined) props.setProperty('sas'+i+'_nombre', String(d.nombre));
     if(d.n      !== undefined) props.setProperty('sas'+i+'_n',      String(d.n));
   }
+  return {ok: true};
+}
+
+// ── CONFIG CALCULADORA PERSONAL ──
+function obtenerCalcConfig(){
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty('calc_config');
+  if(!raw) return {ok: true, config: null};
+  try { return {ok: true, config: JSON.parse(raw)}; }
+  catch(e) { return {ok: true, config: null}; }
+}
+function guardarCalcConfig(d){
+  var props = PropertiesService.getScriptProperties();
+  var keys = ['r1','r2','r3','d1','d2','d3','c1','c2','c3'];
+  var cfg = {};
+  keys.forEach(function(k){ if(d[k] !== undefined) cfg[k] = String(d[k]); });
+  props.setProperty('calc_config', JSON.stringify(cfg));
   return {ok: true};
 }
 
