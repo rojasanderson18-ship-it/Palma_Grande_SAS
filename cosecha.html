@@ -2022,7 +2022,10 @@ function exportarPDF(){
         const c=document.createElement('canvas');
         c.width=CW;c.height=CH_TOTAL;
         const ctx=c.getContext('2d');
-        const dpr=1;// sin devicePixelRatio para consistencia
+
+        // Fondo blanco — JPEG no soporta transparencia, sin esto queda negro
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(0,0,CW,CH_TOTAL);
 
         // ── Encabezado ──
         ctx.fillStyle=bgHdr;
