@@ -2017,11 +2017,13 @@ function exportarPDF(){
           if(vU!=null&&vA!=null){tendencia=+(vU-vA).toFixed(1);tendLabel=yA+' → '+yU;}
         }
 
-        // Dimensiones canvas
-        const CW=756,CH_KPI=80,CH_CHART=190,CH_LEG=24,CH_TOTAL=CH_KPI+CH_CHART+CH_LEG;
+        // Dimensiones canvas (SCALE=2 → doble resolución → JPEG nítido en PDF)
+        const CW=756,CH_KPI=90,CH_CHART=190,CH_LEG=28,CH_TOTAL=CH_KPI+CH_CHART+CH_LEG;
+        const SCALE=2;
         const c=document.createElement('canvas');
-        c.width=CW;c.height=CH_TOTAL;
+        c.width=CW*SCALE;c.height=CH_TOTAL*SCALE;
         const ctx=c.getContext('2d');
+        ctx.scale(SCALE,SCALE);
 
         // Fondo blanco — JPEG no soporta transparencia, sin esto queda negro
         ctx.fillStyle='#ffffff';
@@ -2029,18 +2031,18 @@ function exportarPDF(){
 
         // ── Encabezado ──
         ctx.fillStyle=bgHdr;
-        ctx.fillRect(0,0,CW,30);
+        ctx.fillRect(0,0,CW,34);
+        ctx.textAlign='left';
         ctx.fillStyle=txtHdr;
-        ctx.font='bold 13px Arial';
-        ctx.fillText(titulo,14,20);
+        ctx.font='bold 14px Arial';
+        ctx.fillText(titulo,14,22);
         ctx.font='9px Arial';
-        ctx.fillStyle=txtHdr;
-        ctx.globalAlpha=0.8;
-        ctx.fillText('Dias promedio entre cosechas  ·  Solo meses cerrados',14,26);
+        ctx.globalAlpha=0.75;
+        ctx.fillText('Dias promedio entre cosechas  ·  Solo meses cerrados',14,32);
         ctx.globalAlpha=1;
 
         // ── KPI row ──
-        const kpiY=32;
+        const kpiY=38;
         const kpis=[
           mejor?{v:mejor.v+'d',l:'MEJOR MES',sub:MESES_ES_C[+mejor.k.slice(5)-1]+' '+mejor.k.slice(0,4),bg:'#f0fdf4',bd:'#16a34a',txt:'#15803d'}
                :{v:'—',l:'MEJOR MES',sub:'sin datos',bg:'#f9fafb',bd:'#d1d5db',txt:'#9ca3af'},
@@ -2050,7 +2052,7 @@ function exportarPDF(){
                         :{v:'—',l:'TENDENCIA A/A',sub:'1 año de datos',bg:'#f9fafb',bd:'#d1d5db',txt:'#9ca3af'},
           {v:totalC+'',l:'CICLOS MEDIDOS',sub:meses.length+' meses',bg:'#f8fafc',bd:'#94a3b8',txt:'#475569'},
         ];
-        const kpiW=(CW-16)/4, kpiH=CH_KPI-6;
+        const kpiW=(CW-16)/4, kpiH=CH_KPI-kpiY-4; // 90-38-4=48px
         kpis.forEach((k,i)=>{
           const kx=8+i*(kpiW+2), ky=kpiY;
           ctx.fillStyle=k.bg; roundRect(ctx,kx,ky,kpiW,kpiH,5);
@@ -2128,10 +2130,10 @@ function exportarPDF(){
         const ptsPorFinca=[];
         fincasConDatos.forEach((f)=>{
           const stroke=FINCA_STROKES[f]||'#334155';
-          const pts=meses.map((k)=>{
+          const pts=meses.map((k,i)=>{
             const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];
             if(arr.length<min)return null;
-            return{x:xPos(meses.indexOf(k)),y:yPos(avgC(arr))};
+            const v=avgC(arr);return{x:xPos(i),y:yPos(v),v};
           });
           ptsPorFinca.push({stroke,pts});
           ctx.save();
@@ -2168,31 +2170,33 @@ function exportarPDF(){
         ctx.strokeRect(pL,pT,gW,gH);
 
         // Label objetivo (fuera del clip para que sea visible a la derecha)
-        ctx.fillStyle='#f0fdf4'; roundRect(ctx,pL+gW+2,yObj-8,46,13,3);
-        ctx.fillStyle='#15803d'; ctx.font='bold 8px Arial'; ctx.textAlign='left';
+        ctx.fillStyle='#bbf7d0'; roundRect(ctx,pL+gW+2,yObj-8,46,13,3);
+        ctx.strokeStyle='#16a34a'; ctx.lineWidth=0.8;
+        ctx.strokeRect(pL+gW+2,yObj-8,46,13);
+        ctx.fillStyle='#15803d'; ctx.font='bold 8.5px Arial'; ctx.textAlign='left';
         ctx.fillText('OBJ '+objetivo+'d',pL+gW+5,yObj+2);
 
         // ── Leyenda ──
-        const legY=CH_KPI+CH_CHART+2;
+        const legY=CH_KPI+CH_CHART+6;
         let legX=pL;
-        fincasConDatos.forEach((f,fi)=>{
+        fincasConDatos.forEach((f)=>{
           const stroke=FINCA_STROKES[f]||'#334155';
-          ctx.strokeStyle=stroke;ctx.lineWidth=2;
-          ctx.beginPath();ctx.moveTo(legX,legY+7);ctx.lineTo(legX+18,legY+7);ctx.stroke();
-          ctx.beginPath();ctx.arc(legX+9,legY+7,3,0,Math.PI*2);
-          ctx.fillStyle=stroke;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
-          ctx.fillStyle='#374151';ctx.font='8.5px Arial';ctx.textAlign='left';
-          ctx.fillText(f,legX+22,legY+11);
-          legX+=100;
+          ctx.strokeStyle=stroke;ctx.lineWidth=2.5;
+          ctx.beginPath();ctx.moveTo(legX,legY+7);ctx.lineTo(legX+20,legY+7);ctx.stroke();
+          ctx.beginPath();ctx.arc(legX+10,legY+7,3.5,0,Math.PI*2);
+          ctx.fillStyle=stroke;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+          ctx.fillStyle='#374151';ctx.font='bold 8.5px Arial';ctx.textAlign='left';
+          ctx.fillText(f,legX+26,legY+11);
+          legX+=110;
         });
         // Objetivo en leyenda
-        ctx.strokeStyle='#16a34a';ctx.lineWidth=1.8;ctx.setLineDash([6,4]);
-        ctx.beginPath();ctx.moveTo(legX,legY+7);ctx.lineTo(legX+18,legY+7);ctx.stroke();
+        ctx.strokeStyle='#16a34a';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+        ctx.beginPath();ctx.moveTo(legX,legY+7);ctx.lineTo(legX+20,legY+7);ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle='#6b7280';ctx.font='8.5px Arial';ctx.textAlign='left';
-        ctx.fillText('Objetivo ('+objetivo+'d)',legX+22,legY+11);
+        ctx.fillStyle='#15803d';ctx.font='bold 8.5px Arial';ctx.textAlign='left';
+        ctx.fillText('Objetivo ('+objetivo+'d)',legX+26,legY+11);
 
-        return{dataURL:c.toDataURL('image/jpeg',0.95),w:CW,h:CH_TOTAL};
+        return{dataURL:c.toDataURL('image/jpeg',0.96),w:CW,h:CH_TOTAL};
       };
 
       // roundRect helper
@@ -2246,7 +2250,7 @@ function exportarPDF(){
           doc.text(lbl,bx+6,pieY);
         });
         doc.setTextColor(148,163,184);
-        doc.text('Solo meses cerrados  ·  G ≥'+MIN_G+' ciclos/mes  ·  H ≥'+MIN_H+' ciclos/mes',210,pieY,{align:'right'});
+        doc.text('Solo meses cerrados  ·  G ≥'+MIN_G+'  ·  J ≥'+MIN_J+'  ·  H ≥'+MIN_H+' ciclos/mes',210,pieY,{align:'right'});
       }
     }
 
