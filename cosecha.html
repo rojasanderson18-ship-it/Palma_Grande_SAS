@@ -2123,14 +2123,14 @@ function exportarPDF(){
           ctx.save();
           ctx.strokeStyle=stroke; ctx.lineWidth=2.2;
           ctx.lineJoin='round'; ctx.lineCap='round';
-          let lastIdx=-1,inPath=false;
-          pts.forEach((p,i)=>{
-            if(!p){if(inPath){ctx.stroke();inPath=false;}lastIdx=-1;return;}
-            if(lastIdx<0||i-lastIdx>2){if(inPath)ctx.stroke();ctx.beginPath();ctx.moveTo(p.x,p.y);inPath=true;}
-            else ctx.lineTo(p.x,p.y);
-            lastIdx=i;
-          });
-          if(inPath)ctx.stroke();
+          // Conectar todos los puntos con datos, sin importar gaps de meses sin datos
+          const validos=pts.map((p,i)=>p?{...p,i}:null).filter(Boolean);
+          if(validos.length>=2){
+            ctx.beginPath();
+            ctx.moveTo(validos[0].x,validos[0].y);
+            validos.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+            ctx.stroke();
+          }
           ctx.restore();
         });
 
