@@ -2595,6 +2595,7 @@ function init(){
   cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
   setInterval(async ()=>{
     if(!modoEdicion){ await cargarGAS(); render(); actualizarAlertas(); }
+    cargarCosecherosSAS(); // refrescar número de cosecheros SAS en todos los dispositivos
   }, 30*1000);
   setTimeout(()=>{ cargarCalc(); }, 300);
 }
