@@ -2063,9 +2063,17 @@ function exportarPDF(){
         // ── Área gráfica ──
         const pL=42,pR=52,pT=CH_KPI+10,pB=CH_KPI+CH_CHART-26;
         const gW=CW-pL-pR, gH=pB-pT;
-        const todosVals=serieG.map(x=>x.v);
-        const yMin=Math.max(0,Math.floor(Math.min(objetivo*0.8,...todosVals)-1));
-        const yMax=Math.ceil(Math.max(objetivo*1.2,...todosVals)+2);
+        // yMax/yMin basados en valores POR FINCA (no promedio combinado)
+        // para que ninguna línea individual se salga del área
+        const todosValsFinca=[];
+        fincasConDatos.forEach(f=>{
+          meses.forEach(k=>{
+            const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];
+            if(arr.length>=min)todosValsFinca.push(avgC(arr));
+          });
+        });
+        const yMin=Math.max(0,Math.floor(Math.min(objetivo*0.8,...todosValsFinca)-1));
+        const yMax=Math.ceil(Math.max(objetivo*1.2,...todosValsFinca)+2);
         const yRange=yMax-yMin;
         const xPos=i=>pL+i*(gW/(meses.length-1||1));
         const yPos=v=>pT+gH-(v-yMin)/yRange*gH;
@@ -2109,9 +2117,12 @@ function exportarPDF(){
         ctx.strokeStyle='#16a34a'; ctx.lineWidth=1.8; ctx.setLineDash([6,4]);
         ctx.beginPath(); ctx.moveTo(pL,yObj); ctx.lineTo(pL+gW,yObj); ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle='#f0fdf4'; roundRect(ctx,pL+gW+2,yObj-8,46,13,3);
-        ctx.fillStyle='#15803d'; ctx.font='bold 8px Arial'; ctx.textAlign='left';
-        ctx.fillText('OBJ '+objetivo+'d',pL+gW+5,yObj+2);
+
+        // Activar clipping para que nada salga del área de la gráfica
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(pL,pT,gW,gH);
+        ctx.clip();
 
         // Pasada 1: todas las líneas
         const ptsPorFinca=[];
@@ -2137,7 +2148,7 @@ function exportarPDF(){
           ctx.restore();
         });
 
-        // Pasada 2: todos los puntos encima de todas las líneas
+        // Pasada 2: todos los puntos encima de todas las líneas (dentro del clip)
         ptsPorFinca.forEach(({stroke,pts})=>{
           pts.forEach(p=>{
             if(!p)return;
@@ -2148,6 +2159,18 @@ function exportarPDF(){
             ctx.restore();
           });
         });
+
+        // Cerrar clipping — lo que sigue (leyenda, objetivo label) se dibuja sin clip
+        ctx.restore();
+
+        // Redibujar borde del área encima de las líneas
+        ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1;
+        ctx.strokeRect(pL,pT,gW,gH);
+
+        // Label objetivo (fuera del clip para que sea visible a la derecha)
+        ctx.fillStyle='#f0fdf4'; roundRect(ctx,pL+gW+2,yObj-8,46,13,3);
+        ctx.fillStyle='#15803d'; ctx.font='bold 8px Arial'; ctx.textAlign='left';
+        ctx.fillText('OBJ '+objetivo+'d',pL+gW+5,yObj+2);
 
         // ── Leyenda ──
         const legY=CH_KPI+CH_CHART+2;
