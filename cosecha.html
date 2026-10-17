@@ -2037,7 +2037,7 @@ function exportarPDF(){
     const s=fincaStats[f];
     const fc=fincaColors[f];
     return `<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;flex:1;">
-      <div style="background:${fc.hdr};padding:10px 14px;font-size:14px;font-weight:900;color:${fc.txt};letter-spacing:2px;">🌴 ${fc.name}</div>
+      <div style="background:${fc.hdr};padding:10px 14px;font-size:14px;font-weight:900;color:${fc.txt};letter-spacing:2px;">${fc.name}</div>
       <div style="padding:10px 12px;display:flex;flex-direction:column;gap:5px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#f0fdf4;border-radius:6px;">
           <span style="font-size:11px;color:#6b7280;">En ciclo</span>
@@ -2109,26 +2109,160 @@ function exportarPDF(){
         <div style="display:flex;gap:10px;">${fincaCols}</div>
       </div>
 
-      <!-- RANGOS -->
-      <div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Distribucion de HA por dias del ciclo</div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
-          ${rangos.map((r,i)=>{
-            const cols=['#15803d','#4d7c0f','#854d0e','#9a3412','#b91c1c'];
-            const bgs=['#f0fdf4','#f7fee7','#fffbeb','#fff7ed','#fef2f2'];
-            const bars=['#16a34a','#84cc16','#eab308','#f97316','#dc2626'];
-            const p=haTotalR>0?Math.round(r.ha/haTotalR*100):0;
-            return `<div style="background:${bgs[i]};border-radius:8px;padding:10px;border:1px solid #e5e7eb;text-align:center;">
-              <div style="font-size:9px;color:#6b7280;margin-bottom:4px;">${r.label}</div>
-              <div style="font-size:20px;font-weight:900;color:${cols[i]};line-height:1;">${r.ha>0?fmt(r.ha):'—'}</div>
-              <div style="font-size:10px;color:#9ca3af;margin-top:2px;">${p}%</div>
-              <div style="height:4px;background:#e5e7eb;border-radius:2px;margin-top:6px;">
-                <div style="height:100%;width:${p}%;background:${bars[i]};border-radius:2px;"></div>
+      <!-- RANGOS + SEMÁFORO TIPO PALMA -->
+      ${(()=>{
+        // Semáforo tipo palma
+        const tipoStats2={guineensis:{v:0,a:0,r:0},joven:{v:0,a:0,r:0},hibrido:{v:0,a:0,r:0}};
+        LOTES.forEach(l=>{
+          const tipo=l.tipo==='hibrido'?'hibrido':l.tipo==='joven'?'joven':'guineensis';
+          const cs=getCellState(l.finca+'_'+l.lote,l.tipo,hoy);
+          if(cs.tipo==='cosechando'||cs.tipo==='verde') tipoStats2[tipo].v++;
+          else if(cs.tipo==='azul') tipoStats2[tipo].a++;
+          else if(cs.tipo==='rojo') tipoStats2[tipo].r++;
+        });
+        const pill=(n,cls)=>`<span style="display:inline-block;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:700;${cls}">${n}</span>`;
+        const pV='background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;';
+        const pA='background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;';
+        const pR='background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;';
+        const dot=(c)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c};margin-right:3px;vertical-align:middle;"></span>`;
+        const semRows=[
+          {label:dot('#374151')+'Guineensis', s:tipoStats2.guineensis},
+          {label:dot('#d97706')+'Híbrida',    s:tipoStats2.hibrido},
+          {label:dot('#16a34a')+'Joven',      s:tipoStats2.joven},
+        ].map(row=>`<tr>
+          <td style="padding:4px 6px;border-top:1px solid #f3f4f6;font-size:9.5px;">${row.label}</td>
+          <td style="padding:4px 6px;border-top:1px solid #f3f4f6;text-align:right;">${pill(row.s.v,pV)}</td>
+          <td style="padding:4px 6px;border-top:1px solid #f3f4f6;text-align:right;">${pill(row.s.a,pA)}</td>
+          <td style="padding:4px 6px;border-top:1px solid #f3f4f6;text-align:right;">${pill(row.s.r,pR)}</td>
+        </tr>`).join('');
+        const cols=['#15803d','#4d7c0f','#854d0e','#9a3412','#b91c1c'];
+        const bgs=['#f0fdf4','#f7fee7','#fffbeb','#fff7ed','#fef2f2'];
+        const bars=['#16a34a','#84cc16','#eab308','#f97316','#dc2626'];
+        const rangosHTML=rangos.map((r,i)=>{
+          const p=haTotalR>0?Math.round(r.ha/haTotalR*100):0;
+          return `<div style="background:${bgs[i]};border-radius:7px;padding:7px 5px;border:1px solid #e5e7eb;text-align:center;">
+            <div style="font-size:8px;color:#6b7280;margin-bottom:2px;">${r.label}</div>
+            <div style="font-size:17px;font-weight:900;color:${cols[i]};line-height:1;">${r.ha>0?fmt(r.ha):'—'}</div>
+            <div style="font-size:9px;color:#9ca3af;margin-top:1px;">${p}%</div>
+            <div style="height:3px;background:#e5e7eb;border-radius:2px;margin-top:4px;">
+              <div style="height:100%;width:${p}%;background:${bars[i]};border-radius:2px;"></div>
+            </div>
+          </div>`;
+        }).join('');
+        return `<div>
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Distribucion de HA por dias del ciclo &amp; semaforo por tipo de palma</div>
+          <div style="display:grid;grid-template-columns:1.15fr 0.85fr;gap:10px;align-items:start;">
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">${rangosHTML}</div>
+            <table style="width:100%;border-collapse:collapse;font-size:9.5px;">
+              <thead><tr>
+                <th style="font-size:8.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;padding:3px 6px;text-align:left;">Tipo</th>
+                <th style="font-size:8.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;padding:3px 5px;text-align:right;">Ciclo</th>
+                <th style="font-size:8.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;padding:3px 5px;text-align:right;">Toler.</th>
+                <th style="font-size:8.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;padding:3px 5px;text-align:right;">Incump.</th>
+              </tr></thead>
+              <tbody>${semRows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      })()}
+
+      <!-- CICLO PROMEDIO + VELOCIDAD + RACHA -->
+      ${(()=>{
+        // Ciclo promedio vs objetivo
+        const tiposInfoP={guineensis:{lbl:'Guineensis',obj:12},hibrido:{lbl:'Híbridas',obj:22},joven:{lbl:'Palma joven',obj:12}};
+        const mesActP=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+        const cicloFilas=['FINCA 1','FINCA 2','FINCA 3'].map(finca=>{
+          const chips=Object.entries(tiposInfoP).map(([tipo,info])=>{
+            const lotesT=LOTES.filter(l=>l.finca===finca&&(l.tipo==='hibrido'?'hibrido':l.tipo==='joven'?'joven':'guineensis')===tipo);
+            if(!lotesT.length) return null;
+            const gapMin=tipo==='hibrido'?10:5,gapMax=tipo==='hibrido'?60:45;
+            const gaps=[];
+            lotesT.forEach(l=>{
+              const m=marcas[l.finca+'_'+l.lote]||{};
+              const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
+              for(let i=1;i<inicios.length;i++){
+                const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
+                if(gap<gapMin||gap>gapMax) continue;
+                if(inicios[i].substring(0,7)===mesActP) gaps.push(gap);
+              }
+            });
+            if(!gaps.length) return null;
+            const avg=Math.round(gaps.reduce((s,v)=>s+v,0)/gaps.length*10)/10;
+            const diff=Math.round((avg-info.obj)*10)/10;
+            const bc=diff<=0?'#bbf7d0':diff<=2?'#bfdbfe':'#fecaca';
+            const tc=diff<=0?'#15803d':diff<=2?'#1d4ed8':'#b91c1c';
+            const bg=diff<=0?'#f0fdf4':diff<=2?'#eff6ff':'#fef2f2';
+            return `<span style="font-size:8.5px;color:#6b7280;margin-right:3px;">${info.lbl.substring(0,4)}:</span><span style="font-size:8.5px;font-weight:700;color:${tc};">${avg}d</span><span style="display:inline-block;padding:1px 4px;border-radius:10px;font-size:8px;font-weight:700;background:${bg};color:${tc};border:1px solid ${bc};margin-left:2px;">${(diff>0?'+':'')+diff}</span>`;
+          }).filter(Boolean);
+          if(!chips.length) return `<div style="display:flex;align-items:center;gap:6px;padding:4px 7px;border-radius:5px;background:#f9fafb;"><span style="font-size:8.5px;font-weight:700;color:#374151;min-width:44px;">${finca.replace('FINCA ','F')}</span><span style="font-size:8.5px;color:#9ca3af;">sin datos</span></div>`;
+          return `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:4px 7px;border-radius:5px;background:#f9fafb;"><span style="font-size:8.5px;font-weight:700;color:#374151;min-width:44px;">${finca.replace('FINCA ','F')}</span>${chips.join('')}</div>`;
+        }).join('');
+
+        // Velocidad recuperación
+        const hace7P=new Date(hoy); hace7P.setDate(hace7P.getDate()-7);
+        let rojosAntesP=0, recupHoyP=0, rojosAunP=0;
+        LOTES.forEach(l=>{
+          const key=l.finca+'_'+l.lote;
+          const csA=getCellState(key,l.tipo,hace7P);
+          const csH=getCellState(key,l.tipo,hoy);
+          if(csA.tipo==='rojo'){ rojosAntesP++; if(csH.tipo==='rojo') rojosAunP++; else recupHoyP++; }
+        });
+        const velPct=rojosAntesP>0?Math.round(recupHoyP/rojosAntesP*100):0;
+        const velAunPct=rojosAntesP>0?Math.round(rojosAunP/rojosAntesP*100):0;
+
+        // Racha
+        const UMBRAL=0.70, NHIST=16;
+        let rachaActP=0, mejorP=0, rachaTmpP=0;
+        const heatP=[];
+        for(let w=NHIST-1;w>=0;w--){
+          const fs=new Date(hoy); fs.setDate(fs.getDate()-w*7);
+          let sv=0,sa=0,sr=0;
+          LOTES.forEach(l=>{const cs=getCellState(l.finca+'_'+l.lote,l.tipo,fs);if(cs.tipo==='cosechando'||cs.tipo==='verde')sv++;else if(cs.tipo==='azul')sa++;else if(cs.tipo==='rojo')sr++;});
+          const tot=sv+sa+sr||1;
+          const cumple=(sv/tot)>=UMBRAL;
+          const enTol=((sv+sa)/tot)>=UMBRAL;
+          const color=cumple?'#16a34a':enTol?'#2563eb':'#dc2626';
+          heatP.push({color,cumple});
+          if(cumple){rachaTmpP++;if(rachaTmpP>mejorP)mejorP=rachaTmpP;}else rachaTmpP=0;
+        }
+        for(let i=heatP.length-1;i>=0;i--){if(heatP[i].cumple)rachaActP++;else break;}
+        const heatDots=heatP.map((s,i)=>`<div style="width:10px;height:10px;border-radius:2px;background:${s.color};display:inline-block;margin:1px;${i===heatP.length-1?'outline:2px solid '+s.color+';outline-offset:1px;':''}"></div>`).join('');
+
+        return `<div>
+          <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">Ciclo promedio vs objetivo · Recuperacion · Racha de cumplimiento</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div>
+              <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:4px;">Ciclo prom. vs objetivo</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">${cicloFilas}</div>
+            </div>
+            <div>
+              <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:4px;">Velocidad recuperacion (7d)</div>
+              <div style="background:#f9fafb;border-radius:6px;padding:7px 9px;">
+                <div style="display:flex;gap:10px;">
+                  <div><div style="font-size:20px;font-weight:900;color:#16a34a;line-height:1;">${recupHoyP}</div><div style="font-size:8.5px;color:#6b7280;">recuperados</div></div>
+                  <div><div style="font-size:20px;font-weight:900;color:#dc2626;line-height:1;">${rojosAunP}</div><div style="font-size:8.5px;color:#6b7280;">siguen rojo</div></div>
+                </div>
+                <div style="display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:5px;">
+                  <div style="flex:${recupHoyP||0};background:#16a34a;"></div>
+                  <div style="flex:${rojosAunP||0};background:#dc2626;"></div>
+                </div>
+                <div style="font-size:8.5px;color:#6b7280;margin-top:4px;">${velPct}% salieron del incumplimiento</div>
               </div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
+            </div>
+            <div>
+              <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:4px;">Racha de cumplimiento</div>
+              <div style="background:#f9fafb;border-radius:6px;padding:7px 9px;">
+                <div style="display:flex;align-items:baseline;gap:6px;">
+                  <div style="font-size:20px;font-weight:900;color:#16a34a;line-height:1;">${rachaActP}</div>
+                  <div><div style="font-size:9px;font-weight:700;color:#374151;">sem. consec. &ge;70%</div><div style="font-size:8.5px;color:#6b7280;">Mejor: ${mejorP} sem.</div></div>
+                </div>
+                <div style="margin-top:5px;line-height:0;">${heatDots}</div>
+                <div style="font-size:8px;color:#6b7280;margin-top:3px;">&#x1F7E2;&ge;70% · &#x1F535;toler. · &#x1F534;incumplio</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      })()}
 
       <!-- CRITICOS + PROXIMAS -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
