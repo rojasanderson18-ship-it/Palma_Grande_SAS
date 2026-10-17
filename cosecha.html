@@ -2853,10 +2853,11 @@ function init(){
   // Todos los dispositivos muestran datos locales de inmediato
   render();
   actualizarAlertas();
+  calcularIndicadores();
   // Todos los dispositivos sincronizan con GAS para ver cambios recientes
-  cargarGAS().finally(()=>{ render(); actualizarAlertas(); });
+  cargarGAS().finally(()=>{ render(); actualizarAlertas(); calcularIndicadores(); });
   setInterval(async ()=>{
-    if(!modoEdicion){ await cargarGAS(); render(); actualizarAlertas(); }
+    if(!modoEdicion){ await cargarGAS(); render(); actualizarAlertas(); calcularIndicadores(); }
     cargarCosecherosSAS(); // refrescar número de cosecheros SAS en todos los dispositivos
   }, 30*1000);
   setTimeout(()=>{ cargarCalc(); }, 300);
