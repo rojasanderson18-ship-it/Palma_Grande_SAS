@@ -2110,33 +2110,39 @@ function exportarPDF(){
         ctx.fillStyle='#15803d'; ctx.font='bold 8px Arial'; ctx.textAlign='left';
         ctx.fillText('OBJ '+objetivo+'d',pL+gW+5,yObj+2);
 
-        // Líneas por finca
-        fincasConDatos.forEach((f,fi)=>{
+        // Pasada 1: todas las líneas
+        const ptsPorFinca=[];
+        fincasConDatos.forEach((f)=>{
           const stroke=FINCA_STROKES[f]||'#334155';
-          const pts=meses.map((k,i)=>{
+          const pts=meses.map((k)=>{
             const d=ciclosPorMes[k];const arr=(d&&d[f])?d[f][tipo]:[];
             if(arr.length<min)return null;
-            return{x:xPos(i),y:yPos(avgC(arr))};
+            return{x:xPos(meses.indexOf(k)),y:yPos(avgC(arr))};
           });
+          ptsPorFinca.push({stroke,pts});
+          ctx.save();
           ctx.strokeStyle=stroke; ctx.lineWidth=2.2;
           ctx.lineJoin='round'; ctx.lineCap='round';
-          let lastIdx=-1;
+          let lastIdx=-1,inPath=false;
           pts.forEach((p,i)=>{
-            if(!p){
-              if(lastIdx>=0)ctx.stroke();
-              lastIdx=-1; return;
-            }
-            if(lastIdx<0||i-lastIdx>2){ctx.beginPath();ctx.moveTo(p.x,p.y);}
+            if(!p){if(inPath){ctx.stroke();inPath=false;}lastIdx=-1;return;}
+            if(lastIdx<0||i-lastIdx>2){if(inPath)ctx.stroke();ctx.beginPath();ctx.moveTo(p.x,p.y);inPath=true;}
             else ctx.lineTo(p.x,p.y);
             lastIdx=i;
           });
-          if(lastIdx>=0)ctx.stroke();
-          // Puntos
+          if(inPath)ctx.stroke();
+          ctx.restore();
+        });
+
+        // Pasada 2: todos los puntos encima de todas las líneas
+        ptsPorFinca.forEach(({stroke,pts})=>{
           pts.forEach(p=>{
             if(!p)return;
-            ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);
+            ctx.save();
+            ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);
             ctx.fillStyle=stroke;ctx.fill();
-            ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+            ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+            ctx.restore();
           });
         });
 
