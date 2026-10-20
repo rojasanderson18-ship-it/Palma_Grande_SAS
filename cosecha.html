@@ -1437,17 +1437,22 @@ function calcularIndicadores(){
       if(!lotesT.length) return;
       // Calcular gaps del mes actual (o las últimas 4 semanas)
       const gapMin=tipo==='hibrido'?10:5, gapMax=tipo==='hibrido'?60:45;
-      const gaps=[];
-      lotesT.forEach(l=>{
-        const m=marcas[l.finca+'_'+l.lote]||{};
-        const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
-        for(let i=1;i<inicios.length;i++){
-          const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
-          if(gap<gapMin||gap>gapMax) continue;
-          const mes=inicios[i].substring(0,7);
-          if(mes===mesActual) gaps.push(gap);
-        }
-      });
+      // Buscar primero en el mes actual; si no hay datos usar las últimas 4 semanas (periodos)
+      const calcGaps=(mesesFiltro)=>{
+        const g=[];
+        lotesT.forEach(l=>{
+          const m=marcas[l.finca+'_'+l.lote]||{};
+          const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
+          for(let i=1;i<inicios.length;i++){
+            const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
+            if(gap<gapMin||gap>gapMax) continue;
+            if(mesesFiltro.includes(inicios[i].substring(0,7))) g.push(gap);
+          }
+        });
+        return g;
+      };
+      let gaps=calcGaps([mesActual]);
+      if(!gaps.length) gaps=calcGaps(periodos);
       if(!gaps.length){html+='<div class="ciclo-tipo-row"><span class="ciclo-tipo-lbl">'+info.lbl+'</span><span class="ciclo-sin">sin datos</span></div>';return;}
       const avg=Math.round(gaps.reduce((s,v)=>s+v,0)/gaps.length*10)/10;
       const diff=Math.round((avg-info.obj)*10)/10;
@@ -2171,21 +2176,27 @@ function exportarPDF(){
         // Ciclo promedio vs objetivo
         const tiposInfoP={guineensis:{lbl:'Guineensis',obj:12},hibrido:{lbl:'Híbridas',obj:22},joven:{lbl:'Palma joven',obj:12}};
         const mesActP=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+        const periodosP=[0,1,2,3].map(d=>{const dt=new Date(hoy);dt.setDate(dt.getDate()-d*7);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');});
         const cicloFilas=['FINCA 1','FINCA 2','FINCA 3'].map(finca=>{
           const chips=Object.entries(tiposInfoP).map(([tipo,info])=>{
             const lotesT=LOTES.filter(l=>l.finca===finca&&(l.tipo==='hibrido'?'hibrido':l.tipo==='joven'?'joven':'guineensis')===tipo);
             if(!lotesT.length) return null;
             const gapMin=tipo==='hibrido'?10:5,gapMax=tipo==='hibrido'?60:45;
-            const gaps=[];
-            lotesT.forEach(l=>{
-              const m=marcas[l.finca+'_'+l.lote]||{};
-              const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
-              for(let i=1;i<inicios.length;i++){
-                const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
-                if(gap<gapMin||gap>gapMax) continue;
-                if(inicios[i].substring(0,7)===mesActP) gaps.push(gap);
-              }
-            });
+            const calcGapsP=(mesesF)=>{
+              const g=[];
+              lotesT.forEach(l=>{
+                const m=marcas[l.finca+'_'+l.lote]||{};
+                const inicios=Object.keys(m).filter(iso=>m[iso]==='nuevo').sort();
+                for(let i=1;i<inicios.length;i++){
+                  const gap=Math.round((new Date(inicios[i])-new Date(inicios[i-1]))/86400000);
+                  if(gap<gapMin||gap>gapMax) continue;
+                  if(mesesF.includes(inicios[i].substring(0,7))) g.push(gap);
+                }
+              });
+              return g;
+            };
+            let gaps=calcGapsP([mesActP]);
+            if(!gaps.length) gaps=calcGapsP(periodosP);
             if(!gaps.length) return null;
             const avg=Math.round(gaps.reduce((s,v)=>s+v,0)/gaps.length*10)/10;
             const diff=Math.round((avg-info.obj)*10)/10;
