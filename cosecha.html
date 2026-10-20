@@ -3001,12 +3001,15 @@ function aplicarSASUI(sas){
   // sas = [{nombre, n}, {nombre, n}]
   sas.forEach((s, idx) => {
     const i = idx + 1;
-    const nom = s.nombre || 'SAS ' + i;
-    const n   = s.n != null ? s.n : '—';
+    // Solo sobreescribir localStorage si GAS trae un valor real (no el default vacío)
+    const gasNombre = s.nombre && s.nombre !== 'SAS '+i ? s.nombre : null;
+    const gasN      = s.n != null && s.n !== '' ? s.n : null;
+    const nom = gasNombre || localStorage.getItem('pg_sas'+i+'_nombre') || 'SAS '+i;
+    const n   = gasN      != null ? gasN : localStorage.getItem('pg_sas'+i+'_n');
     document.getElementById('st-sas'+i+'-nom').textContent = nom;
-    document.getElementById('st-sas'+i+'-n').textContent  = n;
-    localStorage.setItem('pg_sas'+i+'_nombre', nom);
-    if(s.n != null) localStorage.setItem('pg_sas'+i+'_n', s.n);
+    document.getElementById('st-sas'+i+'-n').textContent  = n != null ? n : '—';
+    if(gasNombre) localStorage.setItem('pg_sas'+i+'_nombre', gasNombre);
+    if(gasN != null) localStorage.setItem('pg_sas'+i+'_n', gasN);
   });
 }
 async function cargarCosecherosSAS(){
