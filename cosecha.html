@@ -101,6 +101,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 .th-fecha{background:var(--surface2);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;text-align:center;padding:2px 1px;}
 .th-diaSem{background:var(--surface2);color:var(--muted);font-size:9px;text-align:center;padding:1px;}
 .th-hoy-col{color:var(--gold2) !important;}
+.th-festivo{color:#d97706 !important;background:#fffbeb !important;}
+.th-festivo-dia{color:#d97706 !important;background:#fffbeb !important;}
+.festivo-col{background:rgba(251,191,36,.07) !important;}
 .th-left{background:var(--surface2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:500;padding:6px 8px;text-align:center;}
 
 .td-finca{color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:9px;letter-spacing:1px;text-align:center;padding:2px 1px;}
@@ -685,7 +688,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
       </div>
 
       <!-- TOTAL GENERAL -->
-      <div id="calc-result-wrap" style="display:none;margin-top:12px;background:#1a1f2e;border-radius:10px;padding:14px;display:none;">
+      <div id="calc-result-wrap" style="display:none;margin-top:12px;background:#1a1f2e;border-radius:10px;padding:14px;">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
           <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:8px;padding:10px;">
             <div style="font-family:Bebas Neue,sans-serif;font-size:32px;color:#f0c96a;" id="cr-total"></div>
@@ -1741,19 +1744,29 @@ function calcularDashboard(){
     }
   });
 
+  // Calcular tendencia real últimas 5 semanas
+  const trendLabels=[], trendVerde=[], trendRojo=[];
+  for(let w=4;w>=0;w--){
+    const fd=new Date(hoy); fd.setDate(fd.getDate()-w*7);
+    let sv=0,sr=0;
+    LOTES.forEach(l=>{const cs=getCellState(l.finca+'_'+l.lote,l.tipo,fd);if(cs.tipo==='verde'||cs.tipo==='cosechando')sv++;else if(cs.tipo==='rojo')sr++;});
+    trendLabels.push('Sem '+semanaNum(fd));
+    trendVerde.push(sv); trendRojo.push(sr);
+  }
+
   // Charts
   if(!chartsInit){
     chartsInit=true;
     chartTrend = new Chart(document.getElementById('chart-trend'),{
       type:'line',
       data:{
-        labels:['Sem 19','Sem 20','Sem 21','Sem 22','Sem 23'],
+        labels:trendLabels,
         datasets:[
-          {label:'En ciclo',data:[28,30,33,29,31],borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
-          {label:'Incumplimiento',data:[14,12,10,13,11],borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2}
+          {label:'En ciclo',data:trendVerde,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
+          {label:'Incumplimiento',data:trendRojo,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2}
         ]
       },
-      options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},min:0,max:45}}}
+      options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},min:0,max:LOTES.length}}}
     });
     chartFinca = new Chart(document.getElementById('chart-finca'),{
       type:'bar',
@@ -1768,6 +1781,10 @@ function calcularDashboard(){
       options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.5,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},scales:{x:{stacked:true,ticks:{font:{size:10}}},y:{stacked:true,ticks:{font:{size:10}}}}}
     });
   } else {
+    chartTrend.data.labels = trendLabels;
+    chartTrend.data.datasets[0].data = trendVerde;
+    chartTrend.data.datasets[1].data = trendRojo;
+    chartTrend.update();
     chartFinca.data.datasets[0].data = fincas.map(f=>fincaStats[f].verde);
     chartFinca.data.datasets[1].data = fincas.map(f=>fincaStats[f].azul);
     chartFinca.data.datasets[2].data = fincas.map(f=>fincaStats[f].rojo);
@@ -1984,7 +2001,7 @@ function exportarPDF(){
       fHA+=l.ha;
       if(cs.tipo==='cosechando'){fC++;fHAen+=l.ha;}
       else if(cs.tipo==='verde'){fV++;fHAen+=l.ha;}
-      else if(cs.tipo==='azul'){fA++;fHAf+=l.ha;}
+      else if(cs.tipo==='azul'){fA++;fHAen+=l.ha;}
       else if(cs.tipo==='rojo'){fR++;fHAf+=l.ha;}
     });
     const tot=fV+fA+fR+fC;
@@ -2829,7 +2846,7 @@ function exportarPDF(){
 let semanasProyeccion = 0;
 
 function cambiarProyeccion(d){
-  semanasProyeccion = Math.max(0, semanasProyeccion + d);
+  semanasProyeccion = Math.max(0, Math.min(12, semanasProyeccion + d));
   document.getElementById('proj-val').textContent = semanasProyeccion;
   render();
 }
@@ -2981,6 +2998,16 @@ async function cargarCalc(){
   }catch(e){}
 }
 
+// DATOS_RESPALDO generado dinámicamente: cada lote arranca con una marca "nuevo" 3 días atrás
+// para que sin conexión aparezca en verde (en ciclo) en vez de rojo (130+ días).
+function _generarRespaldo(){
+  const hoy=hoyLocal();
+  const base=new Date(hoy); base.setDate(base.getDate()-3);
+  const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const r={};
+  LOTES.forEach(l=>{ r[l.finca+'_'+l.lote]={[iso(base)]:'nuevo'}; });
+  return r;
+}
 const DATOS_RESPALDO = {"FINCA 1_10":{"2026-05-10":"continuidad"},"FINCA 1_11":{"2026-05-08":"continuidad","2026-05-09":"continuidad"},"FINCA 1_11A":{"2026-05-11":"continuidad"},"FINCA 1_12":{"2026-05-20":"continuidad"},"FINCA 1_13":{"2026-05-05":"continuidad","2026-05-25":"nuevo","2026-06-05":"nuevo","2026-06-08":"continuidad","2026-06-09":"continuidad"},"FINCA 1_14":{"2026-05-05":"continuidad","2026-06-09":"nuevo"},"FINCA 1_15":{"2026-05-06":"continuidad"},"FINCA 1_16":{"2026-05-06":"continuidad","2026-05-07":"continuidad"},"FINCA 1_17":{"2026-05-07":"continuidad","2026-05-08":"continuidad"},"FINCA 1_18":{"2026-05-11":"continuidad","2026-05-12":"continuidad","2026-05-13":"continuidad","2026-05-14":"continuidad","2026-06-03":"nuevo"},"FINCA 1_18A":{"2026-05-12":"continuidad"},"FINCA 1_1A":{"2026-05-20":"continuidad","2026-05-21":"continuidad","2026-05-22":"continuidad"},"FINCA 1_2A":{"2026-05-19":"continuidad","2026-05-20":"continuidad"},"FINCA 1_3A":{"2026-05-18":"continuidad","2026-05-19":"continuidad"},"FINCA 1_4A":{"2026-05-14":"continuidad","2026-05-15":"continuidad"},"FINCA 1_5":{"2026-05-13":"continuidad","2026-05-14":"continuidad"},"FINCA 1_6":{"2026-05-14":"continuidad","2026-05-15":"continuidad","2026-05-16":"continuidad","2026-06-03":"nuevo","2026-06-04":"continuidad","2026-06-05":"continuidad"},"FINCA 1_7":{"2026-05-13":"continuidad"},"FINCA 1_8":{"2026-05-12":"continuidad","2026-05-13":"continuidad"},"FINCA 1_9":{"2026-05-11":"continuidad"},"FINCA 2_19":{"2026-06-01":"continuidad"},"FINCA 2_20":{"2026-05-27":"continuidad"},"FINCA 2_21":{"2026-05-28":"continuidad"},"FINCA 2_22":{"2026-05-27":"continuidad"},"FINCA 2_23":{"2026-06-01":"continuidad","2026-06-02":"continuidad"},"FINCA 2_24":{"2026-06-02":"continuidad","2026-06-03":"continuidad"},"FINCA 2_25":{"2026-06-03":"continuidad"},"FINCA 2_26":{"2026-06-02":"continuidad","2026-06-03":"continuidad"},"FINCA 2_27":{"2026-06-03":"continuidad","2026-06-04":"continuidad"},"FINCA 2_28":{"2026-06-04":"continuidad"},"FINCA 2_29":{"2026-06-05":"continuidad","2026-06-06":"continuidad"},"FINCA 2_30":{"2026-06-05":"continuidad","2026-06-06":"continuidad","2026-06-08":"continuidad"},"FINCA 2_31":{"2026-05-13":"continuidad","2026-06-08":"nuevo","2026-06-09":"continuidad"},"FINCA 2_32A":{"2026-05-13":"continuidad","2026-06-09":"nuevo"},"FINCA 2_33A":{"2026-05-14":"continuidad","2026-06-09":"nuevo"},"FINCA 2_34A":{"2026-05-14":"continuidad","2026-06-09":"nuevo"},"FINCA 2_35A":{"2026-05-15":"continuidad","2026-05-16":"continuidad"},"FINCA 2_36":{"2026-06-05":"continuidad","2026-06-06":"continuidad","2026-06-09":"continuidad"},"FINCA 2_37":{"2026-05-22":"continuidad","2026-05-29":"nuevo","2026-06-04":"continuidad","2026-06-05":"continuidad"},"FINCA 2_38":{"2026-06-04":"continuidad"},"FINCA 2_39":{"2026-06-03":"continuidad","2026-06-04":"continuidad"},"FINCA 2_40":{"2026-06-01":"continuidad","2026-06-02":"continuidad"},"FINCA 2_41":{"2026-06-01":"continuidad"},"FINCA 3_42":{"2026-05-27":"continuidad"},"FINCA 3_43A":{"2026-05-25":"continuidad"},"FINCA 3_43B":{"2026-05-26":"continuidad"},"FINCA 3_44A":{"2026-05-27":"continuidad"},"FINCA 3_45A":{"2026-05-26":"continuidad"},"FINCA 3_45B":{"2026-05-26":"continuidad"},"FINCA 3_46":{"2026-05-25":"continuidad"},"FINCA 3_47":{"2026-05-22":"continuidad","2026-05-25":"continuidad"},"FINCA 3_48":{"2026-05-25":"continuidad"},"FINCA 3_49":{"2026-05-21":"continuidad"},"FINCA 3_50":{"2026-05-22":"continuidad","2026-05-25":"continuidad"},"FINCA 3_51":{"2026-05-22":"continuidad"},"FINCA 3_52":{"2026-05-21":"continuidad"},"FINCA 3_53":{"2026-05-20":"continuidad"},"FINCA 3_54":{"2026-05-20":"continuidad"},"FINCA 3_55":{"2026-05-18":"continuidad"},"FINCA 3_56":{"2026-05-15":"continuidad"},"FINCA 3_57":{"2026-05-16":"continuidad"},"FINCA 3_58":{"2026-04-29":"continuidad"}};
 
 function init(){
@@ -2989,10 +3016,10 @@ function init(){
   document.getElementById('hdr-sem').textContent='Semana '+semanaNum(hoy);
   cargarLocal();
   cargarPendientes();
-  // Si localStorage está vacío, cargar respaldo embebido primero
+  // Si localStorage está vacío, cargar respaldo dinámico (lotes en verde, 3 días atrás)
   const totalLocal = Object.values(marcas).reduce((s,v)=>s+Object.keys(v).length,0);
   if(totalLocal === 0){
-    marcas = JSON.parse(JSON.stringify(DATOS_RESPALDO));
+    marcas = _generarRespaldo();
     guardarLocal();
   }
   // Todos los dispositivos muestran datos locales de inmediato
