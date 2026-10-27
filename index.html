@@ -440,6 +440,12 @@ a.mtab:hover{color:#16a34a;}
 }
 
 
+/* ── FLOTA Y COMBUSTIBLE (sección) ─────────── */
+.flt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.flt-tabs button{border:1px solid #e3e6ed;background:#fff;border-radius:20px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:#4b5563;cursor:pointer}
+.flt-tabs button.on{background:#16a34a;border-color:#16a34a;color:#fff}
+.flt-frame{display:block;width:100%;height:75vh;border:1px solid #eef0f4;border-radius:14px;background:#fff}
+#section-flota{margin:-4px 0 -24px}
 /* ── FLOTA DE MAQUINARIA (inicio) ─────────── */
 .flt .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .flt-abrir{font-size:12.5px;font-weight:700;color:#16a34a;text-decoration:none;white-space:nowrap}
@@ -699,7 +705,15 @@ a.mtab:hover{color:#16a34a;}
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Fertilización</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-flower"/></svg> Polinización</span>
     <a class="sb-link" href="mantenimiento.html"><svg class="ic-svg"><use href="#i-wrench"/></svg> Mantenimiento</a>
-    <a class="sb-link" href="https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/"><svg class="ic-svg"><use href="#i-truck"/></svg> Flota y Combustible</a>
+    <a class="sb-link menu-toggle" id="sb-link-flota" href="javascript:void(0)" onclick="toggleFlotaMenu()"><svg class="ic-svg"><use href="#i-truck"/></svg> Flota y Combustible <svg class="ic-svg chev"><use href="#i-chevron-down"/></svg></a>
+    <div id="sb-flota-sub" style="display:none;">
+      <a class="sb-sublink" id="sbf-resumen" href="javascript:void(0)" onclick="showFlota('resumen')"><svg class="ic-svg"><use href="#i-bar-chart"/></svg> Resumen</a>
+      <a class="sb-sublink" id="sbf-taller" href="javascript:void(0)" onclick="showFlota('taller')"><svg class="ic-svg"><use href="#i-wrench"/></svg> Taller</a>
+      <a class="sb-sublink" id="sbf-programacion" href="javascript:void(0)" onclick="showFlota('programacion')"><svg class="ic-svg"><use href="#i-calendar"/></svg> Programación</a>
+      <a class="sb-sublink" id="sbf-preoperativo" href="javascript:void(0)" onclick="showFlota('preoperativo')"><svg class="ic-svg"><use href="#i-check"/></svg> Preoperativo</a>
+      <a class="sb-sublink" id="sbf-gerencia" href="javascript:void(0)" onclick="showFlota('gerencia')"><svg class="ic-svg"><use href="#i-trending-up"/></svg> Indicadores</a>
+      <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Combustible</span>
+    </div>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-clipboard"/></svg> Inventarios</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-cloud"/></svg> Clima</span>
 
@@ -806,7 +820,7 @@ a.mtab:hover{color:#16a34a;}
       <div class="grid-row">
         <div class="panel flt">
           <div class="panel-head"><div><div class="panel-title">Flota de maquinaria · hoy</div><div class="panel-sub" id="flt-sub">Consultando el taller…</div></div>
-            <a class="flt-abrir" href="https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/">Abrir Flota y Combustible ›</a></div>
+            <a class="flt-abrir" href="javascript:void(0)" onclick="showFlota('resumen')">Abrir Flota y Combustible ›</a></div>
           <div class="flt-cuerpo" id="flt-cuerpo"><div class="empty-panel-msg">Consultando…</div></div>
         </div>
       </div>
@@ -852,6 +866,16 @@ a.mtab:hover{color:#16a34a;}
       </div>
       </div>
       <!-- /section-inicio -->
+
+      <!-- Flota y Combustible: el sistema de maquinaria dentro de Agrovisión -->
+      <div id="section-flota" style="display:none;">
+        <div class="flt-tabs" id="flt-tabs">
+          <button data-ft="resumen">Resumen</button><button data-ft="taller">Taller</button>
+          <button data-ft="programacion">Programación</button><button data-ft="preoperativo">Preoperativo</button>
+          <button data-ft="gerencia">Indicadores</button>
+        </div>
+        <iframe id="flt-frame" class="flt-frame" title="Flota y Combustible" allow="web-share; clipboard-write; camera"></iframe>
+      </div>
 
       <div id="section-cosecha" style="display:none;">
         <div id="cosecha-tab-resumen" class="cosecha-tabpanel">
@@ -2086,6 +2110,7 @@ function semanaNum(d){
 const SECTION_INFO = {
   inicio:  {title: nombre => `¡Buenos días, ${nombre}!`, sub: 'Bienvenido al Sistema de Gestión de Plantaciones de Palma de Aceite'},
   cosecha: {title: () => 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
+  flota: {title: () => 'Flota y Combustible', sub: 'Maquinaria: taller, programación, preoperativos e indicadores'},
   importar: {title: () => 'Importación de Datos', sub: 'Cargue datos de producción desde Excel o CSV'},
   metas: {title: () => 'Configuración de Metas', sub: 'Defina las metas productivas para el año seleccionado'},
 };
@@ -2113,6 +2138,9 @@ function showSection(name){
   document.getElementById('section-cosecha').style.display = name === 'cosecha' ? '' : 'none';
   document.getElementById('section-importar').style.display = name === 'importar' ? '' : 'none';
   document.getElementById('section-metas').style.display = name === 'metas' ? '' : 'none';
+  document.getElementById('section-flota').style.display = name === 'flota' ? '' : 'none';
+  document.getElementById('sb-link-flota').classList.toggle('active', name === 'flota');
+  if (name !== 'flota') setFlotaMenuOpen(false);
   document.getElementById('sb-link-inicio').classList.toggle('active', name === 'inicio');
   document.getElementById('sb-link-cosecha').classList.toggle('active', name === 'cosecha');
   document.getElementById('sb-link-importar').classList.toggle('active', name === 'importar');
@@ -2126,6 +2154,54 @@ function showSection(name){
   document.getElementById('topbar-sub').textContent = info.sub;
   document.getElementById('sidebar').classList.remove('open');
 }
+
+/* ── Flota y Combustible: cada página del sistema de maquinaria se muestra
+   dentro de Agrovisión (mismo menú y encabezado), en un marco. ── */
+const FLOTA_URL = 'https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/';
+const FLOTA_PAGS = { resumen:'index.html', taller:'taller-palma.html', programacion:'programacion-palma.html',
+  preoperativo:'preoperativo-palma.html', gerencia:'gerencia-palma.html' };
+const FLOTA_SUB = { resumen:'Estado de la flota hoy', taller:'Paradas, altas, pendientes y mantenimiento · Tulio Olaya',
+  programacion:'Máquina, labor, lotes y operario de cada día', preoperativo:'Al arrancar y al terminar la jornada',
+  gerencia:'Disponibilidad, fallas, uso e historial' };
+let flotaActual = null;
+function setFlotaMenuOpen(open){
+  document.getElementById('sb-flota-sub').style.display = open ? '' : 'none';
+  document.getElementById('sb-link-flota').classList.toggle('expanded', open);
+}
+function toggleFlotaMenu(){
+  const abierto = document.getElementById('sb-flota-sub').style.display !== 'none';
+  if (abierto && document.getElementById('section-flota').style.display !== 'none'){ setFlotaMenuOpen(false); return; }
+  showFlota(flotaActual || 'resumen');
+}
+function showFlota(tab){
+  if (!FLOTA_PAGS[tab]) tab = 'resumen';
+  showSection('flota');
+  setFlotaMenuOpen(true);
+  const fr = document.getElementById('flt-frame'), url = FLOTA_URL + FLOTA_PAGS[tab];
+  if (flotaActual !== tab || !fr.getAttribute('src')) fr.setAttribute('src', url);
+  flotaActual = tab;
+  Object.keys(FLOTA_PAGS).forEach(function(k){
+    document.getElementById('sbf-' + k).classList.toggle('active', k === tab);
+    const b = document.querySelector('#flt-tabs [data-ft="' + k + '"]'); if (b) b.classList.toggle('on', k === tab);
+  });
+  document.getElementById('topbar-sub').textContent = FLOTA_SUB[tab];
+  ajustarFlota();
+}
+function ajustarFlota(){
+  const fr = document.getElementById('flt-frame');
+  if (!fr || document.getElementById('section-flota').style.display === 'none') return;
+  fr.style.height = Math.max(480, window.innerHeight - fr.getBoundingClientRect().top - 12) + 'px';
+}
+window.addEventListener('resize', ajustarFlota);
+document.addEventListener('click', function(e){
+  const b = e.target.closest && e.target.closest('#flt-tabs [data-ft]');
+  if (b) showFlota(b.dataset.ft);
+});
+/* el sistema de maquinaria avisa cuando dentro del marco se pasa a otra app */
+window.addEventListener('message', function(e){
+  if (e.origin !== location.origin || !e.data || !e.data.flota) return;
+  if (FLOTA_PAGS[e.data.flota]) showFlota(e.data.flota);
+});
 
 function setMetasMenuOpen(open){
   document.getElementById('sb-metas-sub').style.display = open ? '' : 'none';
