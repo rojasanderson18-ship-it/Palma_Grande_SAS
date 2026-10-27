@@ -712,7 +712,7 @@ a.mtab:hover{color:#16a34a;}
       <a class="sb-sublink" id="sbf-programacion" href="javascript:void(0)" onclick="showFlota('programacion')"><svg class="ic-svg"><use href="#i-calendar"/></svg> Programación</a>
       <a class="sb-sublink" id="sbf-preoperativo" href="javascript:void(0)" onclick="showFlota('preoperativo')"><svg class="ic-svg"><use href="#i-check"/></svg> Preoperativo</a>
       <a class="sb-sublink" id="sbf-gerencia" href="javascript:void(0)" onclick="showFlota('gerencia')"><svg class="ic-svg"><use href="#i-trending-up"/></svg> Indicadores</a>
-      <span class="sb-sublink pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Combustible</span>
+      <a class="sb-sublink" id="sbf-combustible" href="javascript:void(0)" onclick="showFlota('combustible')"><svg class="ic-svg"><use href="#i-droplet"/></svg> Combustible</a>
     </div>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-clipboard"/></svg> Inventarios</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-cloud"/></svg> Clima</span>
@@ -872,7 +872,7 @@ a.mtab:hover{color:#16a34a;}
         <div class="flt-tabs" id="flt-tabs">
           <button data-ft="resumen">Resumen</button><button data-ft="taller">Taller</button>
           <button data-ft="programacion">Programación</button><button data-ft="preoperativo">Preoperativo</button>
-          <button data-ft="gerencia">Indicadores</button>
+          <button data-ft="combustible">Combustible</button><button data-ft="gerencia">Indicadores</button>
         </div>
         <iframe id="flt-frame" class="flt-frame" title="Flota y Combustible" allow="web-share; clipboard-write; camera"></iframe>
       </div>
@@ -2159,10 +2159,11 @@ function showSection(name){
    dentro de Agrovisión (mismo menú y encabezado), en un marco. ── */
 const FLOTA_URL = 'https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/';
 const FLOTA_PAGS = { resumen:'index.html', taller:'taller-palma.html', programacion:'programacion-palma.html',
-  preoperativo:'preoperativo-palma.html', gerencia:'gerencia-palma.html' };
+  preoperativo:'preoperativo-palma.html', combustible:'tanqueo-palma.html', gerencia:'gerencia-palma.html' };
 const FLOTA_SUB = { resumen:'Estado de la flota hoy', taller:'Paradas, altas, pendientes y mantenimiento · Tulio Olaya',
   programacion:'Máquina, labor, lotes y operario de cada día', preoperativo:'Al arrancar y al terminar la jornada',
-  gerencia:'Disponibilidad, fallas, uso e historial' };
+  combustible:'Tanqueo de combustible del almacén: despachos, tanque y requisiciones',
+  gerencia:'Disponibilidad, fallas, uso, combustible e historial' };
 let flotaActual = null;
 function setFlotaMenuOpen(open){
   document.getElementById('sb-flota-sub').style.display = open ? '' : 'none';
