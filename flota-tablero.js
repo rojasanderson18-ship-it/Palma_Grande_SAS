@@ -14,7 +14,7 @@
   var LABORES = { alceTijera:'Alce con tijera', alceQuinta:'Alce con quinta rueda', rotospeed:'Rotospeed', rolo:'Rolo cuchilla',
     fertMezcla:'Fertilización con mezcla', fertBorax:'Fertilización en bórax', sanidad:'Sanidad', varias:'Labores varias' };
   var SISTEMAS = { motor:'Motor', hidraulico:'Hidráulico', electrico:'Eléctrico', transmision:'Transmisión',
-    frenos:'Frenos', direccion:'Dirección', llantas:'Llantas', estructura:'Estructura', otro:'Otro' };
+    frenos:'Frenos', direccion:'Dirección', llantas:'Llantas', estructura:'Estructura', implemento:'Implemento', otro:'Otro' };
 
   function el(id){ return document.getElementById(id); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -79,9 +79,9 @@
         if (r[6]) e.tipo = String(r[6]).trim() === 'mantenimiento' ? 'mantenimiento' : 'falla';
         if (r[8]) e.txt = String(r[8]);
         if (r[10]) e.inicio = aIso(r[10]);
+        var s = String(r[7] || '').trim(), k = SISTEMAS[s] ? s : Object.keys(SISTEMAS).filter(function(x){ return SISTEMAS[x] === s; })[0];
+        if (s) e.sistema = k || 'otro';      // desde la parada; el alta lo puede corregir
         if (acc === 'ALTA'){
-          var s = String(r[7] || '').trim(), k = SISTEMAS[s] ? s : Object.keys(SISTEMAS).filter(function(x){ return SISTEMAS[x] === s; })[0];
-          e.sistema = k || (s ? 'otro' : null);
           var d = parseInt(r[13], 10); e.fin = isNaN(d) ? f0 : sumar(e.inicio, d);
         }
       } else if (acc === 'PENDIENTE' || acc === 'RESUELTO'){
@@ -159,6 +159,15 @@
     });
     return l.sort(function(a, b){ return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.lec || 0) - (b.lec || 0); });
   }
+
+  /* En qué va la reparación de una parada y cuánto cuesta (hoja Reparaciones:
+     el Taller dice el estado, Compras el costo; Reparaciones en maestros.js) */
+  function reparacion(e){
+    var R = window.Reparaciones ? Reparaciones.de(e.id) : { taller:null, compras:null }, c = R.compras;
+    return { t:R.taller, c:c, costo: c ? (c.repuestos || 0) + (c.mano || 0) : 0,
+      estado: R.taller && window.Reparaciones ? Reparaciones.txtEstado(R.taller.estado) : '' };
+  }
+  function millones(v){ return v >= 1e6 ? '$' + g1(v / 1e6) + ' M' : peso(v); }
 
   /* ---------------- cálculos ---------------- */
   function laborales(desde, hasta){ var l = []; for (var f = desde; f <= hasta; f = sumar(f, 1)) if (laboral(f)) l.push(f); return l; }
@@ -281,7 +290,28 @@
       linea: mas30.length ? plural(mas30.length, 'máquina lleva', 'máquinas llevan') + ' más de un mes en taller' : mas7.length ? 'Ninguna pasa de un mes; ' + plural(mas7.length, 'pasa', 'pasan') + ' de una semana' : 'Ninguna lleva más de una semana parada',
       detalle: largas.slice(0, 6).map(function(x){ return x.cod + ' · ' + plural(x.d, 'día', 'días'); }).join(' — '),
       accion: mas30.length ? 'Decidir con el taller: conseguir el repuesto, mandarla a taller externo o darla de baja. ' + mas30.map(function(x){ return x.cod + (x.e.txt ? ' (' + x.e.txt + ')' : ''); }).join('; ') + '.' : '',
-      corta: mas30.length ? 'Decidir si se consigue el repuesto, se manda a taller externo o se da de baja: ' + mas30.map(function(x){ return x.cod + ' (' + x.d + ' días)'; }).join(', ') + '.' : '' });
+      corta: mas30.length ? 'Decidir si se consigue el repuesto, se manda a taller externo o se da de baja: ' + mas30.map(function(x){
+        var r = reparacion(x.e); return x.cod + ' (' + x.d + ' días' + (r.estado ? ', ' + r.estado.toLowerCase() : '') + (r.costo ? ', ' + millones(r.costo) : '') + ')'; }).join(', ') + '.' : '' });
+
+    /* 3b. Reparaciones: en qué va cada parada y cuánto cuesta ponerlas a trabajar */
+    var lr = Object.keys(paradas).map(function(c){ var e = paradas[c], r = reparacion(e); r.cod = c; r.d = dias(e.inicio, hy); r.e = e; return r; })
+      .sort(function(a, b){ return b.d - a.d; });
+    var sinEstado = lr.filter(function(x){ return !x.t && x.d >= 2; }), decision = lr.filter(function(x){ return x.t && x.t.estado === 'decision'; });
+    var vencidas = lr.filter(function(x){ return x.t && x.t.sale && x.t.sale < hy; }), atrasados = lr.filter(function(x){ return x.c && x.c.llega && x.c.llega < hy; });
+    var porCotizar = lr.filter(function(x){ return x.t && x.t.estado === 'repuesto' && !x.costo; });
+    var cotizado = lr.reduce(function(a, x){ return a + x.costo; }, 0), conCosto = lr.filter(function(x){ return x.costo; }).length;
+    var hayRep = !!window.Reparaciones && lr.some(function(x){ return x.t || x.c; });
+    ind({ id:'reparaciones', grupo:'flota', titulo:'Reparaciones en curso', valor: cotizado ? millones(cotizado) : lr.length ? String(lr.length - sinEstado.length) + ' de ' + lr.length : '0',
+      nivel: !lr.length ? 'verde' : (decision.length || vencidas.length || atrasados.length) ? 'rojo' : (sinEstado.length || porCotizar.length) ? 'ambar' : 'verde',
+      linea: !lr.length ? 'Ninguna máquina en taller' : cotizado ? 'Cotizado para poner a trabajar ' + plural(conCosto, 'máquina', 'máquinas') + ' de ' + lr.length + ' paradas' :
+        hayRep ? 'Paradas con estado de la reparación (sin costos todavía)' : 'El taller todavía no ha dicho en qué va ninguna parada',
+      detalle: lr.slice(0, 7).map(function(x){ return x.cod + ': ' + (x.estado || 'sin decir en qué va') + (x.costo ? ' · ' + millones(x.costo) : '') +
+        (x.t && x.t.sale ? ' · sale ' + dcorta(x.t.sale) : ''); }).join(' — '),
+      accion: [decision.length ? 'Decidir si se reparan o se dan de baja: ' + decision.map(function(x){ return x.cod + ' (' + x.d + ' días' + (x.costo ? ', reparación ' + millones(x.costo) : ', sin cotizar') + ')'; }).join(', ') + '.' : '',
+        vencidas.length ? 'Ya pasó la fecha en que debían salir: ' + vencidas.map(function(x){ return x.cod + ' (' + dcorta(x.t.sale) + ')'; }).join(', ') + '.' : '',
+        atrasados.length ? 'Repuestos que no han llegado: ' + atrasados.map(function(x){ return x.cod + ' (' + (x.c.proveedor || 'proveedor') + ', ' + dcorta(x.c.llega) + ')'; }).join(', ') + '.' : '',
+        porCotizar.length ? 'Compras no ha cotizado el repuesto de ' + porCotizar.map(function(x){ return x.cod; }).join(', ') + '.' : '',
+        sinEstado.length ? 'El taller no ha dicho en qué va: ' + sinEstado.map(function(x){ return x.cod; }).join(', ') + '.' : ''].filter(Boolean).join(' ') });
 
     /* 4. Fallas del mes */
     var fm = fallasEntre(D, mesIni, hy), fp = fallasEntre(D, pmIni, pmMismo);
@@ -440,7 +470,9 @@
       var par = paradas[f.cod], pend = D.pend.filter(function(n){ return n.cod === f.cod; });
       var k = f.cod + '|' + hy;
       return { cod:f.cod, nombre:f.nombre, camion:f.grupo === 'transporte',
-        hoy: par ? { c:'rojo', t:'En taller · ' + plural(Math.max(0, dias(par.inicio, hy)), 'día', 'días'), d:par.txt } :
+        hoy: par ? (function(){ var r = reparacion(par);
+            return { c:'rojo', t:'En taller · ' + plural(Math.max(0, dias(par.inicio, hy)), 'día', 'días'),
+              d: (r.estado || 'Sin decir en qué va') + (r.costo ? ' · ' + millones(r.costo) : '') + (r.t && r.t.sale ? ' · sale ' + dcorta(r.t.sale) : '') + (par.txt ? ' — ' + par.txt : '') }; })() :
           pend.some(function(n){ return n.urgente; }) ? { c:'ambar', t:'Trabaja con daño urgente', d:pend[0].txt } :
           pend.length ? { c:'ambar', t:'Trabaja con pendiente', d:pend[0].txt } : { c:'verde', t:'Trabaja', d:'' },
         disp: labM.length ? (labM.length - perd.falla - perd.mantenimiento) / labM.length * 100 : null, perdF:perd.falla, perdM:perd.mantenimiento,
@@ -669,7 +701,7 @@
       { t:'Combustible', v: A.tanqueos ? g1(A.gal) + ' gal' : '—', n: A.tanqueos ? 'verde' : 'gris', d: P.tanqueos ? difTxt(A.gal, P.gal, ' gal', true, 1).replace(/class="(me|pe)"/, 'class="ig"') : '',
         s: A.tanqueos ? plural(A.tanqueos, 'tanqueo', 'tanqueos') + (A.costo ? ' · ' + peso(A.costo) : '') : 'Sin tanqueos en la app de Tanqueo' }
     ];
-    var riesgos = ['largas', 'riesgo', 'repetidas', 'mtto', 'consumo', 'tanque'].map(function(id){ return ind[id]; })
+    var riesgos = ['largas', 'reparaciones', 'riesgo', 'repetidas', 'mtto', 'consumo', 'tanque'].map(function(id){ return ind[id]; })
       .filter(function(x){ return x && (x.nivel === 'rojo' || x.nivel === 'ambar'); });
     var todos = k.map(function(x){ return x.n; }).concat(riesgos.map(function(x){ return x.nivel; }));
     var nivel = todos.indexOf('rojo') >= 0 ? 'rojo' : todos.indexOf('ambar') >= 0 ? 'ambar' : 'verde';
@@ -700,9 +732,11 @@
         return '<div class="fi-kc ' + x.n + '"><div class="t">' + x.t + '</div><div class="v">' + esc(x.v) + '</div><div class="s">' + esc(x.s) + '</div><div class="d">' + x.d + '</div></div>';
       }).join('') + '</div>';
 
-    h += '<div class="fi-dos"><div><h2>Máquinas en taller al ' + larga(w.hasta) + '</h2>' + (enT.length ? '<table><thead><tr><th>Máquina</th><th class="n">Días</th><th>Causa</th></tr></thead><tbody>' +
-        enT.slice(0, 9).map(function(x){ return '<tr><td><b>' + esc(x.f.cod) + '</b> ' + esc(x.f.nombre) + '</td><td class="n">' + x.d + '</td><td>' + esc(x.e.txt.length > 95 ? x.e.txt.slice(0, 92) + '…' : x.e.txt) + '</td></tr>'; }).join('') +
-        (enT.length > 9 ? '<tr><td colspan="3">y ' + (enT.length - 9) + ' más</td></tr>' : '') + '</tbody></table>' : '<p>Ninguna máquina en taller.</p>') + '</div>' +
+    h += '<div class="fi-dos"><div><h2>Máquinas en taller al ' + larga(w.hasta) + '</h2>' + (enT.length ? '<table><thead><tr><th>Máquina</th><th class="n">Días</th><th>Causa</th><th>En qué va</th><th class="n">Costo</th></tr></thead><tbody>' +
+        enT.slice(0, 9).map(function(x){ var r = reparacion(x.e);
+          return '<tr><td><b>' + esc(x.f.cod) + '</b></td><td class="n">' + x.d + '</td><td>' + esc(x.e.txt.length > 60 ? x.e.txt.slice(0, 57) + '…' : x.e.txt) + '</td>' +
+            '<td>' + esc(r.estado || '—') + (r.t && r.t.sale ? '<br><span class="g">sale ' + dcorta(r.t.sale) + '</span>' : '') + '</td><td class="n">' + (r.costo ? millones(r.costo) : '—') + '</td></tr>'; }).join('') +
+        (enT.length > 9 ? '<tr><td colspan="5">y ' + (enT.length - 9) + ' más</td></tr>' : '') + '</tbody></table>' : '<p>Ninguna máquina en taller.</p>') + '</div>' +
       '<div><h2>Lo que pasó en la semana</h2><ul>' +
         '<li><b>Entraron al taller:</b> ' + (entraron.length ? entraron.map(function(e){ return esc(e.cod) + ' (' + (e.tipo === 'mantenimiento' ? 'mantenimiento' : esc(e.txt)) + ')'; }).join('; ') : 'ninguna') + '.</li>' +
         '<li><b>Salieron reparadas:</b> ' + (salieron.length ? salieron.map(function(e){ return esc(e.cod) + ' (' + plural(dias(e.inicio, e.fin), 'día', 'días') + ' parada)'; }).join('; ') : 'ninguna') + '.</li>' +
@@ -781,8 +815,9 @@
     var mae = window.Maestros ? Maestros.traer().catch(function(){}) : Promise.resolve();
     var hor = window.Horometros ? Horometros.traer().catch(function(){}) : Promise.resolve();
     var viejo = window.AppVieja ? AppVieja.traer().catch(function(){ return null; }) : Promise.resolve(null);
+    var repar = window.Reparaciones ? Reparaciones.traer().catch(function(){}) : Promise.resolve();
     Promise.all([leer('Taller'), talvez('ProgMaquinaria'), talvez('Programacion'), talvez('PreopDiario'), talvez('Preoperativos'),
-      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor, viejo])
+      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor, viejo, repar])
       .then(function(r){
         FLOTA = window.Maestros ? Maestros.flota() : []; EQ = {};
         FLOTA.forEach(function(f){ EQ[f.cod] = f; });
