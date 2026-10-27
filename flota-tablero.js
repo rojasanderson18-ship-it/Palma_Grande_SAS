@@ -418,6 +418,18 @@
       comp: hP.t ? comparar(hM.t, hP.t, ' h', false, 'el mismo tramo de ' + nombrePrev, true, 1) : '',
       detalle: hDia != null && hDia < 5 ? 'Jornadas cortas: menos de 5 horas de motor por máquina al día.' : '' });
 
+    /* 15. Preoperativo viejo todavía en uso: lo que manda no llega al Taller */
+    var V = D.viejo;
+    if (V && (V.preop.length || V.nov.length || V.tanq.length)){
+      ind({ id:'appvieja', grupo:'operacion', titulo:'Preoperativo viejo en uso', valor:String(V.personas.length),
+        nivel: V.nov.length ? 'rojo' : 'ambar',
+        linea: plural(V.personas.length, 'celular sigue', 'celulares siguen') + ' con la app anterior: lo que mandan no llega al Taller',
+        detalle: V.personas.map(function(g){ return (g.op || 'Sin nombre') + ' (' + g.cods.join(', ') + ', ' + dcorta(g.ultima) + ')'; }).join(' — ') +
+          (V.nov.length ? '. Daños reportados ahí: ' + V.nov.map(function(x){ return x.cod + ' ' + (x.txt || x.items); }).join('; ') : ''),
+        accion: 'Pedirle a ' + V.personas.map(function(g){ return g.op || 'quien la usa'; }).join(', ') + ' abrir el Preoperativo con señal para que se actualice' +
+          (V.nov.length ? ', y que el Taller pase ' + (V.nov.length === 1 ? 'el daño que reportó' : 'los ' + V.nov.length + ' daños que reportaron') + ' como pendiente (aparece en el aviso del Taller).' : '.') });
+    }
+
     /* ---- detalle para las pestañas ---- */
     var labM = laborales(mesIni, hy), desde90 = sumar(hy, -90), cierHoy = {};
     cier.forEach(function(c){ if (c.fecha === hy) cierHoy[c.cod] = (cierHoy[c.cod] || 0) + (c.horas || 0); });
@@ -768,8 +780,9 @@
     var b = el('ft-recargar'); if (b){ b.disabled = true; b.textContent = 'Consultando…'; }
     var mae = window.Maestros ? Maestros.traer().catch(function(){}) : Promise.resolve();
     var hor = window.Horometros ? Horometros.traer().catch(function(){}) : Promise.resolve();
+    var viejo = window.AppVieja ? AppVieja.traer().catch(function(){ return null; }) : Promise.resolve(null);
     Promise.all([leer('Taller'), talvez('ProgMaquinaria'), talvez('Programacion'), talvez('PreopDiario'), talvez('Preoperativos'),
-      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor])
+      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor, viejo])
       .then(function(r){
         FLOTA = window.Maestros ? Maestros.flota() : []; EQ = {};
         FLOTA.forEach(function(f){ EQ[f.cod] = f; });
@@ -778,7 +791,7 @@
         var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]),
           tanq:tanqueos(r[5]),
           tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
-          alertas:Object.keys(al).map(function(k){ return al[k]; }) };
+          alertas:Object.keys(al).map(function(k){ return al[k]; }), viejo:r[10] };
         listo = true; DATOS = D;
         var R = indicadores(D);
         try { localStorage.setItem(CACHE, JSON.stringify({ R:R, ts:Date.now() })); } catch(e){}
