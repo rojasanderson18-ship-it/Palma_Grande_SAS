@@ -107,25 +107,18 @@
     return o;
   }
 
-  /* Tanqueos: la app de Tanqueo (hoja Combustible, última fila por ID, sin
-     anulados) y, para la historia, la hoja Tanqueos del preoperativo anterior.
-     Si un mismo día y máquina está en las dos, vale la nueva. */
-  function tanqueos(nuevo, viejo){
-    var u = {}, l = [], hay = {};
+  /* Tanqueos: solo la app de Tanqueo del almacén (hoja Combustible, última
+     fila por ID, sin anulados). Lo que anotaba el preoperativo anterior en la
+     hoja Tanqueos no se toma: el combustible se controla desde la app. */
+  function tanqueos(nuevo){
+    var u = {}, l = [];
     (nuevo || []).forEach(function(r){ var id = String(r[3] || '').trim(); if (id) u[id] = r; });
     Object.keys(u).forEach(function(k){
       var r = u[k], f = aIso(r[0]), acc = String(r[2] || '').trim().toUpperCase();
       if (acc === 'ANULADO' || !esFecha(f)) return;
       var t = { fecha:f, cod:String(r[4] || '').trim(), gal:num(r[6]) || 0, lec:num(r[7]), km:String(r[8] || '') === 'Km',
         costo:num(r[14]) || 0, saldo:num(r[15]), just:String(r[17] || '').trim(), hora:String(r[1] || ''), nuevo:true };
-      if (t.gal > 0){ l.push(t); hay[t.fecha + '|' + t.cod] = true; }
-    });
-    var visto = {};
-    (viejo || []).forEach(function(r){
-      var f = aIso(r[0]), c = codDe(r[3]), gal = num(r[6]), lec = num(r[7]), k = f + '|' + c + '|' + gal + '|' + lec;
-      if (!esFecha(f) || !c || !(gal > 0) || hay[f + '|' + c] || visto[k] || String(r[5] || '').trim().toLowerCase().indexOf('s') !== 0) return;
-      visto[k] = true;    // el mismo tanqueo enviado varias veces por falta de señal
-      l.push({ fecha:f, cod:c, gal:gal, lec:lec, km:esCamion(c), costo:0, saldo:null, just:'', hora:String(r[1] || '') });
+      if (t.gal > 0) l.push(t);
     });
     // galones fuera de toda proporción para esa máquina (125 en vez de 12,5): no se cuentan y se avisan
     var por = {};
@@ -340,7 +333,7 @@
     var tasaM = flotaTasa(cm), tasa3 = flotaTasa(c3), varTasa = tasaM != null && tasa3 ? (tasaM - tasa3) / tasa3 * 100 : null;
     ind({ id:'comb', grupo:'combustible', titulo:'Combustible de ' + nombreMes, valor: T.length ? g1(galM) + ' gal' : '—',
       nivel: !T.length ? 'gris' : varTasa == null ? 'verde' : varTasa > 30 ? 'rojo' : varTasa > 15 ? 'ambar' : 'verde',
-      linea: !T.length ? 'Sin tanqueos registrados' : plural(M.length, 'tanqueo', 'tanqueos') + (costoM ? ' · ' + peso(costoM) : '') +
+      linea: !T.length ? 'Todavía no hay tanqueos en la app de Tanqueo' : plural(M.length, 'tanqueo', 'tanqueos') + (costoM ? ' · ' + peso(costoM) : '') +
         (tasaM != null ? ' · ' + g1(tasaM) + ' gal por hora de trabajo' : ''),
       comp: (galP ? comparar(galM, galP, ' gal', true, 'el mismo tramo de ' + nombrePrev, true, 1).replace(/ftc-c (mejor|peor)/, 'ftc-c igual') : '') +
         (dud.length ? '<div class="ftc-c igual">No se contó ' + (dud.length === 1 ? 'un tanqueo mal digitado' : dud.length + ' tanqueos mal digitados') + ': ' +
@@ -348,14 +341,16 @@
         (varTasa != null ? '<div class="ftc-c ' + (varTasa > 15 ? 'peor' : varTasa < -5 ? 'mejor' : 'igual') + '">' + (Math.abs(varTasa) < 5 ? 'Consumo por hora normal' : 'Consumo por hora ' + (varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(varTasa)) + '% vs. los 3 meses anteriores') + '</div>' : '') });
 
     /* 11. Consumo fuera de lo normal por máquina */
-    var raras = Object.keys(cm).filter(function(c){ return cm[c].tasa != null && c3[c] && c3[c].tasa != null; }).map(function(c){
+    var comparables = Object.keys(cm).filter(function(c){ return cm[c].tasa != null && c3[c] && c3[c].tasa != null; });
+    var raras = comparables.map(function(c){
       var a = cm[c].tasa, b = c3[c].tasa, v = cm[c].km ? (b - a) / b * 100 : (a - b) / b * 100;   // en camiones, menos km/gal es peor
       return { cod:c, v:v, a:a, b:b, km:cm[c].km };
     }).filter(function(x){ return x.v > 25; }).sort(function(a, b){ return b.v - a.v; });
     var alertasApp = M.filter(function(t){ return t.just; });
-    ind({ id:'consumo', grupo:'combustible', titulo:'Consumo fuera de lo normal', valor: String(raras.length + alertasApp.length),
-      nivel: !T.length ? 'gris' : raras.some(function(x){ return x.v > 50; }) ? 'rojo' : (raras.length || alertasApp.length) ? 'ambar' : 'verde',
-      linea: raras.length ? plural(raras.length, 'máquina gasta', 'máquinas gastan') + ' más de lo que gastaban' : alertasApp.length ? plural(alertasApp.length, 'tanqueo marcado', 'tanqueos marcados') + ' por el almacén' : 'Cada máquina gasta lo de siempre',
+    ind({ id:'consumo', grupo:'combustible', titulo:'Consumo fuera de lo normal', valor: comparables.length || alertasApp.length ? String(raras.length + alertasApp.length) : '—',
+      nivel: raras.some(function(x){ return x.v > 50; }) ? 'rojo' : (raras.length || alertasApp.length) ? 'ambar' : comparables.length ? 'verde' : 'gris',
+      linea: raras.length ? plural(raras.length, 'máquina gasta', 'máquinas gastan') + ' más de lo que gastaban' : alertasApp.length ? plural(alertasApp.length, 'tanqueo marcado', 'tanqueos marcados') + ' por el almacén' :
+        comparables.length ? 'Cada máquina gasta lo de siempre' : 'Se podrá comparar cuando la app de Tanqueo tenga más de un mes de datos',
       detalle: raras.map(function(x){ return x.cod + ': ' + g1(x.a) + (x.km ? ' km/gal' : ' gal/h') + ' (antes ' + g1(x.b) + ')'; })
         .concat(alertasApp.map(function(t){ return t.cod + ' ' + dcorta(t.fecha) + ': ' + t.just; })).slice(0, 5).join(' — '),
       accion: raras.length ? 'Revisar si es el motor (filtros, inyección), el trabajo que hizo o el combustible que se le está entregando: ' + raras.map(function(x){ return x.cod; }).join(', ') + '.' : '' });
@@ -437,15 +432,15 @@
     var mae = window.Maestros ? Maestros.traer().catch(function(){}) : Promise.resolve();
     var hor = window.Horometros ? Horometros.traer().catch(function(){}) : Promise.resolve();
     Promise.all([leer('Taller'), talvez('ProgMaquinaria'), talvez('Programacion'), talvez('PreopDiario'), talvez('Preoperativos'),
-      talvez('Combustible'), talvez('Tanqueos'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor])
+      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor])
       .then(function(r){
         FLOTA = window.Maestros ? Maestros.flota() : []; EQ = {};
         FLOTA.forEach(function(f){ EQ[f.cod] = f; });
         var tl = taller(r[0]), al = {};
-        (r[8] || []).forEach(function(a){ var id = String(a[3] || '').trim(); if (id) al[id] = { fecha:aIso(a[0]), abierta:String(a[2] || '').trim().toUpperCase() === 'ABIERTA' }; });
+        (r[7] || []).forEach(function(a){ var id = String(a[3] || '').trim(); if (id) al[id] = { fecha:aIso(a[0]), abierta:String(a[2] || '').trim().toUpperCase() === 'ABIERTA' }; });
         var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]), preViejo:r[4],
-          tanq:tanqueos(r[5], r[6]),
-          tanque:(r[7] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), dif:num(m[6]) || 0 }; }),
+          tanq:tanqueos(r[5]),
+          tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), dif:num(m[6]) || 0 }; }),
           alertas:Object.keys(al).map(function(k){ return al[k]; }) };
         listo = true;
         pintar(indicadores(D), 'Actualizado ' + new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }));
