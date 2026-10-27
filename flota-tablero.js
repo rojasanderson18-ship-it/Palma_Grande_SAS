@@ -15,7 +15,7 @@
      nuevo. Lo de antes se registraba distinto (o no se registraba) y daba
      comparaciones engañosas. El estado de hoy (qué máquina está parada y
      desde cuándo) sí sale con su fecha real. */
-  var INICIO = '2026-10-27';
+  var INICIO = (window.SISTEMA && SISTEMA.INICIO) || '2026-10-27';   // la fecha vive en maestros.js
   var DIAS_REPETIDAS = 90;       // ventana para "la misma falla otra vez"
   var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var LABORES = { alceTijera:'Alce con tijera', alceQuinta:'Alce con quinta rueda', rotospeed:'Rotospeed', rolo:'Rolo cuchilla',
