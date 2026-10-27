@@ -280,7 +280,8 @@
       nivel: mas30.length ? 'rojo' : mas7.length ? 'ambar' : 'verde',
       linea: mas30.length ? plural(mas30.length, 'máquina lleva', 'máquinas llevan') + ' más de un mes en taller' : mas7.length ? 'Ninguna pasa de un mes; ' + plural(mas7.length, 'pasa', 'pasan') + ' de una semana' : 'Ninguna lleva más de una semana parada',
       detalle: largas.slice(0, 6).map(function(x){ return x.cod + ' · ' + plural(x.d, 'día', 'días'); }).join(' — '),
-      accion: mas30.length ? 'Decidir con el taller: conseguir el repuesto, mandarla a taller externo o darla de baja. ' + mas30.map(function(x){ return x.cod + (x.e.txt ? ' (' + x.e.txt + ')' : ''); }).join('; ') + '.' : '' });
+      accion: mas30.length ? 'Decidir con el taller: conseguir el repuesto, mandarla a taller externo o darla de baja. ' + mas30.map(function(x){ return x.cod + (x.e.txt ? ' (' + x.e.txt + ')' : ''); }).join('; ') + '.' : '',
+      corta: mas30.length ? 'Decidir si se consigue el repuesto, se manda a taller externo o se da de baja: ' + mas30.map(function(x){ return x.cod + ' (' + x.d + ' días)'; }).join(', ') + '.' : '' });
 
     /* 4. Fallas del mes */
     var fm = fallasEntre(D, mesIni, hy), fp = fallasEntre(D, pmIni, pmMismo);
@@ -591,7 +592,8 @@
       [rojos.length ? plural(rojos.length, 'alarma', 'alarmas') + ': ' + rojos.map(function(x){ return x.titulo.toLowerCase(); }).join(', ') : '',
        ambar.length ? plural(ambar.length, 'punto', 'puntos') + ' para mirar' : ''].filter(Boolean).join(' · ') + '.';
     var h = '<div class="ft-ver ' + n + '"><div class="ft-luz"><i></i></div><div class="ft-ver-txt"><div class="ft-ver-t">' + titulo + '</div><div class="ft-ver-s">' + esc(sub) + '</div></div>' +
-      '<div class="ft-ver-r"><span id="ft-act">' + esc(act) + '</span><button type="button" id="ft-recargar">Actualizar</button></div></div>';
+      '<div class="ft-ver-r"><span id="ft-act">' + esc(act) + '</span><span class="ft-ver-b"><button type="button" id="ft-informe" class="ft-inf">Informe para gerencia</button>' +
+      '<button type="button" id="ft-recargar">Actualizar</button></span></div></div>';
     h += '<div class="ft-tabs" role="tablist">' + TABS.map(function(t){
       var nv = t[0] === 'resumen' ? '' : peor(I.filter(function(x){ return x.grupo === t[0]; }));
       return '<button type="button" role="tab" data-ft-tab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '" class="' + (TAB === t[0] ? 'on' : '') + '">' +
@@ -601,6 +603,146 @@
     h += '<div class="ft-pie">Datos del sistema de maquinaria: Taller, Programación, Preoperativo y app de Tanqueo. Meta de disponibilidad ' + META + '%. ' +
       'Verde = bien · ámbar = mirarlo · rojo = alarma.</div>';
     el('ft-cuerpo').innerHTML = h;
+  }
+
+  /* =====================================================================
+     INFORME SEMANAL PARA GERENCIA (PDF de una hoja)
+     Lo arma el Superintendente desde este tablero: la semana (lunes a
+     sábado) comparada con la anterior, lo que pasó, los riesgos de hoy, las
+     decisiones que se piden y sus observaciones. Se imprime o se guarda como
+     PDF desde el navegador.
+     ===================================================================== */
+  var DATOS = null;
+  function lunesDe(f){ var p = f.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]); return sumar(f, -((d.getDay() + 6) % 7)); }
+  function larga(f){ var p = f.split('-'); return (+p[2]) + ' de ' + MESES[+p[1] - 1]; }
+  function semanas(){
+    var hy = hoy(), lu = lunesDe(hy), pas = sumar(lu, -7);
+    return { pasada:{ desde:pas, hasta:sumar(pas, 5) }, actual:{ desde:lu, hasta: hy < sumar(lu, 5) ? hy : sumar(lu, 5) } };
+  }
+  function txtSemana(w){
+    var a = w.desde.split('-'), b = w.hasta.split('-');
+    return 'del ' + (+a[2]) + (a[1] !== b[1] ? ' de ' + MESES[+a[1] - 1] : '') + ' al ' + (+b[2]) + ' de ' + MESES[+b[1] - 1] + ' de ' + b[0];
+  }
+
+  /* cifras de un período */
+  function periodo(D, desde, hasta){
+    var disp = disponibilidad(D, desde, hasta), u = uso(D, desde, hasta), h = 0, hd = 0;
+    (window.Horometros ? Horometros.cierres() : []).forEach(function(c){
+      if (c.fecha >= desde && c.fecha <= hasta && c.horas != null && eq(c.cod) && !esCamion(c.cod)){ h += c.horas; hd++; }
+    });
+    var T = D.tanq.filter(function(t){ return !t.dudoso && t.fecha >= desde && t.fecha <= hasta; });
+    return { disp:disp.pct, perdidos:disp.perdidos, total:disp.total, fallas:fallasEntre(D, desde, hasta), uso:u.pct, pre:u.prePct,
+      horas:h, jornadas:hd, gal:T.reduce(function(a, t){ return a + t.gal; }, 0), costo:T.reduce(function(a, t){ return a + t.costo; }, 0), tanqueos:T.length };
+  }
+  function nivelPct(v, ok, al){ return v == null ? 'gris' : v >= ok ? 'verde' : v >= al ? 'ambar' : 'rojo'; }
+  function difTxt(a, b, unidad, menosEsMejor, dec){
+    if (a == null || b == null) return '';
+    var d = dec ? Math.round((a - b) * 10) / 10 : Math.round(a - b);
+    if (!d) return '<span class="ig">= semana anterior</span>';
+    var mejor = menosEsMejor ? d < 0 : d > 0;
+    return '<span class="' + (mejor ? 'me' : 'pe') + '">' + (d > 0 ? '▲ ' : '▼ ') + String(Math.abs(d)).replace('.', ',') + unidad + ' vs. semana anterior</span>';
+  }
+
+  function informe(w, obs){
+    var D = DATOS, I = ULT.R.I;
+    var A = periodo(D, w.desde, w.hasta), P = periodo(D, sumar(w.desde, -7), sumar(w.hasta, -7));
+    var ind = {}; I.forEach(function(x){ ind[x.id] = x; });
+    var k = [
+      { t:'Disponibilidad', v: A.disp == null ? '—' : Math.round(A.disp) + '%', n:nivelPct(A.disp, META, 75), d: difTxt(A.disp, P.disp, ' pts'), s:'Meta ' + META + '% · ' + plural(A.perdidos, 'día-máquina perdido', 'días-máquina perdidos') },
+      { t:'Fallas nuevas', v:String(A.fallas.length), n: A.fallas.length > P.fallas.length ? 'ambar' : 'verde', d: difTxt(A.fallas.length, P.fallas.length, '', true), s:'Máquinas que entraron al taller por daño' },
+      { t:'Horas trabajadas', v: A.horas ? g1(A.horas) + ' h' : '—', n: !A.horas ? 'gris' : P.horas && A.horas < P.horas * 0.8 ? 'ambar' : 'verde', d: P.horas ? difTxt(A.horas, P.horas, ' h', false, 1) : '',
+        s: A.jornadas ? g1(A.horas / A.jornadas) + ' h por máquina en cada jornada' : 'Sin cierres de jornada con horómetro' },
+      { t:'Uso de la maquinaria', v: A.uso == null ? '—' : Math.round(A.uso) + '%', n:nivelPct(A.uso, 80, 60), d: difTxt(A.uso, P.uso, ' pts'), s:'Días buenas con trabajo registrado' },
+      { t:'Preoperativos', v: A.pre == null ? '—' : Math.round(A.pre) + '%', n:nivelPct(A.pre, 90, 70), d: difTxt(A.pre, P.pre, ' pts'), s:'Días trabajados con revisión al arrancar' },
+      { t:'Combustible', v: A.tanqueos ? g1(A.gal) + ' gal' : '—', n: A.tanqueos ? 'verde' : 'gris', d: P.tanqueos ? difTxt(A.gal, P.gal, ' gal', true, 1).replace(/class="(me|pe)"/, 'class="ig"') : '',
+        s: A.tanqueos ? plural(A.tanqueos, 'tanqueo', 'tanqueos') + (A.costo ? ' · ' + peso(A.costo) : '') : 'Sin tanqueos en la app de Tanqueo' }
+    ];
+    var riesgos = ['largas', 'riesgo', 'repetidas', 'mtto', 'consumo', 'tanque'].map(function(id){ return ind[id]; })
+      .filter(function(x){ return x && (x.nivel === 'rojo' || x.nivel === 'ambar'); });
+    var todos = k.map(function(x){ return x.n; }).concat(riesgos.map(function(x){ return x.nivel; }));
+    var nivel = todos.indexOf('rojo') >= 0 ? 'rojo' : todos.indexOf('ambar') >= 0 ? 'ambar' : 'verde';
+    var veredicto = { rojo:'La flota necesita decisiones de gerencia', ambar:'La flota está trabajando, con puntos para vigilar', verde:'La flota está bien' }[nivel];
+
+    // máquinas en taller al cierre de la semana y movimiento de la semana
+    var enT = FLOTA.map(function(f){
+      var e = D.eventos.filter(function(x){ return x.cod === f.cod && x.inicio <= w.hasta && (!x.fin || x.fin > w.hasta); })[0];
+      return e ? { f:f, e:e, d:dias(e.inicio, w.hasta) } : null;
+    }).filter(Boolean).sort(function(a, b){ return b.d - a.d; });
+    var entraron = D.eventos.filter(function(e){ return eq(e.cod) && e.inicio >= w.desde && e.inicio <= w.hasta; });
+    var salieron = D.eventos.filter(function(e){ return eq(e.cod) && e.fin && e.fin >= w.desde && e.fin <= w.hasta; });
+    var acciones = I.filter(function(x){ return x.accion && (x.nivel === 'rojo' || x.nivel === 'ambar'); })
+      .sort(function(a, b){ return (a.nivel === 'rojo' ? 0 : 1) - (b.nivel === 'rojo' ? 0 : 1); });
+
+    var sups = (window.Maestros && Maestros.get('SUPERVISORES')) || [];
+    var supte = sups.filter(function(x){ return x.activo !== false && /superintendente/i.test(x.cargo || ''); })[0];
+    var quien = supte ? supte.nombre : ((el('tb-user-name') || {}).textContent || '');
+
+    var h = '<div class="fi">' +
+      '<div class="fi-cab"><div><div class="fi-emp">Palma Grande S.A.S. · Maquinaria y combustible</div><h1>Informe semanal para gerencia</h1>' +
+        '<div class="fi-per">Semana ' + txtSemana(w) + '</div></div>' +
+        '<div class="fi-meta">Preparó: <b>' + esc(quien || 'Superintendente') + '</b><br>Superintendente de Plantación<br>Generado el ' + larga(hoy()) + ' de ' + hoy().slice(0, 4) + '</div></div>' +
+      '<div class="fi-ver ' + nivel + '"><b>' + veredicto + '.</b> ' +
+        (enT.filter(function(x){ return !x.f.grupo || x.f.grupo !== 'transporte'; }).length + ' de ' + maquinaria().length + ' máquinas en taller al cierre de la semana') +
+        (riesgos.length ? ' · ' + plural(riesgos.length, 'riesgo abierto', 'riesgos abiertos') : '') + '.</div>' +
+      '<div class="fi-k">' + k.map(function(x){
+        return '<div class="fi-kc ' + x.n + '"><div class="t">' + x.t + '</div><div class="v">' + esc(x.v) + '</div><div class="s">' + esc(x.s) + '</div><div class="d">' + x.d + '</div></div>';
+      }).join('') + '</div>';
+
+    h += '<div class="fi-dos"><div><h2>Máquinas en taller al ' + larga(w.hasta) + '</h2>' + (enT.length ? '<table><thead><tr><th>Máquina</th><th class="n">Días</th><th>Causa</th></tr></thead><tbody>' +
+        enT.slice(0, 9).map(function(x){ return '<tr><td><b>' + esc(x.f.cod) + '</b> ' + esc(x.f.nombre) + '</td><td class="n">' + x.d + '</td><td>' + esc(x.e.txt.length > 95 ? x.e.txt.slice(0, 92) + '…' : x.e.txt) + '</td></tr>'; }).join('') +
+        (enT.length > 9 ? '<tr><td colspan="3">y ' + (enT.length - 9) + ' más</td></tr>' : '') + '</tbody></table>' : '<p>Ninguna máquina en taller.</p>') + '</div>' +
+      '<div><h2>Lo que pasó en la semana</h2><ul>' +
+        '<li><b>Entraron al taller:</b> ' + (entraron.length ? entraron.map(function(e){ return esc(e.cod) + ' (' + (e.tipo === 'mantenimiento' ? 'mantenimiento' : esc(e.txt)) + ')'; }).join('; ') : 'ninguna') + '.</li>' +
+        '<li><b>Salieron reparadas:</b> ' + (salieron.length ? salieron.map(function(e){ return esc(e.cod) + ' (' + plural(dias(e.inicio, e.fin), 'día', 'días') + ' parada)'; }).join('; ') : 'ninguna') + '.</li>' +
+        (A.fallas.length ? '<li><b>Fallas nuevas:</b> ' + A.fallas.map(function(e){ return esc(e.cod); }).join(', ') + '.</li>' : '') +
+        '</ul>' +
+        '<h2>Riesgos abiertos hoy</h2>' + (riesgos.length ? '<ul>' + riesgos.map(function(x){
+          return '<li class="' + x.nivel + '"><b>' + esc(x.titulo) + ':</b> ' + esc(x.linea) + (x.detalle ? '. <span class="g">' + esc(x.detalle.length > 160 ? x.detalle.slice(0, 157) + '…' : x.detalle) + '</span>' : '') + '</li>';
+        }).join('') + '</ul>' : '<p>Sin riesgos abiertos.</p>') + '</div></div>';
+
+    h += '<h2>Decisiones y acciones</h2>' + (acciones.length ? '<ol>' + acciones.slice(0, 6).map(function(x){
+        var a = x.corta || x.accion;
+        return '<li><b>' + esc(x.titulo) + '.</b> ' + esc(a.length > 260 ? a.slice(0, 257) + '…' : a) + '</li>'; }).join('') + '</ol>' : '<p>No hay decisiones pendientes esta semana.</p>');
+    if (obs) h += '<h2>Observaciones del Superintendente</h2><p class="fi-obs">' + esc(obs) + '</p>';
+    h += '<div class="fi-fir"><div>' + esc(quien || 'Superintendente') + '<span>Superintendente de Plantación</span></div><div>&nbsp;<span>Gerencia · recibió</span></div></div>' +
+      '<div class="fi-pie">Datos del sistema de maquinaria (Taller, Programación, Preoperativo y app de Tanqueo). Disponibilidad = días laborales sin estar en taller ÷ días laborales (lunes a sábado sin festivos). ' +
+      'Uso = días con programación, preoperativo o cierre ÷ días que la máquina estaba buena. Los camiones no entran en la disponibilidad.</div></div>';
+
+    var pr = el('ft-print');
+    if (!pr){ pr = document.createElement('div'); pr.id = 'ft-print'; document.body.appendChild(pr); }
+    pr.innerHTML = h;
+    document.body.classList.add('ft-imprimiendo');
+    var quitar = function(){ document.body.classList.remove('ft-imprimiendo'); window.removeEventListener('afterprint', quitar); };
+    window.addEventListener('afterprint', quitar);
+    setTimeout(function(){ window.print(); }, 150);
+  }
+
+  /* ventana para elegir la semana y escribir las observaciones */
+  function abrirInforme(){
+    if (!DATOS){ var b = el('ft-informe'); if (b) b.textContent = 'Espere, consultando…'; return; }
+    var S = semanas(), m = el('ft-modal');
+    if (!m){ m = document.createElement('div'); m.id = 'ft-modal'; document.body.appendChild(m); }
+    function clave(w){ return 'ft_obs_' + w.desde; }
+    function leerObs(w){ try { return localStorage.getItem(clave(w)) || ''; } catch(e){ return ''; } }
+    m.innerHTML = '<div class="ft-mod"><div class="ft-mod-h">Informe semanal para gerencia</div>' +
+      '<label class="ft-op"><input type="radio" name="ft-sem" value="pasada" checked> <span><b>Semana pasada</b><br>' + txtSemana(S.pasada) + '</span></label>' +
+      '<label class="ft-op"><input type="radio" name="ft-sem" value="actual"> <span><b>Esta semana, hasta hoy</b><br>' + txtSemana(S.actual) + '</span></label>' +
+      '<label class="ft-obs-l">Observaciones del Superintendente (opcional)<textarea id="ft-obs" rows="4" placeholder="Lo que gerencia debe saber además de las cifras: compras pedidas, decisiones tomadas, labores atrasadas…"></textarea></label>' +
+      '<div class="ft-mod-b"><button type="button" id="ft-mod-no">Cancelar</button><button type="button" id="ft-mod-si">Generar PDF</button></div>' +
+      '<div class="ft-mod-n">En la ventana de impresión elija "Guardar como PDF" para enviarlo.</div></div>';
+    m.hidden = false;
+    var sel = function(){ return S[(m.querySelector('input[name=ft-sem]:checked') || {}).value || 'pasada']; };
+    el('ft-obs').value = leerObs(sel());
+    m.onchange = function(e){ if (e.target.name === 'ft-sem') el('ft-obs').value = leerObs(sel()); };
+    m.onclick = function(e){
+      if (e.target === m || e.target.id === 'ft-mod-no') m.hidden = true;
+      if (e.target.id === 'ft-mod-si'){
+        var w = sel(), obs = el('ft-obs').value.trim();
+        try { localStorage.setItem(clave(w), obs); } catch(x){}
+        m.hidden = true;
+        informe(w, obs);
+      }
+    };
   }
 
   var cargando = false, listo = false, CACHE = 'ft_ultimo';
@@ -637,7 +779,7 @@
           tanq:tanqueos(r[5]),
           tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
           alertas:Object.keys(al).map(function(k){ return al[k]; }) };
-        listo = true;
+        listo = true; DATOS = D;
         var R = indicadores(D);
         try { localStorage.setItem(CACHE, JSON.stringify({ R:R, ts:Date.now() })); } catch(e){}
         pintar(R, 'Actualizado ' + hora(new Date()));
@@ -660,6 +802,7 @@
 
   document.addEventListener('click', function(e){
     if (e.target && e.target.id === 'ft-recargar') return cargar(true);
+    if (e.target && e.target.id === 'ft-informe') return abrirInforme();
     var t = e.target.closest && e.target.closest('[data-ft-tab]');
     if (t && ULT){
       TAB = t.getAttribute('data-ft-tab');

@@ -523,10 +523,67 @@ a.mtab:hover{color:#16a34a;}
 .ft-bar i.rojo{background:#d9534a} .ft-bar i.verde{background:#16a34a} .ft-bar i.gris{background:#64748b}
 .ft-bar .v{color:#4b5563;white-space:nowrap;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
 .ft-vacio{font-size:12.5px;color:#9ca3af;padding:14px 0}
+.ft-ver-b{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ft-ver-r button.ft-inf{background:#fff;color:#1a1f2e;border-color:#fff}
+/* ventana del informe para gerencia */
+#ft-modal{position:fixed;inset:0;z-index:1000;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+#ft-modal[hidden]{display:none}
+.ft-mod{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.ft-mod-h{font-size:16px;font-weight:800;margin-bottom:12px}
+.ft-op{display:flex;gap:10px;align-items:flex-start;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:#4b5563;cursor:pointer}
+.ft-op b{color:#1a1f2e}
+.ft-op input{margin-top:3px;accent-color:#16a34a}
+.ft-obs-l{display:block;font-size:12.5px;font-weight:700;color:#4b5563;margin-top:12px}
+.ft-obs-l textarea{display:block;width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:10px;padding:9px 10px;font:inherit;font-size:13px;font-weight:400;resize:vertical}
+.ft-mod-b{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.ft-mod-b button{border:1px solid #d1d5db;background:#fff;border-radius:9px;padding:8px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.ft-mod-b #ft-mod-si{background:#16a34a;border-color:#16a34a;color:#fff}
+.ft-mod-n{font-size:11.5px;color:#9ca3af;margin-top:10px}
+/* informe impreso (una hoja carta) */
+#ft-print{display:none}
+@media print{
+  @page{size:letter portrait;margin:11mm 12mm}
+  body.ft-imprimiendo{background:#fff!important;min-height:0}
+  body.ft-imprimiendo > *:not(#ft-print){display:none!important}
+  body.ft-imprimiendo #ft-print{display:block}
+}
+.fi{font-family:'DM Sans',sans-serif;color:#1a1f2e;font-size:10.5px;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.fi h1{font-size:19px;margin:2px 0 1px;font-weight:800}
+.fi h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#14532d;margin:10px 0 4px;border-bottom:1.5px solid #16a34a;padding-bottom:2px}
+.fi-cab{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;border-bottom:3px solid #14532d;padding-bottom:6px}
+.fi-emp{font-size:10px;font-weight:700;color:#16a34a;letter-spacing:.05em;text-transform:uppercase}
+.fi-per{font-size:12px;color:#374151}
+.fi-meta{text-align:right;font-size:9.5px;color:#4b5563}
+.fi-ver{margin:8px 0;padding:7px 10px;border-radius:6px;font-size:11.5px;border-left:5px solid}
+.fi-ver.verde{background:#ecfdf3;border-color:#16a34a} .fi-ver.ambar{background:#fffaeb;border-color:#d97706} .fi-ver.rojo{background:#fef3f2;border-color:#b42318}
+.fi-k{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.fi-kc{border:1px solid #e5e7eb;border-top:3px solid #d1d5db;border-radius:6px;padding:5px 6px}
+.fi-kc.verde{border-top-color:#16a34a} .fi-kc.ambar{border-top-color:#d97706} .fi-kc.rojo{border-top-color:#b42318}
+.fi-kc .t{font-size:9px;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.03em}
+.fi-kc .v{font-size:17px;font-weight:800;margin:1px 0}
+.fi-kc.rojo .v{color:#b42318} .fi-kc.ambar .v{color:#b45309}
+.fi-kc .s{font-size:8.5px;color:#6b7280;line-height:1.3}
+.fi-kc .d{font-size:8.5px;font-weight:700;margin-top:2px}
+.fi .me{color:#15803d} .fi .pe{color:#b42318} .fi .ig{color:#6b7280}
+.fi-dos{display:grid;grid-template-columns:1.05fr 1fr;gap:14px}
+.fi table{width:100%;border-collapse:collapse;font-size:9.5px}
+.fi th{text-align:left;font-size:8.5px;color:#6b7280;text-transform:uppercase;border-bottom:1px solid #d1d5db;padding:2px 4px}
+.fi td{border-bottom:1px solid #eef0f4;padding:3px 4px;vertical-align:top}
+.fi .n{text-align:right;white-space:nowrap}
+.fi ul,.fi ol{margin:0;padding-left:16px}
+.fi li{margin-bottom:3px}
+.fi li.rojo::marker{color:#b42318} .fi li.ambar::marker{color:#d97706}
+.fi .g{color:#6b7280}
+.fi p{margin:0}
+.fi-obs{white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:6px;padding:6px 8px;background:#fafafa}
+.fi-fir{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:22px}
+.fi-fir div{border-top:1px solid #1a1f2e;padding-top:3px;font-weight:700;font-size:10px}
+.fi-fir span{display:block;font-weight:400;color:#6b7280;font-size:9px}
+.fi-pie{margin-top:8px;font-size:8px;color:#9ca3af;line-height:1.35}
 @media (max-width:600px){
   .ft-ver{flex-wrap:wrap;padding:16px}
   .ft-ver-t{font-size:18px}
-  .ft-ver-r{flex-direction:row;align-items:center;width:100%;justify-content:space-between}
+  .ft-ver-r{flex-direction:row;align-items:center;width:100%;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .ft-grid{grid-template-columns:1fr}
   .ft-areas{grid-template-columns:1fr}
   .ft-tabs button{padding:10px 10px;font-size:13px}
@@ -2184,7 +2241,7 @@ function semanaNum(d){
 const SECTION_INFO = {
   inicio:  {title: nombre => `¡Buenos días, ${nombre}!`, sub: 'Bienvenido al Sistema de Gestión de Plantaciones de Palma de Aceite'},
   cosecha: {title: () => 'Cosecha', sub: 'Gestión integral de cosecha de fruta'},
-  flota: {title: () => 'Flota y Combustible', sub: 'Cómo está la maquinaria: disponibilidad, daños, uso y combustible'},
+  flota: {title: () => 'Flota y Combustible', sub: 'Tablero del Superintendente de Plantación · informe semanal para gerencia'},
   importar: {title: () => 'Importación de Datos', sub: 'Cargue datos de producción desde Excel o CSV'},
   metas: {title: () => 'Configuración de Metas', sub: 'Defina las metas productivas para el año seleccionado'},
 };
