@@ -11,6 +11,8 @@
   var META = 90;                 // disponibilidad objetivo (%)
   var DIAS_REPETIDAS = 90;       // ventana para "la misma falla otra vez"
   var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var LABORES = { alceTijera:'Alce con tijera', alceQuinta:'Alce con quinta rueda', rotospeed:'Rotospeed', rolo:'Rolo cuchilla',
+    fertMezcla:'Fertilización con mezcla', fertBorax:'Fertilización en bórax', sanidad:'Sanidad', varias:'Labores varias' };
   var SISTEMAS = { motor:'Motor', hidraulico:'Hidráulico', electrico:'Eléctrico', transmision:'Transmisión',
     frenos:'Frenos', direccion:'Dirección', llantas:'Llantas', estructura:'Estructura', otro:'Otro' };
 
@@ -89,22 +91,34 @@
       var acc = String(r[2] || '').trim().toUpperCase(), f = aIso(r[4]), cod = String(r[5] || '').trim();
       if (!esFecha(f) || !cod) return;
       if (acc === 'QUITAR'){ if (dias[f]) delete dias[f][cod]; return; }
-      if (acc === 'ASIGNAR') (dias[f] = dias[f] || {})[cod] = true;
+      if (acc === 'ASIGNAR') (dias[f] = dias[f] || {})[cod] = { labor: LABORES[String(r[6] || '').trim()] || String(r[6] || '').trim(),
+        op: [String(r[9] || '').trim(), String(r[12] || '').trim()].filter(Boolean).join(' / ') };
     });
     Object.keys(dias).forEach(function(f){ nuevas[f] = true; });
     (vieja || []).forEach(function(r){
       var f = aIso(r[0]), cod = codDe(r[2]);
       if (!esFecha(f) || !cod || nuevas[f] || !eq(cod) || !String(r[3] || '').trim()) return;
-      (dias[f] = dias[f] || {})[cod] = true;
+      (dias[f] = dias[f] || {})[cod] = { labor:String(r[3] || '').trim(), op:'' };
     });
     return dias;
   }
 
-  /* días con preoperativo por máquina: { 'cod|fecha': true } */
+  /* días con preoperativo por máquina: { 'cod|fecha': { op, hora } } */
   function preops(nuevo, viejo){
     var o = {};
-    (nuevo || []).concat(viejo || []).forEach(function(r){ var f = aIso(r[0]), c = codDe(r[3]); if (c && esFecha(f)) o[c + '|' + f] = true; });
+    (nuevo || []).concat(viejo || []).forEach(function(r){
+      var f = aIso(r[0]), c = codDe(r[3]), op = String(r[2] || '').trim();
+      if (!c || !esFecha(f)) return;
+      var x = o[c + '|' + f] = o[c + '|' + f] || { op:'', hora:hhmm(r[1]) };
+      if (op && x.op.indexOf(op) < 0) x.op = x.op ? x.op + ' / ' + op : op;   // doble turno
+    });
     return o;
+  }
+  /* la hora puede venir como texto (06:16 a. m.) o como fecha de 1899 */
+  function hhmm(v){
+    var s = String(v == null ? '' : v);
+    if (s.indexOf('1899-') === 0){ var d = new Date(s); return isNaN(d) ? '' : p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+    return s.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   /* Tanqueos: solo la app de Tanqueo del almacén (hoja Combustible, última
@@ -117,7 +131,7 @@
       var r = u[k], f = aIso(r[0]), acc = String(r[2] || '').trim().toUpperCase();
       if (acc === 'ANULADO' || !esFecha(f)) return;
       var t = { fecha:f, cod:String(r[4] || '').trim(), gal:num(r[6]) || 0, lec:num(r[7]), km:String(r[8] || '') === 'Km',
-        costo:num(r[14]) || 0, saldo:num(r[15]), just:String(r[17] || '').trim(), hora:String(r[1] || ''), nuevo:true };
+        costo:num(r[14]) || 0, saldo:num(r[15]), just:String(r[17] || '').trim(), hora:hhmm(r[1]), recibe:String(r[11] || '').trim(), nuevo:true };
       if (t.gal > 0) l.push(t);
     });
     // galones fuera de toda proporción para esa máquina (125 en vez de 12,5): no se cuentan y se avisan
@@ -369,7 +383,65 @@
       accion: faltante > limFalt ? 'Falta combustible en el tanque que no está en ningún despacho (' + g1(faltante) + ' gal). Revisar fugas o salidas sin registrar.' :
         reqAb.length ? 'El tanque está bajo y la requisición sigue abierta: confirmar la compra.' : '' });
 
-    return I;
+    /* 13. Programación de hoy */
+    var progD = D.prog[hy] || {}, progTaller = Object.keys(progD).filter(function(c){ return paradas[c]; });
+    var sinProg = trab.filter(function(f){ return !progD[f.cod]; });
+    ind({ id:'proghoy', grupo:'operacion', titulo:'Programación de hoy', valor: laboral(hy) ? progHoy + ' de ' + trab.length : '—',
+      nivel: !laboral(hy) ? 'gris' : !Object.keys(progD).length ? 'ambar' : (progTaller.length || progHoy < trab.length * 0.8) ? 'ambar' : 'verde',
+      linea: !laboral(hy) ? 'Hoy no es día laboral' : !Object.keys(progD).length ? 'Hoy no hay programación registrada' : 'Máquinas buenas con labor asignada hoy',
+      detalle: [sinProg.length && Object.keys(progD).length ? 'Buenas sin programar: ' + sinProg.map(function(f){ return f.cod; }).join(', ') : '',
+        progTaller.length ? 'Programadas pero están en taller: ' + progTaller.join(', ') : ''].filter(Boolean).join(' — '),
+      accion: progTaller.length ? 'Se programaron máquinas que están en el taller (' + progTaller.join(', ') + '): esa labor no se va a hacer.' : '' });
+
+    /* 14. Horas trabajadas (horómetro del cierre de jornada) */
+    var cier = window.Horometros ? Horometros.cierres() : [];
+    function horas(desde, hasta){
+      var o = { t:0, p:{}, dias:0 };
+      cier.forEach(function(c){
+        if (c.fecha < desde || c.fecha > hasta || c.horas == null || !eq(c.cod) || esCamion(c.cod)) return;
+        o.t += c.horas; o.dias++; o.p[c.cod] = (o.p[c.cod] || 0) + c.horas;
+      });
+      return o;
+    }
+    var hM = horas(mesIni, hy), hP = horas(pmIni, pmMismo), hDia = hM.dias ? hM.t / hM.dias : null;
+    ind({ id:'horas', grupo:'operacion', titulo:'Horas trabajadas en ' + nombreMes, valor: hM.t ? g1(hM.t) + ' h' : '—',
+      nivel: !hM.t ? 'gris' : (hP.t && hM.t < hP.t * 0.8) || hDia < 5 ? 'ambar' : 'verde',
+      linea: !hM.t ? 'Sin cierres de jornada con horómetro' : 'Promedio ' + g1(hDia) + ' h por máquina en cada jornada',
+      comp: hP.t ? comparar(hM.t, hP.t, ' h', false, 'el mismo tramo de ' + nombrePrev, true, 1) : '',
+      detalle: hDia != null && hDia < 5 ? 'Jornadas cortas: menos de 5 horas de motor por máquina al día.' : '' });
+
+    /* ---- detalle para las pestañas ---- */
+    var labM = laborales(mesIni, hy), desde90 = sumar(hy, -90), cierHoy = {};
+    cier.forEach(function(c){ if (c.fecha === hy) cierHoy[c.cod] = (cierHoy[c.cod] || 0) + (c.horas || 0); });
+    var porMtto = {}; mt.forEach(function(m){ porMtto[m.cod] = m; });
+    var X = { mes:nombreMes, maquinas: FLOTA.map(function(f){
+      var perd = { falla:0, mantenimiento:0 };
+      labM.forEach(function(d){ var t = paradoEl(D, f.cod, d); if (t) perd[t]++; });
+      var par = paradas[f.cod], pend = D.pend.filter(function(n){ return n.cod === f.cod; });
+      var k = f.cod + '|' + hy;
+      return { cod:f.cod, nombre:f.nombre, camion:f.grupo === 'transporte',
+        hoy: par ? { c:'rojo', t:'En taller · ' + plural(Math.max(0, dias(par.inicio, hy)), 'día', 'días'), d:par.txt } :
+          pend.some(function(n){ return n.urgente; }) ? { c:'ambar', t:'Trabaja con daño urgente', d:pend[0].txt } :
+          pend.length ? { c:'ambar', t:'Trabaja con pendiente', d:pend[0].txt } : { c:'verde', t:'Trabaja', d:'' },
+        disp: labM.length ? (labM.length - perd.falla - perd.mantenimiento) / labM.length * 100 : null, perdF:perd.falla, perdM:perd.mantenimiento,
+        fallas90: D.eventos.filter(function(e){ return e.cod === f.cod && e.tipo === 'falla' && e.inicio >= desde90; }).length,
+        mtto: porMtto[f.cod] || null, pend:pend.length,
+        prog: progD[f.cod] || null, pre: D.pre[k] || null, cierre: cierHoy[f.cod] != null ? cierHoy[f.cod] : null, horasMes: hM.p[f.cod] || 0 };
+    }) };
+    var sis = {};
+    D.eventos.forEach(function(e){
+      if (e.tipo !== 'falla' || e.inicio < desde90 || !eq(e.cod) || esCamion(e.cod)) return;
+      var k = e.fin ? (SISTEMAS[e.sistema] || 'Otro') : 'Sin alta todavía';
+      var x = sis[k] = sis[k] || { k:k, n:0, d:0 }; x.n++; x.d += duracion(e);
+    });
+    X.sistemas = Object.keys(sis).map(function(k){ return sis[k]; }).sort(function(a, b){ return b.n - a.n || b.d - a.d; });
+    X.comb = Object.keys(cm).map(function(c){ var x = cm[c], e = eq(c) || {}, a = c3[c];
+      return { cod:c, nombre:e.nombre || '', n:x.n, gal:x.gal, costo:M.filter(function(t){ return t.cod === c; }).reduce(function(s, t){ return s + t.costo; }, 0),
+        tasa:x.tasa, antes: a && a.tasa != null ? a.tasa : null, km:x.km };
+    }).sort(function(a, b){ return b.gal - a.gal; });
+    X.tanqueos = T.slice(-10).reverse();
+    X.mov = D.tanque.slice(-8).reverse();
+    return { I:I, X:X };
   }
 
   /* diferencia contra otro período */
@@ -400,25 +472,125 @@
     return h + '</div>';
   }
 
-  function pintar(I, act){
+  /* ---- piezas ---- */
+  function tabla(cols, filas, vacio){
+    if (!filas.length) return '<div class="ft-vacio">' + esc(vacio || 'Sin datos.') + '</div>';
+    return '<div class="ft-tabla"><table><thead><tr>' + cols.map(function(c){ return '<th' + (c.n ? ' class="n"' : '') + '>' + c.t + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      filas.map(function(f){ return '<tr>' + f.map(function(v, i){ return '<td' + (cols[i].n ? ' class="n"' : '') + '>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+  }
+  /* barras horizontales de una sola serie, con el valor escrito al lado */
+  function barras(l, clase, vacio){
+    if (!l.length) return '<div class="ft-vacio">' + esc(vacio) + '</div>';
+    var max = Math.max.apply(null, l.map(function(x){ return x.v; })) || 1;
+    return '<div class="ft-bars">' + l.map(function(x){
+      return '<div class="ft-bar" title="' + esc(x.t || '') + '"><span class="k">' + esc(x.k) + '</span><span class="tr"><i class="' + clase + '" style="width:' + Math.max(2, x.v / max * 100) + '%"></i></span><span class="v">' + esc(x.lbl) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function bloque(titulo, ayuda, cuerpo){
+    return '<div class="panel ft-blq"><div class="panel-title">' + titulo + '</div>' + (ayuda ? '<div class="panel-sub">' + ayuda + '</div>' : '') + cuerpo + '</div>';
+  }
+  function pill(c, t){ return '<span class="ft-pill ' + c + '">' + esc(t) + '</span>'; }
+  function maq(m){ return '<b class="ft-cod">' + esc(m.cod) + '</b> <span class="ft-nom">' + esc(m.nombre || '') + '</span>'; }
+  function peor(l){ return l.some(function(x){ return x.nivel === 'rojo'; }) ? 'rojo' : l.some(function(x){ return x.nivel === 'ambar'; }) ? 'ambar' :
+    l.some(function(x){ return x.nivel === 'verde'; }) ? 'verde' : 'gris'; }
+
+  var TABS = [['resumen', 'Resumen'], ['flota', 'Flota'], ['operacion', 'Operación'], ['combustible', 'Combustible']];
+  var TAB = (function(){ try { return localStorage.getItem('ft_tab') || 'resumen'; } catch(e){ return 'resumen'; } })();
+  var ULT = null;
+
+  function pResumen(I){
     var rojos = I.filter(function(x){ return x.nivel === 'rojo'; }), ambar = I.filter(function(x){ return x.nivel === 'ambar'; });
-    var nivel = rojos.length ? 'rojo' : ambar.length ? 'ambar' : 'verde';
-    var titulo = { rojo:'Hay alarmas en la flota', ambar:'Estamos bien, con cosas para mirar', verde:'Estamos bien' }[nivel];
-    var sub = nivel === 'verde' ? 'Las máquinas están disponibles, trabajando y gastando lo normal.' :
+    var acciones = rojos.concat(ambar).filter(function(x){ return x.accion; });
+    var clave = { flota:['hoy', 'mes'], operacion:['proghoy', 'preop'], combustible:['comb', 'tanque'] };
+    var h = '<div class="ft-areas">' + GRUPOS.map(function(gr){
+      var l = I.filter(function(x){ return x.grupo === gr[0]; }), n = peor(l);
+      var r = l.filter(function(x){ return x.nivel === 'rojo'; }).length, a = l.filter(function(x){ return x.nivel === 'ambar'; }).length;
+      return '<button type="button" class="ft-area ' + n + '" data-ft-tab="' + gr[0] + '"><span class="ft-area-h"><b>' + gr[1] + '</b>' + pill(n, NIV[n].t) + '</span>' +
+        clave[gr[0]].map(function(id){ var x = l.filter(function(y){ return y.id === id; })[0];
+          return x ? '<span class="ft-area-k"><span>' + esc(x.titulo) + '</span><b>' + esc(x.valor) + '</b></span>' : ''; }).join('') +
+        '<span class="ft-area-p">' + (r || a ? [r ? plural(r, 'alarma', 'alarmas') : '', a ? plural(a, 'punto', 'puntos') + ' para mirar' : ''].filter(Boolean).join(' · ') : n === 'gris' ? 'Sin datos todavía' : 'Todo en orden') + ' ›</span></button>';
+    }).join('') + '</div>';
+    h += acciones.length ? '<div class="panel ft-acc"><div class="panel-title">Qué hacer</div><ol>' + acciones.map(function(x){
+        return '<li class="' + x.nivel + '"><b>' + esc(x.titulo) + '.</b> ' + esc(x.accion) + '</li>'; }).join('') + '</ol></div>'
+      : '<div class="panel ft-acc"><div class="panel-title">Qué hacer</div><div class="ft-vacio">Nada urgente: la flota está trabajando dentro de lo normal.</div></div>';
+    return h;
+  }
+  function pFlota(I, X){
+    var maqs = X.maquinas.filter(function(m){ return !m.camion; }), cams = X.maquinas.filter(function(m){ return m.camion; });
+    var perd = maqs.filter(function(m){ return m.perdF + m.perdM; }).sort(function(a, b){ return (b.perdF + b.perdM) - (a.perdF + a.perdM); })
+      .map(function(m){ var t = m.perdF + m.perdM; return { k:m.cod, v:t, lbl:plural(t, 'día', 'días'), t:m.cod + ' ' + m.nombre + ': ' + m.perdF + ' por falla, ' + m.perdM + ' por mantenimiento' }; });
+    function fila(m){
+      var mt = m.mtto, txtM = !mt || mt.nivel === 'sindato' ? '<span class="ft-mute">Sin dato</span>' :
+        mt.nivel === 'vencido' ? pill(mt.fuente === 'taller' ? 'rojo' : 'ambar', 'Vencido ' + g1(-mt.faltan) + ' h') :
+        mt.nivel === 'proximo' ? pill('ambar', 'Faltan ' + g1(mt.faltan) + ' h') : pill('verde', 'Al día');
+      return [maq(m), pill(m.hoy.c, m.hoy.t) + (m.hoy.d ? '<div class="ft-sub">' + esc(m.hoy.d) + '</div>' : ''),
+        m.disp == null ? '—' : '<span class="' + (m.disp >= META ? 'ft-ok' : m.disp >= 75 ? 'ft-al' : 'ft-ma') + '">' + Math.round(m.disp) + '%</span>',
+        String(m.perdF + m.perdM), String(m.fallas90), m.camion ? '—' : txtM, m.pend ? String(m.pend) : '—'];
+    }
+    var cols = [{ t:'Máquina' }, { t:'Hoy' }, { t:'Disp. ' + X.mes, n:1 }, { t:'Días perdidos', n:1 }, { t:'Fallas 3 meses', n:1 }, { t:'Mantenimiento' }, { t:'Pendientes', n:1 }];
+    return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'flota'; }).map(tarjeta).join('') + '</div>' +
+      '<div class="ft-dos">' +
+        bloque('Días perdidos en ' + X.mes, 'Días laborales que cada máquina estuvo en taller. Son las que bajan la disponibilidad.', barras(perd, 'rojo', 'Ninguna máquina ha perdido días este mes.')) +
+        bloque('Fallas por sistema', 'Fallas de los últimos 3 meses y días parados que dejaron.', barras(X.sistemas.map(function(x){
+          return { k:x.k, v:x.n, lbl:plural(x.n, 'falla', 'fallas') + ' · ' + x.d + ' d', t:x.k + ': ' + x.n + ' fallas, ' + x.d + ' días parados' }; }), 'gris', 'Sin fallas en los últimos 3 meses.')) +
+      '</div>' +
+      bloque('Estado de cada máquina', '', tabla(cols, maqs.map(fila))) +
+      (cams.length ? bloque('Camiones', 'No entran en la disponibilidad de la maquinaria.', tabla(cols, cams.map(fila))) : '');
+  }
+  function pOperacion(I, X){
+    var maqs = X.maquinas.filter(function(m){ return !m.camion; });
+    var hrs = maqs.filter(function(m){ return m.horasMes; }).sort(function(a, b){ return b.horasMes - a.horasMes; })
+      .map(function(m){ return { k:m.cod, v:m.horasMes, lbl:g1(m.horasMes) + ' h', t:m.cod + ' ' + m.nombre }; });
+    var hoyF = maqs.slice().sort(function(a, b){ return (a.hoy.c === 'rojo') - (b.hoy.c === 'rojo'); }).map(function(m){
+      return [maq(m), pill(m.hoy.c, m.hoy.c === 'rojo' ? 'En taller' : 'Buena'),
+        m.prog ? esc(m.prog.labor || 'Programada') + (m.prog.op ? '<div class="ft-sub">' + esc(m.prog.op) + '</div>' : '') : '<span class="ft-mute">Sin programar</span>',
+        m.pre ? pill('verde', 'Hecho' + (m.pre.hora ? ' ' + m.pre.hora : '')) + (m.pre.op ? '<div class="ft-sub">' + esc(m.pre.op) + '</div>' : '') :
+          (m.prog && m.hoy.c !== 'rojo' ? pill('rojo', 'Falta') : '<span class="ft-mute">—</span>'),
+        m.cierre != null ? g1(m.cierre) + ' h' : '<span class="ft-mute">—</span>'];
+    });
+    return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'operacion'; }).map(tarjeta).join('') + '</div>' +
+      bloque('Hoy, máquina por máquina', 'Programación, preoperativo y horas del cierre de jornada de hoy.',
+        tabla([{ t:'Máquina' }, { t:'Estado' }, { t:'Labor programada' }, { t:'Preoperativo' }, { t:'Horas hoy', n:1 }], hoyF)) +
+      bloque('Horas trabajadas en ' + X.mes, 'Horas de motor según el horómetro del cierre de jornada.', barras(hrs, 'verde', 'Todavía no hay cierres de jornada con horómetro este mes.'));
+  }
+  function pCombustible(I, X){
+    var filas = X.comb.map(function(x){
+      var cons = x.tasa == null ? '<span class="ft-mute">Falta historia</span>' : g1(x.tasa) + (x.km ? ' km/gal' : ' gal/h');
+      var antes = x.antes == null || x.tasa == null ? '—' : (function(){ var v = x.km ? (x.antes - x.tasa) / x.antes * 100 : (x.tasa - x.antes) / x.antes * 100;
+        return v > 25 ? pill(v > 50 ? 'rojo' : 'ambar', '▲ ' + Math.round(v) + '%') : Math.abs(v) < 5 ? '<span class="ft-mute">igual</span>' : (v > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(v)) + '%'; })();
+      return [maq(x), String(x.n), g1(x.gal), x.costo ? peso(x.costo) : '—', cons, antes];
+    });
+    var tq = X.tanqueos.map(function(t){ return ['<span class="ft-nw">' + dcorta(t.fecha) + '</span>' + (t.hora ? '<div class="ft-sub">' + esc(t.hora) + '</div>' : ''), '<b class="ft-cod">' + esc(t.cod) + '</b>', g1(t.gal),
+      t.lec == null ? '—' : g1(t.lec), esc(t.recibe || ''), t.just ? '<span class="ft-alerta">' + esc(t.just) + '</span>' : ''];
+    });
+    var mv = X.mov.map(function(m){ return [dcorta(m.fecha), m.tipo === 'LLEGADA' ? 'Llegada' : 'Medición', g1(m.gal),
+      m.tipo === 'AJUSTE' ? (m.dif < 0 ? pill('rojo', 'Faltan ' + g1(-m.dif)) : m.dif > 0 ? pill('ambar', 'Sobran ' + g1(m.dif)) : pill('verde', 'Cuadra')) : '', esc(m.nota)]; });
+    return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'combustible'; }).map(tarjeta).join('') + '</div>' +
+      bloque('Consumo por máquina en ' + X.mes, 'Galones despachados y consumo por hora de motor (km por galón en camiones), comparado con los 3 meses anteriores.',
+        tabla([{ t:'Máquina' }, { t:'Tanqueos', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'Consumo', n:1 }, { t:'vs. antes', n:1 }], filas, 'Todavía no hay tanqueos este mes en la app de Tanqueo.')) +
+      '<div class="ft-dos">' +
+        bloque('Últimos tanqueos', '', tabla([{ t:'Fecha' }, { t:'Máquina' }, { t:'Galones', n:1 }, { t:'Horómetro', n:1 }, { t:'Recibió' }, { t:'Alerta' }], tq, 'Todavía no hay tanqueos.')) +
+        bloque('Movimientos del tanque', 'Llegadas de combustible y mediciones del tanque.', tabla([{ t:'Fecha' }, { t:'Tipo' }, { t:'Galones', n:1 }, { t:'Medición' }, { t:'Nota' }], mv, 'Sin movimientos todavía.')) +
+      '</div>';
+  }
+
+  function pintar(R, act){
+    ULT = { R:R, act:act };
+    var I = R.I, n = peor(I.filter(function(x){ return x.nivel !== 'gris'; }));
+    var rojos = I.filter(function(x){ return x.nivel === 'rojo'; }), ambar = I.filter(function(x){ return x.nivel === 'ambar'; });
+    var titulo = { rojo:'Hay alarmas en la flota', ambar:'Estamos bien, con cosas para mirar', verde:'Estamos bien', gris:'Sin datos' }[n];
+    var sub = n === 'verde' ? 'Las máquinas están disponibles, trabajando y gastando lo normal.' :
       [rojos.length ? plural(rojos.length, 'alarma', 'alarmas') + ': ' + rojos.map(function(x){ return x.titulo.toLowerCase(); }).join(', ') : '',
        ambar.length ? plural(ambar.length, 'punto', 'puntos') + ' para mirar' : ''].filter(Boolean).join(' · ') + '.';
-    var acciones = rojos.concat(ambar).filter(function(x){ return x.accion; });
-    var h = '<div class="ft-ver ' + nivel + '"><div class="ft-luz"><i></i></div><div class="ft-ver-txt"><div class="ft-ver-t">' + titulo + '</div><div class="ft-ver-s">' + esc(sub) + '</div></div>' +
+    var h = '<div class="ft-ver ' + n + '"><div class="ft-luz"><i></i></div><div class="ft-ver-txt"><div class="ft-ver-t">' + titulo + '</div><div class="ft-ver-s">' + esc(sub) + '</div></div>' +
       '<div class="ft-ver-r"><span id="ft-act">' + esc(act) + '</span><button type="button" id="ft-recargar">Actualizar</button></div></div>';
-    if (acciones.length){
-      h += '<div class="panel ft-acc"><div class="panel-title">Qué hacer</div><ol>' + acciones.map(function(x){
-        return '<li class="' + x.nivel + '"><b>' + esc(x.titulo) + '.</b> ' + esc(x.accion) + '</li>'; }).join('') + '</ol></div>';
-    }
-    GRUPOS.forEach(function(gr){
-      var l = I.filter(function(x){ return x.grupo === gr[0]; });
-      h += '<div class="ft-sec">' + gr[1] + '</div><div class="ft-grid">' + l.map(tarjeta).join('') + '</div>';
-    });
-    h += '<div class="ft-pie">Datos del sistema de maquinaria: Taller, Programación, Preoperativo y Tanqueo. Meta de disponibilidad ' + META + '%. ' +
+    h += '<div class="ft-tabs" role="tablist">' + TABS.map(function(t){
+      var nv = t[0] === 'resumen' ? '' : peor(I.filter(function(x){ return x.grupo === t[0]; }));
+      return '<button type="button" role="tab" data-ft-tab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '" class="' + (TAB === t[0] ? 'on' : '') + '">' +
+        (nv ? '<i class="ft-dot ' + nv + '"></i>' : '') + t[1] + '</button>';
+    }).join('') + '</div>';
+    h += '<div class="ft-panel">' + (TAB === 'flota' ? pFlota(I, R.X) : TAB === 'operacion' ? pOperacion(I, R.X) : TAB === 'combustible' ? pCombustible(I, R.X) : pResumen(I)) + '</div>';
+    h += '<div class="ft-pie">Datos del sistema de maquinaria: Taller, Programación, Preoperativo y app de Tanqueo. Meta de disponibilidad ' + META + '%. ' +
       'Verde = bien · ámbar = mirarlo · rojo = alarma.</div>';
     el('ft-cuerpo').innerHTML = h;
   }
@@ -440,7 +612,7 @@
         (r[7] || []).forEach(function(a){ var id = String(a[3] || '').trim(); if (id) al[id] = { fecha:aIso(a[0]), abierta:String(a[2] || '').trim().toUpperCase() === 'ABIERTA' }; });
         var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]), preViejo:r[4],
           tanq:tanqueos(r[5]),
-          tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), dif:num(m[6]) || 0 }; }),
+          tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
           alertas:Object.keys(al).map(function(k){ return al[k]; }) };
         listo = true;
         pintar(indicadores(D), 'Actualizado ' + new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }));
@@ -452,6 +624,15 @@
       .then(function(){ cargando = false; var b = el('ft-recargar'); if (b){ b.disabled = false; b.textContent = listo ? 'Actualizar' : 'Intentar otra vez'; } });
   }
 
-  document.addEventListener('click', function(e){ if (e.target && e.target.id === 'ft-recargar') cargar(); });
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'ft-recargar') return cargar();
+    var t = e.target.closest && e.target.closest('[data-ft-tab]');
+    if (t && ULT){
+      TAB = t.getAttribute('data-ft-tab');
+      try { localStorage.setItem('ft_tab', TAB); } catch(x){}
+      pintar(ULT.R, ULT.act);
+      var c = el('section-flota'); if (c && c.getBoundingClientRect().top < 0) c.scrollIntoView();
+    }
+  });
   window.FlotaTablero = { cargar: cargar };
 })();
