@@ -144,6 +144,19 @@
     return s.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
+  /* Cierres de jornada por máquina y día: { 'cod|fecha': [{ hora, op, final, estado, novedad, labor }] }.
+     La última fila de cada operario vale (un reintento por señal no se cuenta dos veces); dos operarios = doble turno. */
+  function cierresDe(filas){
+    var o = {}, u = {};
+    (filas || []).forEach(function(r){
+      var f = aIso(r[0]), c = codDe(r[3]), op = String(r[2] || '').trim();
+      if (c && esFecha(f)) u[c + '|' + f + '|' + op.toLowerCase()] = { cod:c, fecha:f, hora:hhmm(r[1]), op:op, final:num(r[4]),
+        estado:String(r[7] || '').trim().toLowerCase(), novedad:String(r[8] || '').trim(), labor:String(r[9] || '').trim() };
+    });
+    Object.keys(u).forEach(function(k){ var x = u[k]; (o[x.cod + '|' + x.fecha] = o[x.cod + '|' + x.fecha] || []).push(x); });
+    return o;
+  }
+
   /* Tanqueos: solo la app de Tanqueo del almacén (hoja Combustible, última
      fila por ID, sin anulados). Lo que anotaba el preoperativo anterior en la
      hoja Tanqueos no se toma: el combustible se controla desde la app. */
@@ -482,6 +495,9 @@
       var par = paradas[f.cod], pend = D.pend.filter(function(n){ return n.cod === f.cod; });
       var k = f.cod + '|' + hy;
       return { cod:f.cod, nombre:f.nombre, camion:f.grupo === 'transporte',
+        // días en taller desde la fecha de parada que registró el Taller (como lo cuenta el Taller)
+        enTaller: par ? Math.max(0, dias(par.inicio, hy)) : null, desdeTaller: par ? par.inicio : null,
+        tipoParada: par ? par.tipo : null,
         hoy: par ? (function(){ var r = reparacion(par);
             return { c:'rojo', t:'En taller · ' + plural(Math.max(0, dias(par.inicio, hy)), 'día', 'días'),
               d: (r.estado || 'Sin decir en qué va') + (r.costo ? ' · ' + millones(r.costo) : '') + (r.t && r.t.sale ? ' · sale ' + dcorta(r.t.sale) : '') + (par.txt ? ' — ' + par.txt : '') }; })() :
@@ -490,7 +506,8 @@
         disp: labM.length ? (labM.length - perd.falla - perd.mantenimiento) / labM.length * 100 : null, perdF:perd.falla, perdM:perd.mantenimiento,
         fallas90: D.eventos.filter(function(e){ return e.cod === f.cod && e.tipo === 'falla' && e.inicio >= desde90; }).length,
         mtto: porMtto[f.cod] || null, pend:pend.length,
-        prog: progD[f.cod] || null, pre: D.pre[k] || null, cierre: cierHoy[f.cod] != null ? cierHoy[f.cod] : null, horasMes: hM.p[f.cod] || 0 };
+        prog: progD[f.cod] || null, pre: D.pre[k] || null, cierre: cierHoy[f.cod] != null ? cierHoy[f.cod] : null, horasMes: hM.p[f.cod] || 0,
+        cierres: (D.cierres || {})[k] || [] };
     }) };
     var sis = {};
     D.eventos.forEach(function(e){
@@ -581,8 +598,9 @@
   }
   function pFlota(I, X){
     var maqs = X.maquinas.filter(function(m){ return !m.camion; }), cams = X.maquinas.filter(function(m){ return m.camion; });
-    var perd = maqs.filter(function(m){ return m.perdF + m.perdM; }).sort(function(a, b){ return (b.perdF + b.perdM) - (a.perdF + a.perdM); })
-      .map(function(m){ var t = m.perdF + m.perdM; return { k:m.cod, v:t, lbl:plural(t, 'día', 'días'), t:m.cod + ' ' + m.nombre + ': ' + m.perdF + ' por falla, ' + m.perdM + ' por mantenimiento' }; });
+    var perd = maqs.filter(function(m){ return m.enTaller != null; }).sort(function(a, b){ return b.enTaller - a.enTaller; })
+      .map(function(m){ return { k:m.cod, v:Math.max(m.enTaller, 0.5), lbl: m.enTaller ? plural(m.enTaller, 'día', 'días') : 'desde hoy',
+        t:m.cod + ' ' + m.nombre + ': parada desde el ' + dcorta(m.desdeTaller) + (m.tipoParada === 'mantenimiento' ? ' (mantenimiento)' : '') }; });
     function fila(m){
       var mt = m.mtto, txtM = !mt || mt.nivel === 'sindato' ? '<span class="ft-mute">Sin registrar</span>' :
         mt.nivel === 'sinhorometro' ? '<span class="ft-mute">Sin horómetro</span>' :
@@ -590,12 +608,12 @@
         mt.nivel === 'proximo' ? pill('ambar', 'Faltan ' + g1(mt.faltan) + ' h') : pill('verde', 'Al día');
       return [maq(m), pill(m.hoy.c, m.hoy.t) + (m.hoy.d ? '<div class="ft-sub">' + esc(m.hoy.d) + '</div>' : ''),
         m.disp == null ? '—' : '<span class="' + (m.disp >= META ? 'ft-ok' : m.disp >= 75 ? 'ft-al' : 'ft-ma') + '">' + Math.round(m.disp) + '%</span>',
-        String(m.perdF + m.perdM), String(m.fallas90), m.camion ? '—' : txtM, m.pend ? String(m.pend) : '—'];
+        m.enTaller == null ? '—' : String(m.enTaller), String(m.fallas90), m.camion ? '—' : txtM, m.pend ? String(m.pend) : '—'];
     }
-    var cols = [{ t:'Máquina' }, { t:'Hoy' }, { t:'Disp. ' + X.corto, n:1 }, { t:'Días perdidos', n:1 }, { t:'Fallas 3 meses', n:1 }, { t:'Mantenimiento' }, { t:'Pendientes', n:1 }];
+    var cols = [{ t:'Máquina' }, { t:'Hoy' }, { t:'Disp. ' + X.corto, n:1 }, { t:'Días en taller', n:1 }, { t:'Fallas 3 meses', n:1 }, { t:'Mantenimiento' }, { t:'Pendientes', n:1 }];
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'flota'; }).map(tarjeta).join('') + '</div>' +
       '<div class="ft-dos">' +
-        bloque('Días perdidos ' + X.enMes, 'Días laborales que cada máquina estuvo en taller. Son las que bajan la disponibilidad.', barras(perd, 'rojo', 'Ninguna máquina ha perdido días ' + X.enMes + '.')) +
+        bloque('Tiempo en taller', 'Días que lleva cada máquina parada, desde la fecha que registró el Taller.', barras(perd, 'rojo', 'Ninguna máquina en el taller.')) +
         bloque('Fallas por sistema', 'Fallas de los últimos 3 meses y días parados que dejaron.', barras(X.sistemas.map(function(x){
           return { k:x.k, v:x.n, lbl:plural(x.n, 'falla', 'fallas') + ' · ' + x.d + ' d', t:x.k + ': ' + x.n + ' fallas, ' + x.d + ' días parados' }; }), 'gris', 'Sin fallas en los últimos 3 meses.')) +
       '</div>' +
@@ -606,16 +624,28 @@
     var maqs = X.maquinas.filter(function(m){ return !m.camion; });
     var hrs = maqs.filter(function(m){ return m.horasMes; }).sort(function(a, b){ return b.horasMes - a.horasMes; })
       .map(function(m){ return { k:m.cod, v:m.horasMes, lbl:g1(m.horasMes) + ' h', t:m.cod + ' ' + m.nombre }; });
+    // ya pasó la jornada: lo que trabajó y no tiene cierre se marca
+    var tarde = new Date().getHours() >= 18;
+    function cierreTxt(m){
+      if (m.cierres.length) return m.cierres.map(function(x){
+        var c = x.estado === 'varado' ? 'rojo' : x.estado === 'novedad' ? 'ambar' : 'verde';
+        return pill(c, (x.estado === 'varado' ? 'Varada' : x.estado === 'novedad' ? 'Con novedad' : 'Cerrado') + (x.hora ? ' ' + x.hora : '')) +
+          '<div class="ft-sub">' + esc(x.op) + (x.final != null ? ' · horómetro ' + g1(x.final) : '') + '</div>' +
+          (x.novedad ? '<div class="ft-sub" style="color:#b45309">' + esc(x.novedad) + '</div>' : '');
+      }).join('<div style="height:6px"></div>') + (m.cierre != null ? '<div class="ft-sub"><b style="color:#374151">' + g1(m.cierre) + ' h trabajadas</b></div>' : '');
+      if (m.pre || m.prog) return m.hoy.c === 'rojo' && !m.pre ? '<span class="ft-mute">—</span>' : tarde ? pill('rojo', 'Falta el cierre') : '<span class="ft-mute">Pendiente</span>';
+      return '<span class="ft-mute">—</span>';
+    }
     var hoyF = maqs.slice().sort(function(a, b){ return (a.hoy.c === 'rojo') - (b.hoy.c === 'rojo'); }).map(function(m){
       return [maq(m), pill(m.hoy.c, m.hoy.c === 'rojo' ? 'En taller' : 'Buena'),
         m.prog ? esc(m.prog.labor || 'Programada') + (m.prog.op ? '<div class="ft-sub">' + esc(m.prog.op) + '</div>' : '') : '<span class="ft-mute">Sin programar</span>',
         m.pre ? pill('verde', 'Hecho' + (m.pre.hora ? ' ' + m.pre.hora : '')) + (m.pre.op ? '<div class="ft-sub">' + esc(m.pre.op) + '</div>' : '') :
           (m.prog && m.hoy.c !== 'rojo' ? pill('rojo', 'Falta') : '<span class="ft-mute">—</span>'),
-        m.cierre != null ? g1(m.cierre) + ' h' : '<span class="ft-mute">—</span>'];
+        cierreTxt(m)];
     });
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'operacion'; }).map(tarjeta).join('') + '</div>' +
-      bloque('Hoy, máquina por máquina', 'Programación, preoperativo y horas del cierre de jornada de hoy.',
-        tabla([{ t:'Máquina' }, { t:'Estado' }, { t:'Labor programada' }, { t:'Preoperativo' }, { t:'Horas hoy', n:1 }], hoyF)) +
+      bloque('Hoy, máquina por máquina', 'Programación, preoperativo al arrancar y cierre de jornada al terminar (hora, operario, horómetro, horas y novedad).',
+        tabla([{ t:'Máquina' }, { t:'Estado' }, { t:'Labor programada' }, { t:'Preoperativo' }, { t:'Cierre de jornada' }], hoyF)) +
       bloque('Horas trabajadas ' + X.enMes, 'Horas de motor según el horómetro del cierre de jornada.', barras(hrs, 'verde', 'Todavía no hay cierres de jornada con horómetro ' + X.enMes + '.'));
   }
   function pCombustible(I, X){
@@ -841,7 +871,7 @@
     var viejo = window.AppVieja ? AppVieja.traer().catch(function(){ return null; }) : Promise.resolve(null);
     var repar = window.Reparaciones ? Reparaciones.traer().catch(function(){}) : Promise.resolve();
     Promise.all([leer('Taller'), talvez('ProgMaquinaria'), talvez('Programacion'), talvez('PreopDiario'), talvez('Preoperativos'),
-      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor, viejo, repar])
+      talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor, viejo, repar, talvez('CierreJornada')])
       .then(function(r){
         FLOTA = window.Maestros ? Maestros.flota() : []; EQ = {};
         FLOTA.forEach(function(f){ EQ[f.cod] = f; });
@@ -850,7 +880,7 @@
         var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]),
           tanq:tanqueos(r[5]),
           tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
-          alertas:Object.keys(al).map(function(k){ return al[k]; }), viejo:r[10] };
+          alertas:Object.keys(al).map(function(k){ return al[k]; }), viejo:r[10], cierres:cierresDe(r[12]) };
         listo = true; DATOS = D;
         var R = indicadores(D);
         try { localStorage.setItem(CACHE, JSON.stringify({ R:R, ts:Date.now() })); } catch(e){}
