@@ -439,6 +439,31 @@ a.mtab:hover{color:#16a34a;}
   .tb-pill{padding:8px 10px;font-size:11.5px;}
 }
 
+
+/* ── FLOTA DE MAQUINARIA (inicio) ─────────── */
+.flt .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.flt-abrir{font-size:12.5px;font-weight:700;color:#16a34a;text-decoration:none;white-space:nowrap}
+.flt-cuerpo{display:grid;grid-template-columns:200px 1fr 1fr;gap:22px;margin-top:14px;align-items:start}
+.flt-disp .n{font-size:40px;font-weight:800;line-height:1;color:#1a1f2e}
+.flt-disp .n.rojo{color:#b42318} .flt-disp .n.ambar{color:#b45309} .flt-disp .n.verde{color:#15803d}
+.flt-disp .t{font-size:12.5px;color:#6b7280;margin-top:6px;line-height:1.4}
+.flt-barra{position:relative;height:8px;background:#eef0f4;border-radius:5px;margin-top:12px}
+.flt-barra i{position:absolute;inset:0 auto 0 0;border-radius:5px}
+.flt-barra u{position:absolute;left:90%;top:-4px;bottom:-4px;border-left:2px dashed #15803d}
+.flt-meta{font-size:10.5px;color:#15803d;font-weight:700;margin-top:6px}
+.flt-sec{font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.flt-maqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.flt-m{border-radius:9px;padding:6px 7px;font-size:12.5px;font-weight:800}
+.flt-m small{display:block;font-size:10px;font-weight:500;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flt-m.ok{background:#ecfdf3;color:#15803d} .flt-m.ta{background:#fef3f2;color:#b42318} .flt-m.pe{background:#fffaeb;color:#b45309;box-shadow:inset 0 0 0 1px #fcd34d}
+.flt-ley{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#9ca3af;margin-top:8px}
+.flt-ley i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.flt-at{list-style:none;margin:0;padding:0}
+.flt-at li{display:flex;gap:9px;padding:7px 0;border-top:1px solid #f1f2f6;font-size:12.5px;line-height:1.4;color:#374151}
+.flt-at li:first-child{border-top:0;padding-top:0}
+.flt-at .p{flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px}
+.flt-at b{color:#1a1f2e}
+@media (max-width:900px){ .flt-cuerpo{grid-template-columns:1fr} }
 /* ── LOGIN AGROVISIÓN ───────────────────── */
 #login-screen{position:fixed;inset:0;background:#FFFFFF url('fondo_login_desktop.jpg') center center no-repeat;background-size:cover;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:auto;font-family:"DM Sans",sans-serif;padding:20px;}
 #login-screen.hidden{display:none;}
@@ -674,7 +699,7 @@ a.mtab:hover{color:#16a34a;}
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-droplet"/></svg> Fertilización</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-flower"/></svg> Polinización</span>
     <a class="sb-link" href="mantenimiento.html"><svg class="ic-svg"><use href="#i-wrench"/></svg> Mantenimiento</a>
-    <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-truck"/></svg> Flota y Combustible</span>
+    <a class="sb-link" href="https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/"><svg class="ic-svg"><use href="#i-truck"/></svg> Flota y Combustible</a>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-clipboard"/></svg> Inventarios</span>
     <span class="sb-link pronto"><svg class="ic-svg"><use href="#i-cloud"/></svg> Clima</span>
 
@@ -774,6 +799,15 @@ a.mtab:hover{color:#16a34a;}
         <div class="panel">
           <div class="panel-head"><div><div class="panel-title">Alertas y novedades</div></div></div>
           <div class="empty-panel-msg">No hay alertas configuradas todavía.</div>
+        </div>
+      </div>
+
+      <!-- Flota de maquinaria: en vivo desde el sistema de maquinaria (Taller, Preoperativo, Programación) -->
+      <div class="grid-row">
+        <div class="panel flt">
+          <div class="panel-head"><div><div class="panel-title">Flota de maquinaria · hoy</div><div class="panel-sub" id="flt-sub">Consultando el taller…</div></div>
+            <a class="flt-abrir" href="https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/">Abrir Flota y Combustible ›</a></div>
+          <div class="flt-cuerpo" id="flt-cuerpo"><div class="empty-panel-msg">Consultando…</div></div>
         </div>
       </div>
 
@@ -4816,6 +4850,97 @@ async function lotConfirmarImport(){
   lotRenderTabla();
   if (!fallidas) lotCerrarImportModal();
 }
+</script>
+
+<!-- Flota de maquinaria: lee el sistema de maquinaria (otro Apps Script) y usa su lista de máquinas -->
+<script src="https://rojasanderson18-ship-it.github.io/maquinaria-taller-palmag/maestros.js"></script>
+<script>
+(function(){
+  var GS_MAQ = 'https://script.google.com/macros/s/AKfycbwvDU84orwDkO_iBIBdmaq2CSQWYdp4sH9O14k7u6RpeuGeB3Ay3Nqj3HdFZ_4UobNC/exec';
+  var META = 90;
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function p2(n){ return ('0' + n).slice(-2); }
+  function iso(d){ return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+  function aIso(v){
+    var s = String(v == null ? '' : v).trim(); if (!s) return '';
+    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (m) return m[3] + '-' + p2(m[2]) + '-' + p2(m[1]);
+    if (s.indexOf('T') > 0){ var d = new Date(s); if (!isNaN(d)) return iso(d); }
+    return s.slice(0, 10);
+  }
+  function dias(a, b){ var p = a.split('-'), q = b.split('-'); return Math.round((new Date(+q[0], +q[1] - 1, +q[2]) - new Date(+p[0], +p[1] - 1, +p[2])) / 86400000); }
+  function sumar(f, n){ var p = f.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
+  function leer(h){
+    return fetch(GS_MAQ + '?hoja=' + encodeURIComponent(h) + '&t=' + Date.now()).then(function(r){ return r.json(); })
+      .then(function(d){ if (!d || !d.ok || !Array.isArray(d.datos)) throw new Error('sin datos'); return d.datos; });
+  }
+  function pintar(taller, preop, preopViejo){
+    var hoy = iso(new Date()), ev = {}, nov = {};
+    taller.forEach(function(r){
+      var acc = String(r[2] || '').trim().toUpperCase(), id = String(r[3] || '').trim(); if (!id) return;
+      if (acc === 'PARADA' || acc === 'ALTA'){
+        var e = ev[id] = ev[id] || { cod:String(r[4] || '').trim(), inicio:aIso(r[10] || r[0]), fin:null };
+        if (r[10]) e.inicio = aIso(r[10]);
+        if (acc === 'ALTA'){ var n = parseInt(r[13], 10); e.fin = isNaN(n) ? aIso(r[0]) : sumar(e.inicio, n); }
+      } else if (acc === 'PENDIENTE' || acc === 'RESUELTO'){
+        var x = nov[id] = nov[id] || { cod:String(r[4] || '').trim(), txt:'', urgente:false, abierto:true };
+        if (r[8]) x.txt = String(r[8]); if (r[6]) x.urgente = String(r[6]).trim() === 'urgente';
+        if (acc === 'RESUELTO') x.abierto = false;
+      }
+    });
+    var flota = window.Maestros ? Maestros.flota() : [];
+    var maq = flota.filter(function(f){ return f.grupo !== 'transporte'; });
+    function parada(cod){ var l = Object.keys(ev).map(function(k){ return ev[k]; })
+      .filter(function(e){ return e.cod === cod && e.inicio <= hoy && (!e.fin || e.fin > hoy); }); return l[0] || null; }
+    var pend = Object.keys(nov).map(function(k){ return nov[k]; }).filter(function(n){ return n.abierto && n.txt; });
+    var est = {};
+    flota.forEach(function(f){ est[f.cod] = { par:parada(f.cod), pend:pend.filter(function(n){ return n.cod === f.cod; }) }; });
+    var trab = maq.filter(function(f){ return !est[f.cod].par; }), enT = maq.length - trab.length;
+    var pct = maq.length ? Math.round(trab.length / maq.length * 100) : 0;
+    var col = pct >= META ? 'verde' : pct >= 75 ? 'ambar' : 'rojo', colHex = { verde:'#15803d', ambar:'#b45309', rojo:'#b42318' }[col];
+    var cam = flota.filter(function(f){ return f.grupo === 'transporte'; }), camOk = cam.filter(function(f){ return !est[f.cod].par; }).length;
+
+    // preoperativos de hoy (versión nueva y anterior)
+    var conPreop = {}, cod = function(t){ return window.Horometros ? Horometros.codDe(t) : String(t || '').split(/[ ·-]/)[0]; };
+    (preop || []).concat(preopViejo || []).forEach(function(r){ if (aIso(r[0]) === hoy) conPreop[cod(r[3])] = true; });
+    var nPre = trab.filter(function(f){ return conPreop[f.cod]; }).length;
+    var laboral = !window.Festivos || Festivos.laboral(hoy);
+
+    el('flt-sub').textContent = 'Disponibilidad de la maquinaria (sin camiones) · camiones ' + camOk + ' de ' + cam.length + ' trabajando';
+    var h = '<div class="flt-disp"><div class="n ' + col + '">' + pct + '%</div>' +
+      '<div class="t"><b>' + trab.length + ' de ' + maq.length + '</b> máquinas trabajando · ' + enT + ' en taller</div>' +
+      '<div class="flt-barra"><i style="width:' + pct + '%;background:' + colHex + '"></i><u></u></div><div class="flt-meta">Meta ' + META + '%</div></div>';
+    h += '<div><div class="flt-sec">Máquinas</div><div class="flt-maqs">' + maq.map(function(f){
+        var e = est[f.cod], cl, sub;
+        if (e.par){ var n = Math.max(0, dias(e.par.inicio, hoy)); cl = 'ta'; sub = n ? n + ' días' : 'hoy'; }
+        else if (e.pend.length){ cl = 'pe'; sub = 'pendiente'; }
+        else { cl = 'ok'; sub = 'trabaja'; }
+        return '<div class="flt-m ' + cl + '" title="' + esc(f.cod + ' · ' + f.nombre) + '">' + esc(f.cod) + '<small>' + sub + '</small></div>';
+      }).join('') + '</div><div class="flt-ley"><span><i style="background:#ecfdf3"></i>Trabaja</span><span><i style="background:#fffaeb;box-shadow:inset 0 0 0 1px #fcd34d"></i>Con pendiente</span><span><i style="background:#fef3f2"></i>En taller</span></div></div>';
+    var at = [];
+    pend.filter(function(n){ return n.urgente && est[n.cod] && !est[n.cod].par; }).forEach(function(n){
+      at.push(['#b42318', '<b>' + esc(n.cod) + ': pendiente urgente.</b> ' + esc(n.txt)]); });
+    var largas = maq.filter(function(f){ return est[f.cod].par && dias(est[f.cod].par.inicio, hoy) > 60; });
+    if (largas.length) at.push(['#b42318', '<b>' + largas.length + (largas.length === 1 ? ' máquina lleva' : ' máquinas llevan') + ' más de 2 meses en taller:</b> ' +
+      largas.map(function(f){ return esc(f.cod) + ' (' + dias(est[f.cod].par.inicio, hoy) + ' d)'; }).join(', ')]);
+    if (laboral && trab.length) at.push([nPre >= trab.length ? '#15803d' : '#b45309', '<b>Preoperativos de hoy:</b> ' + nPre + ' de ' + trab.length]);
+    h += '<div><div class="flt-sec">Requiere atención</div><ul class="flt-at">' +
+      (at.length ? at.map(function(a){ return '<li><span class="p" style="background:' + a[0] + '"></span><span>' + a[1] + '</span></li>'; }).join('') : '<li>Todo en orden.</li>') + '</ul></div>';
+    el('flt-cuerpo').innerHTML = h;
+  }
+  function cargar(){
+    if (!el('flt-cuerpo')) return;
+    var mae = window.Maestros ? Maestros.traer().catch(function(){}) : Promise.resolve();
+    Promise.all([leer('Taller'), leer('PreopDiario').catch(function(){ return []; }), leer('Preoperativos').catch(function(){ return []; }), mae])
+      .then(function(r){ pintar(r[0], r[1], r[2]); })
+      .catch(function(){
+        el('flt-sub').textContent = 'No se pudo leer el sistema de maquinaria. Revise la señal.';
+        if (!el('flt-cuerpo').querySelector('.flt-disp')) el('flt-cuerpo').innerHTML = '<div class="empty-panel-msg">Sin conexión con el taller.</div>';
+      });
+  }
+  cargar();
+  setInterval(cargar, 5 * 60 * 1000);
+})();
 </script>
 </body>
 </html>
