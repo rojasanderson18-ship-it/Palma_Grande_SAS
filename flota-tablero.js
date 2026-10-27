@@ -38,6 +38,22 @@
   function codDe(t){ return window.Horometros ? Horometros.codDe(t) : String(t || '').split(/[ ·-]/)[0]; }
   function laboral(f){ return !window.Festivos || Festivos.laboral(f); }
 
+  /* Varias partes de Agrovisión leen las mismas hojas casi al mismo tiempo
+     (la tarjeta del Inicio, los horómetros y este tablero). Cada lectura del
+     Apps Script tarda: si una hoja ya se pidió hace menos de un minuto, se usa
+     esa misma respuesta en vez de volver a pedirla. "Actualizar" la pide de nuevo. */
+  var memo = {}, fetchOriginal = window.fetch;
+  window.fetch = function(u, o){
+    var url = typeof u === 'string' ? u : (u && u.url) || '';
+    if (url.indexOf(GS + '?') !== 0 || (o && o.method && o.method.toUpperCase() !== 'GET')) return fetchOriginal.apply(this, arguments);
+    var k = url.replace(/([?&])t=\d+&?/, '$1').replace(/[?&]$/, ''), m = memo[k];
+    if (!m || Date.now() - m.ts > 60000){
+      m = memo[k] = { ts:Date.now(), p: fetchOriginal.call(window, u, o).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }) };
+      m.p.catch(function(){ if (memo[k] === m) delete memo[k]; });
+    }
+    return m.p.then(function(t){ return new Response(t, { status:200, headers:{ 'Content-Type':'application/json' } }); });
+  };
+
   function leer(h){
     return fetch(GS + '?hoja=' + encodeURIComponent(h) + '&t=' + Date.now()).then(function(r){ return r.json(); })
       .then(function(d){ if (!d || !d.ok || !Array.isArray(d.datos)) throw new Error('sin datos'); return d.datos; });
@@ -595,11 +611,26 @@
     el('ft-cuerpo').innerHTML = h;
   }
 
-  var cargando = false, listo = false;
-  function cargar(){
+  var cargando = false, listo = false, CACHE = 'ft_ultimo';
+  function hora(d){ return d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }); }
+  /* lo último que se consultó, para mostrarlo al instante mientras llega lo nuevo */
+  function guardado(){
+    try {
+      var c = JSON.parse(localStorage.getItem(CACHE) || 'null');
+      if (!c || !c.R || !c.ts) return null;
+      var d = new Date(c.ts);
+      return { R:c.R, act: (iso(d) === hoy() ? 'Datos de las ' + hora(d) : 'Datos del ' + dcorta(iso(d))) + ' · actualizando…' };
+    } catch(e){ return null; }
+  }
+  function cargar(forzar){
     if (cargando || !el('ft-cuerpo')) return;
     cargando = true;
-    if (!listo) el('ft-cuerpo').innerHTML = '<div class="empty-panel-msg">Consultando el sistema de maquinaria…</div>';
+    if (forzar) memo = {};
+    if (!listo){
+      var g = guardado();
+      if (g){ try { pintar(g.R, g.act); } catch(e){ g = null; } }
+      if (!g) el('ft-cuerpo').innerHTML = '<div class="empty-panel-msg">Consultando el sistema de maquinaria…</div>';
+    }
     var b = el('ft-recargar'); if (b){ b.disabled = true; b.textContent = 'Consultando…'; }
     var mae = window.Maestros ? Maestros.traer().catch(function(){}) : Promise.resolve();
     var hor = window.Horometros ? Horometros.traer().catch(function(){}) : Promise.resolve();
@@ -615,17 +646,28 @@
           tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
           alertas:Object.keys(al).map(function(k){ return al[k]; }) };
         listo = true;
-        pintar(indicadores(D), 'Actualizado ' + new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }));
+        var R = indicadores(D);
+        try { localStorage.setItem(CACHE, JSON.stringify({ R:R, ts:Date.now() })); } catch(e){}
+        pintar(R, 'Actualizado ' + hora(new Date()));
       })
       .catch(function(){
-        if (!listo) el('ft-cuerpo').innerHTML = '<div class="empty-panel-msg">No se pudo leer el sistema de maquinaria. Revise la señal e intente otra vez.<br><button type="button" id="ft-recargar" class="ft-btn">Intentar otra vez</button></div>';
+        if (!listo && ULT){ var a0 = el('ft-act'); if (a0) a0.textContent = 'Sin conexión: se muestran los últimos datos guardados'; }
+        else if (!listo) el('ft-cuerpo').innerHTML = '<div class="empty-panel-msg">No se pudo leer el sistema de maquinaria. Revise la señal e intente otra vez.<br><button type="button" id="ft-recargar" class="ft-btn">Intentar otra vez</button></div>';
         else { var a = el('ft-act'); if (a) a.textContent = 'Sin conexión: se muestran los datos anteriores'; }
       })
-      .then(function(){ cargando = false; var b = el('ft-recargar'); if (b){ b.disabled = false; b.textContent = listo ? 'Actualizar' : 'Intentar otra vez'; } });
+      .then(function(){ cargando = false; var b = el('ft-recargar'); if (b){ b.disabled = false; b.textContent = listo || ULT ? 'Actualizar' : 'Intentar otra vez'; } });
   }
+  // se empieza a consultar apenas abre Agrovisión (con sesión), así al entrar ya está listo
+  function precargar(){
+    var ok = false;
+    try { ok = sessionStorage.getItem('av_logged_in') === '1' || localStorage.getItem('av_logged_in') === '1'; } catch(e){}
+    if (ok){ ultimaCarga = Date.now(); cargar(); }
+  }
+  if (document.readyState === 'complete') setTimeout(precargar, 300);
+  else window.addEventListener('load', function(){ setTimeout(precargar, 300); });
 
   document.addEventListener('click', function(e){
-    if (e.target && e.target.id === 'ft-recargar') return cargar();
+    if (e.target && e.target.id === 'ft-recargar') return cargar(true);
     var t = e.target.closest && e.target.closest('[data-ft-tab]');
     if (t && ULT){
       TAB = t.getAttribute('data-ft-tab');
@@ -634,5 +676,13 @@
       var c = el('section-flota'); if (c && c.getBoundingClientRect().top < 0) c.scrollIntoView();
     }
   });
-  window.FlotaTablero = { cargar: cargar };
+  /* al abrir la sección: si ya hay datos se muestran tal cual; si son de hace
+     más de 5 minutos, se actualizan por detrás */
+  var ultimaCarga = 0;
+  window.FlotaTablero = {
+    cargar: function(){
+      if (listo && ULT && Date.now() - ultimaCarga < 5 * 60000) return pintar(ULT.R, ULT.act);
+      ultimaCarga = Date.now(); cargar();
+    }
+  };
 })();
