@@ -221,21 +221,13 @@
     return out;
   }
 
-  /* Mantenimiento preventivo: lo que registra el Taller (Mtto en maestros.js);
-     si una máquina no tiene ese dato, lo que dice su último preoperativo anterior. */
-  function mantenimiento(viejo){
-    var ult = {};
-    (viejo || []).forEach(function(r){
-      var c = codDe(r[3]), f = aIso(r[0]), h = num(r[6]), prox = num(r[8]);
-      if (c && esFecha(f) && h > 0 && prox > 0) ult[c] = { fecha:f, h:h, prox:prox };
-    });
+  /* Mantenimiento preventivo: solo lo que registra el Taller (Mtto en
+     maestros.js) con el último horómetro que anotan los operarios. Lo que
+     traía el preoperativo anterior no se toma. */
+  function mantenimiento(){
     return maquinaria().map(function(m){
       var e = window.Mtto ? Mtto.estado(m.cod) : { nivel:'sindato' };
-      if (e.nivel !== 'sindato' && e.nivel !== 'sinhorometro') return { cod:m.cod, nivel:e.nivel, faltan:e.faltan, fuente:'taller' };
-      var u = ult[m.cod], act = window.Horometros && Horometros.ultimo()[m.cod];
-      if (!u || dias(u.fecha, hoy()) > 45) return { cod:m.cod, nivel:'sindato' };
-      var h = act && act.h > u.h ? act.h : u.h, faltan = Math.round((u.prox - h) * 10) / 10;
-      return { cod:m.cod, nivel: faltan <= 0 ? 'vencido' : faltan <= 25 ? 'proximo' : 'ok', faltan:faltan, fuente:'preoperativo' };
+      return { cod:m.cod, nivel:e.nivel, faltan:e.faltan };
     });
   }
 
@@ -325,16 +317,15 @@
       accion: rep.length ? 'La reparación no está quedando bien o hay una causa de fondo: ' + rep.map(function(x){ return x.cod + ' ' + x.sis.toLowerCase(); }).join(', ') + '.' : '' });
 
     /* 7. Mantenimiento preventivo */
-    var mt = mantenimiento(D.preViejo), venc = mt.filter(function(m){ return m.nivel === 'vencido'; }), vencT = venc.filter(function(m){ return m.fuente === 'taller'; }), prox = mt.filter(function(m){ return m.nivel === 'proximo'; });
-    var conDato = mt.filter(function(m){ return m.nivel !== 'sindato'; });
+    var mt = mantenimiento(), venc = mt.filter(function(m){ return m.nivel === 'vencido'; }), prox = mt.filter(function(m){ return m.nivel === 'proximo'; });
+    var conDato = mt.filter(function(m){ return m.nivel !== 'sindato' && m.nivel !== 'sinhorometro'; });
     ind({ id:'mtto', grupo:'flota', titulo:'Mantenimiento preventivo', valor: conDato.length ? String(venc.length) : '—',
-      nivel: !conDato.length ? 'gris' : vencT.length ? 'rojo' : (venc.length || prox.length) ? 'ambar' : 'verde',
+      nivel: !conDato.length ? 'gris' : venc.length ? 'rojo' : prox.length ? 'ambar' : 'verde',
       linea: !conDato.length ? 'Sin registrar todavía en el Taller' : venc.length ? plural(venc.length, 'máquina con el mantenimiento vencido', 'máquinas con el mantenimiento vencido') :
-        prox.length ? plural(prox.length, 'máquina le toca', 'máquinas les toca') + ' en menos de 25 horas' : 'Todas al día (' + conDato.length + ' de ' + mt.length + ' con dato)',
-      detalle: venc.concat(prox).map(function(m){ return m.cod + (m.faltan <= 0 ? ' · vencido hace ' + g1(-m.faltan) + ' h' : ' · faltan ' + g1(m.faltan) + ' h') + (m.fuente === 'preoperativo' ? '*' : ''); }).join(' — ') +
-        (venc.concat(prox).some(function(m){ return m.fuente === 'preoperativo'; }) ? '   (* según el último preoperativo: confirmar con el taller)' : ''),
-      accion: vencT.length ? 'Hacer el mantenimiento y registrarlo en el Taller: ' + vencT.map(function(m){ return m.cod; }).join(', ') + '. Una máquina sin mantenimiento es la próxima en parar.' :
-        venc.length ? 'El preoperativo dice que ' + venc.map(function(m){ return m.cod; }).join(', ') + (venc.length === 1 ? ' tiene' : ' tienen') + ' el mantenimiento vencido. Confirmar con el taller y registrarlo allá.' : '' });
+        prox.length ? plural(prox.length, 'máquina le toca', 'máquinas les toca') + ' en menos de 25 horas' : 'Al día las ' + conDato.length + ' máquinas registradas',
+      detalle: [venc.concat(prox).map(function(m){ return m.cod + (m.faltan <= 0 ? ' · vencido hace ' + g1(-m.faltan) + ' h' : ' · faltan ' + g1(m.faltan) + ' h'); }).join(' — '),
+        conDato.length && conDato.length < mt.length ? (mt.length - conDato.length) + ' de ' + mt.length + ' máquinas sin mantenimiento registrado en el Taller' : ''].filter(Boolean).join('. '),
+      accion: venc.length ? 'Hacer el mantenimiento y registrarlo en el Taller: ' + venc.map(function(m){ return m.cod; }).join(', ') + '. Una máquina sin mantenimiento es la próxima en parar.' : '' });
 
     /* 8. Uso de las máquinas disponibles */
     var u = uso(D, mesIni, hy);
@@ -536,8 +527,9 @@
     var perd = maqs.filter(function(m){ return m.perdF + m.perdM; }).sort(function(a, b){ return (b.perdF + b.perdM) - (a.perdF + a.perdM); })
       .map(function(m){ var t = m.perdF + m.perdM; return { k:m.cod, v:t, lbl:plural(t, 'día', 'días'), t:m.cod + ' ' + m.nombre + ': ' + m.perdF + ' por falla, ' + m.perdM + ' por mantenimiento' }; });
     function fila(m){
-      var mt = m.mtto, txtM = !mt || mt.nivel === 'sindato' ? '<span class="ft-mute">Sin dato</span>' :
-        mt.nivel === 'vencido' ? pill(mt.fuente === 'taller' ? 'rojo' : 'ambar', 'Vencido ' + g1(-mt.faltan) + ' h') :
+      var mt = m.mtto, txtM = !mt || mt.nivel === 'sindato' ? '<span class="ft-mute">Sin registrar</span>' :
+        mt.nivel === 'sinhorometro' ? '<span class="ft-mute">Sin horómetro</span>' :
+        mt.nivel === 'vencido' ? pill('rojo', 'Vencido ' + g1(-mt.faltan) + ' h') :
         mt.nivel === 'proximo' ? pill('ambar', 'Faltan ' + g1(mt.faltan) + ' h') : pill('verde', 'Al día');
       return [maq(m), pill(m.hoy.c, m.hoy.t) + (m.hoy.d ? '<div class="ft-sub">' + esc(m.hoy.d) + '</div>' : ''),
         m.disp == null ? '—' : '<span class="' + (m.disp >= META ? 'ft-ok' : m.disp >= 75 ? 'ft-al' : 'ft-ma') + '">' + Math.round(m.disp) + '%</span>',
@@ -641,7 +633,7 @@
         FLOTA.forEach(function(f){ EQ[f.cod] = f; });
         var tl = taller(r[0]), al = {};
         (r[7] || []).forEach(function(a){ var id = String(a[3] || '').trim(); if (id) al[id] = { fecha:aIso(a[0]), abierta:String(a[2] || '').trim().toUpperCase() === 'ABIERTA' }; });
-        var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]), preViejo:r[4],
+        var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]),
           tanq:tanqueos(r[5]),
           tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
           alertas:Object.keys(al).map(function(k){ return al[k]; }) };
