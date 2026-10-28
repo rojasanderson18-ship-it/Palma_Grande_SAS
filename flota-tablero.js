@@ -326,10 +326,10 @@
     var porCotizar = lr.filter(function(x){ return x.t && x.t.estado === 'repuesto' && !x.costo; });
     var cotizado = lr.reduce(function(a, x){ return a + x.costo; }, 0), conCosto = lr.filter(function(x){ return x.costo; }).length;
     var hayRep = !!window.Reparaciones && lr.some(function(x){ return x.t || x.c; });
-    ind({ id:'reparaciones', grupo:'flota', titulo:'Reparaciones en curso', valor: cotizado ? millones(cotizado) : lr.length ? String(lr.length - sinEstado.length) + ' de ' + lr.length : '0',
+    ind({ id:'reparaciones', grupo:'flota', titulo:'Reparaciones en curso', valor: cotizado ? millones(cotizado) : lr.length ? lr.filter(function(x){ return x.t; }).length + ' de ' + lr.length : '0',
       nivel: !lr.length ? 'verde' : (decision.length || vencidas.length || atrasados.length) ? 'rojo' : (sinEstado.length || porCotizar.length) ? 'ambar' : 'verde',
       linea: !lr.length ? 'Ninguna máquina en taller' : cotizado ? 'Cotizado para poner a trabajar ' + plural(conCosto, 'máquina', 'máquinas') + ' de ' + lr.length + ' paradas' :
-        hayRep ? 'Paradas con estado de la reparación (sin costos todavía)' : 'El taller todavía no ha dicho en qué va ninguna parada',
+        hayRep ? 'Paradas con estado de la reparación (sin costos todavía)' : 'Paradas sin decir en qué va la reparación',
       detalle: lr.slice(0, 7).map(function(x){ return x.cod + ': ' + (x.estado || 'sin decir en qué va') + (x.costo ? ' · ' + millones(x.costo) : '') +
         (x.t && x.t.sale ? ' · sale ' + dcorta(x.t.sale) : ''); }).join(' — '),
       accion: [decision.length ? 'Decidir si se reparan o se dan de baja: ' + decision.map(function(x){ return x.cod + ' (' + x.d + ' días' + (x.costo ? ', reparación ' + millones(x.costo) : ', sin cotizar') + ')'; }).join(', ') + '.' : '',
