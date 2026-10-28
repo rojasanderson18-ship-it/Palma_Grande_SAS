@@ -449,12 +449,22 @@
     /* 13. Programación de hoy */
     var progD = D.prog[hy] || {}, progTaller = Object.keys(progD).filter(function(c){ return paradas[c]; });
     var sinProg = trab.filter(function(f){ return !progD[f.cod]; });
+    // preoperativo hecho por un operario distinto al programado: la programación cruzó a alguien
+    function nombres(t){ return String(t || '').split('/').map(function(x){ return x.trim(); }).filter(Boolean); }
+    var cruces = Object.keys(progD).map(function(c){
+      var pr = D.pre[c + '|' + hy], prog = nombres(progD[c].op), hizo = pr ? nombres(pr.op) : [];
+      var otros = hizo.filter(function(n){ return prog.length && prog.map(function(x){ return x.toLowerCase(); }).indexOf(n.toLowerCase()) < 0; });
+      return otros.length ? { cod:c, prog:prog, otros:otros } : null;
+    }).filter(Boolean);
     ind({ id:'proghoy', grupo:'operacion', titulo:'Programación de hoy', valor: laboral(hy) ? progHoy + ' de ' + trab.length : '—',
-      nivel: !laboral(hy) ? 'gris' : !Object.keys(progD).length ? 'ambar' : (progTaller.length || progHoy < trab.length * 0.8) ? 'ambar' : 'verde',
+      nivel: !laboral(hy) ? 'gris' : !Object.keys(progD).length ? 'ambar' : (cruces.length || progHoy < trab.length * 0.8) ? 'ambar' : 'verde',
       linea: !laboral(hy) ? 'Hoy no es día laboral' : !Object.keys(progD).length ? 'Hoy no hay programación registrada' : 'Máquinas buenas con labor asignada hoy',
       detalle: [sinProg.length && Object.keys(progD).length ? 'Buenas sin programar: ' + sinProg.map(function(f){ return f.cod; }).join(', ') : '',
-        progTaller.length ? 'Programadas pero están en taller: ' + progTaller.join(', ') : ''].filter(Boolean).join(' — '),
-      accion: progTaller.length ? 'Se programaron máquinas que están en el taller (' + progTaller.join(', ') + '): esa labor no se va a hacer.' : '' });
+        cruces.length ? 'Preoperativo de otro operario: ' + cruces.map(function(x){ return x.cod + ' (programado ' + x.prog.join(' / ') + ', lo hizo ' + x.otros.join(' / ') + ')'; }).join('; ') : '',
+        progTaller.length ? 'En espera, todavía en el taller: ' + progTaller.join(', ') : ''].filter(Boolean).join(' — '),
+      accion: cruces.length ? 'Revisar la programación de hoy: el preoperativo lo hizo otro operario en ' + cruces.map(function(x){ return x.cod; }).join(', ') +
+        '. O la programación cruzó a los operarios, o alguien está en la máquina equivocada.' : '' });
+    var cruceDe = {}; cruces.forEach(function(x){ cruceDe[x.cod] = x; });
 
     /* 14. Horas trabajadas (horómetro del cierre de jornada) */
     var cier = window.Horometros ? Horometros.cierres() : [];
@@ -507,7 +517,7 @@
         fallas90: D.eventos.filter(function(e){ return e.cod === f.cod && e.tipo === 'falla' && e.inicio >= desde90; }).length,
         mtto: porMtto[f.cod] || null, pend:pend.length,
         prog: progD[f.cod] || null, pre: D.pre[k] || null, cierre: cierHoy[f.cod] != null ? cierHoy[f.cod] : null, horasMes: hM.p[f.cod] || 0,
-        cierres: (D.cierres || {})[k] || [] };
+        cierres: (D.cierres || {})[k] || [], cruce: cruceDe[f.cod] || null };
     }) };
     var sis = {};
     D.eventos.forEach(function(e){
@@ -636,11 +646,19 @@
       if (m.pre || m.prog) return m.hoy.c === 'rojo' && !m.pre ? '<span class="ft-mute">—</span>' : tarde ? pill('rojo', 'Falta el cierre') : '<span class="ft-mute">Pendiente</span>';
       return '<span class="ft-mute">—</span>';
     }
+    // el operario programado aquí hizo su preoperativo en otra máquina
+    var opMaq = {};
+    maqs.forEach(function(x){ if (x.pre) String(x.pre.op || '').split('/').forEach(function(n){ n = n.trim(); if (n) opMaq[n.toLowerCase()] = x.cod; }); });
+    function dondeHizo(m){
+      var l = String(m.prog.op || '').split('/').map(function(n){ return n.trim(); }).filter(function(n){ return n && opMaq[n.toLowerCase()] && opMaq[n.toLowerCase()] !== m.cod; });
+      return l.length ? '<div class="ft-sub" style="color:#b45309">' + l.map(function(n){ return esc(n) + ' hizo el preoperativo en la ' + esc(opMaq[n.toLowerCase()]); }).join('<br>') + '</div>' : '';
+    }
     var hoyF = maqs.slice().sort(function(a, b){ return (a.hoy.c === 'rojo') - (b.hoy.c === 'rojo'); }).map(function(m){
       return [maq(m), pill(m.hoy.c, m.hoy.c === 'rojo' ? 'En taller' : 'Buena'),
         m.prog ? esc(m.prog.labor || 'Programada') + (m.prog.op ? '<div class="ft-sub">' + esc(m.prog.op) + '</div>' : '') : '<span class="ft-mute">Sin programar</span>',
-        m.pre ? pill('verde', 'Hecho' + (m.pre.hora ? ' ' + m.pre.hora : '')) + (m.pre.op ? '<div class="ft-sub">' + esc(m.pre.op) + '</div>' : '') :
-          (m.prog && m.hoy.c !== 'rojo' ? pill('rojo', 'Falta') : '<span class="ft-mute">—</span>'),
+        m.pre ? pill(m.cruce ? 'ambar' : 'verde', (m.cruce ? 'Otro operario' : 'Hecho') + (m.pre.hora ? ' ' + m.pre.hora : '')) + (m.pre.op ? '<div class="ft-sub">' + esc(m.pre.op) + '</div>' : '') +
+          (m.cruce ? '<div class="ft-sub" style="color:#b45309">Programado: ' + esc(m.cruce.prog.join(' / ')) + '</div>' : '') :
+          (m.prog && m.hoy.c !== 'rojo' ? pill('rojo', 'Falta') + dondeHizo(m) : '<span class="ft-mute">—</span>'),
         cierreTxt(m)];
     });
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'operacion'; }).map(tarjeta).join('') + '</div>' +
