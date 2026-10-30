@@ -38,6 +38,7 @@
   function sumar(f, n){ var p = f.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   function dias(a, b){ var p = a.split('-'), q = b.split('-'); return Math.round((new Date(+q[0], +q[1] - 1, +q[2]) - new Date(+p[0], +p[1] - 1, +p[2])) / 86400000); }
   function num(v){ if (v === '' || v == null) return null; var n = +String(v).replace(',', '.'); return isNaN(n) ? null : n; }
+  function g2(v){ return String(Math.round(v * 100) / 100).replace('.', ','); }   // consumo por hora: 1,25 gal/h
   function g1(v){ return String(Math.round(v * 10) / 10).replace('.', ','); }
   function peso(v){ return '$' + Math.round(v).toLocaleString('es-CO'); }
   function dcorta(f){ var p = String(f).split('-'); return (+p[2]) + ' ' + MESES[+p[1] - 1].slice(0, 3); }
@@ -157,29 +158,6 @@
     return o;
   }
 
-  /* Tanqueos: solo la app de Tanqueo del almacén (hoja Combustible, última
-     fila por ID, sin anulados). Lo que anotaba el preoperativo anterior en la
-     hoja Tanqueos no se toma: el combustible se controla desde la app. */
-  function tanqueos(nuevo){
-    var u = {}, l = [];
-    (nuevo || []).forEach(function(r){ var id = String(r[3] || '').trim(); if (id) u[id] = r; });
-    Object.keys(u).forEach(function(k){
-      var r = u[k], f = aIso(r[0]), acc = String(r[2] || '').trim().toUpperCase();
-      if (acc === 'ANULADO' || !esFecha(f)) return;
-      var t = { fecha:f, cod:String(r[4] || '').trim(), gal:num(r[6]) || 0, lec:num(r[7]), km:String(r[8] || '') === 'Km',
-        costo:num(r[14]) || 0, saldo:num(r[15]), just:String(r[17] || '').trim(), hora:hhmm(r[1]), recibe:String(r[11] || '').trim(), nuevo:true };
-      if (t.gal > 0) l.push(t);
-    });
-    // galones fuera de toda proporción para esa máquina (125 en vez de 12,5): no se cuentan y se avisan
-    var por = {};
-    l.forEach(function(t){ (por[t.cod] = por[t.cod] || []).push(t.gal); });
-    l.forEach(function(t){
-      var v = por[t.cod].slice().sort(function(a, b){ return a - b; }), med = v[Math.floor(v.length / 2)];
-      t.dudoso = v.length >= 5 && t.gal > Math.max(med * 4, 30);
-    });
-    return l.sort(function(a, b){ return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.lec || 0) - (b.lec || 0); });
-  }
-
   /* En qué va la reparación de una parada y cuánto cuesta (hoja Reparaciones:
      el Taller dice el estado, Compras el costo; Reparaciones en maestros.js) */
   function reparacion(e){
@@ -226,28 +204,6 @@
     U.pct = U.disp ? U.usados / U.disp * 100 : null;
     U.prePct = U.usados ? U.conPre / U.usados * 100 : null;
     return U;
-  }
-
-  /* Consumo por hora (o km por galón) de cada máquina en un período, con el
-     horómetro de cada tanqueo: los galones que entran después del primer
-     tanqueo ÷ las horas que avanzó el horómetro. */
-  function consumo(lista, desde, hasta){
-    var por = {};
-    lista.forEach(function(t){ if (!t.dudoso && t.fecha >= desde && t.fecha <= hasta) (por[t.cod] = por[t.cod] || []).push(t); });
-    var out = {};
-    Object.keys(por).forEach(function(c){
-      var l = por[c].filter(function(t){ return t.lec > 0; }), gal = 0, avance = 0;
-      for (var i = 1; i < l.length; i++){
-        var d = l[i].lec - l[i - 1].lec;
-        if (d <= 0 || d > (l[i].km ? 3000 : 300)) continue;    // lectura mal digitada: no se cuenta
-        gal += l[i].gal; avance += d;
-      }
-      var x = { gal: por[c].reduce(function(a, t){ return a + t.gal; }, 0), n:por[c].length, km:por[c][0].km, galCons:gal, avance:avance };
-      // con pocas horas el resultado depende de cuánto se llenó cada vez: no se calcula
-      x.tasa = avance >= (x.km ? 300 : 40) && gal > 0 ? (x.km ? avance / gal : gal / avance) : null;
-      out[c] = x;
-    });
-    return out;
   }
 
   /* Mantenimiento preventivo: solo lo que registra el Taller (Mtto en
@@ -401,49 +357,82 @@
       detalle: laboral(hy) ? 'Hoy: ' + preHoy + ' preoperativos' + (progHoy ? ' de ' + progHoy + ' máquinas programadas' : '') : 'Hoy no es día laboral',
       accion: u.prePct != null && u.prePct < 90 ? 'Hay máquinas saliendo sin revisión: así no se ven a tiempo los daños.' : '' });
 
-    /* 10. Combustible */
-    var T = D.tanq.filter(function(t){ return !t.dudoso; }), dud = D.tanq.filter(function(t){ return t.dudoso && t.fecha >= mesIni; }), M = T.filter(function(t){ return t.fecha >= mesIni && t.fecha <= hy; }), P = antes ? T.filter(function(t){ return t.fecha >= pmIni && t.fecha <= pmMismo; }) : [];
-    function suma(l, k){ return l.reduce(function(a, t){ return a + t[k]; }, 0); }
+    /* 10–12b. Combustible: todo sale del cálculo compartido (Combustible en
+       maestros.js), el mismo de la app de Tanqueo. */
+    var C = window.Combustible, tsIni = new Date(+mesIni.slice(0, 4), +mesIni.slice(5, 7) - 1, +mesIni.slice(8, 10)).getTime(), tsHoy = Date.now();
+    var placas = {}; ((window.Maestros && Maestros.get('VEHICULOS')) || []).forEach(function(v){ placas[v.placa] = v.nombre || 'Vehículo'; });
+    function destino(cod){ return eq(cod) ? (esCamion(cod) ? 'camion' : 'maquina') : placas[cod] ? 'vehiculo' : 'otro'; }
+    var TODOS = D.tanq.filter(function(t){ return !t.anulado; });
+    var T = TODOS.filter(function(t){ return !t.dudoso; });
+    var M = T.filter(function(t){ return t.ts >= tsIni && t.ts <= tsHoy; });
+    var dud = TODOS.filter(function(t){ return t.dudoso && t.ts >= tsIni; });
+    var P = antes ? T.filter(function(t){ return t.fecha >= pmIni && t.fecha <= pmMismo; }) : [];
+    function suma(l, k){ return l.reduce(function(a, t){ return a + (t[k] || 0); }, 0); }
     var galM = suma(M, 'gal'), galP = suma(P, 'gal'), costoM = suma(M, 'costo');
-    var cm = consumo(T, mesIni, hy), c3 = consumo(T, sumar(mesIni, -90), sumar(mesIni, -1));
-    function flotaTasa(c){ var gal = 0, h = 0; Object.keys(c).forEach(function(k){ if (!c[k].km && c[k].tasa != null){ gal += c[k].galCons; h += c[k].avance; } }); return h >= 20 ? gal / h : null; }
-    var tasaM = flotaTasa(cm), tasa3 = flotaTasa(c3), varTasa = tasaM != null && tasa3 ? (tasaM - tasa3) / tasa3 * 100 : null;
-    ind({ id:'comb', grupo:'combustible', titulo:'Combustible ' + delMes, valor: T.length ? g1(galM) + ' gal' : '—',
-      nivel: !T.length ? 'gris' : varTasa == null ? 'verde' : varTasa > 30 ? 'rojo' : varTasa > 15 ? 'ambar' : 'verde',
-      linea: !T.length ? 'Todavía no hay tanqueos en la app de Tanqueo' : plural(M.length, 'tanqueo', 'tanqueos') + (costoM ? ' · ' + peso(costoM) : '') +
-        (tasaM != null ? ' · ' + g1(tasaM) + ' gal por hora de trabajo' : ''),
+    // consumo por máquina en el período y lo normal de cada una (sus tanqueos anteriores)
+    var codsMaq = {}; M.forEach(function(t){ if (destino(t.cod) === 'maquina' || destino(t.cod) === 'camion') codsMaq[t.cod] = true; });
+    var cons = Object.keys(codsMaq).map(function(c){
+      var a = C ? C.consumo(T, c, tsIni, tsHoy) : { tasa:null }, nm = C ? C.normal(T, c, tsIni) : { tasa:null }, l = M.filter(function(t){ return t.cod === c; });
+      var v = a.tasa != null && nm.tasa ? (a.km ? (nm.tasa - a.tasa) / nm.tasa * 100 : (a.tasa - nm.tasa) / nm.tasa * 100) : null;   // en km/gal, menos es peor
+      return { cod:c, nombre:(eq(c) || {}).nombre || '', km:a.km, tasa:a.tasa, normal:nm.tasa, v:v, gal:suma(l, 'gal'), costo:suma(l, 'costo'), n:l.length };
+    }).sort(function(a, b){ return b.gal - a.gal; });
+    var flota = cons.filter(function(x){ return !x.km; });
+    var gH = 0, hH = 0, gN = 0, hN = 0;
+    if (C) flota.forEach(function(x){ var a = C.consumo(T, x.cod, tsIni, tsHoy), nm = C.normal(T, x.cod, tsIni);
+      if (a.tasa != null){ gH += a.gal; hH += a.avance; } if (nm.tasa != null){ gN += nm.gal; hN += nm.avance; } });
+    var tasaM = hH >= 20 ? gH / hH : null, tasaN = hN >= 20 ? gN / hN : null, varTasa = tasaM != null && tasaN ? (tasaM - tasaN) / tasaN * 100 : null;
+    ind({ id:'comb', grupo:'combustible', titulo:'Combustible ' + delMes, valor: TODOS.length ? g1(galM) + ' gal' : '—',
+      nivel: !TODOS.length ? 'gris' : varTasa == null ? 'verde' : varTasa > 50 ? 'rojo' : varTasa > 25 ? 'ambar' : 'verde',   // misma regla que por máquina
+      linea: !TODOS.length ? 'Todavía no hay tanqueos en la app de Tanqueo' : plural(M.length, 'tanqueo', 'tanqueos') + (costoM ? ' · ' + peso(costoM) : '') +
+        (tasaM != null ? ' · ' + g2(tasaM) + ' gal por hora de máquina' : ''),
       comp: (galP ? comparar(galM, galP, ' gal', true, 'el mismo tramo de ' + nombrePrev, true, 1).replace(/ftc-c (mejor|peor)/, 'ftc-c igual') : '') +
         (dud.length ? '<div class="ftc-c igual">No se contó ' + (dud.length === 1 ? 'un tanqueo mal digitado' : dud.length + ' tanqueos mal digitados') + ': ' +
           dud.map(function(t){ return t.cod + ' ' + dcorta(t.fecha) + ' (' + g1(t.gal) + ' gal)'; }).join(', ') + '</div>' : '') +
-        (varTasa != null ? '<div class="ftc-c ' + (varTasa > 15 ? 'peor' : varTasa < -5 ? 'mejor' : 'igual') + '">' + (Math.abs(varTasa) < 5 ? 'Consumo por hora normal' : 'Consumo por hora ' + (varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(varTasa)) + '% vs. los 3 meses anteriores') + '</div>' : '') });
+        (varTasa != null ? '<div class="ftc-c ' + (varTasa > 25 ? 'peor' : varTasa < -5 ? 'mejor' : 'igual') + '">' + (Math.abs(varTasa) < 5 ? 'Consumo por hora normal' : 'Consumo por hora ' + (varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(varTasa)) + '% vs. lo normal') + '</div>' : '') });
 
     /* 11. Consumo fuera de lo normal por máquina */
-    var comparables = Object.keys(cm).filter(function(c){ return cm[c].tasa != null && c3[c] && c3[c].tasa != null; });
-    var raras = comparables.map(function(c){
-      var a = cm[c].tasa, b = c3[c].tasa, v = cm[c].km ? (b - a) / b * 100 : (a - b) / b * 100;   // en camiones, menos km/gal es peor
-      return { cod:c, v:v, a:a, b:b, km:cm[c].km };
-    }).filter(function(x){ return x.v > 25; }).sort(function(a, b){ return b.v - a.v; });
-    var alertasApp = M.filter(function(t){ return t.just; });
-    ind({ id:'consumo', grupo:'combustible', titulo:'Consumo fuera de lo normal', valor: comparables.length || alertasApp.length ? String(raras.length + alertasApp.length) : '—',
-      nivel: raras.some(function(x){ return x.v > 50; }) ? 'rojo' : (raras.length || alertasApp.length) ? 'ambar' : comparables.length ? 'verde' : 'gris',
-      linea: raras.length ? plural(raras.length, 'máquina gasta', 'máquinas gastan') + ' más de lo que gastaban' : alertasApp.length ? plural(alertasApp.length, 'tanqueo marcado', 'tanqueos marcados') + ' por el almacén' :
-        comparables.length ? 'Cada máquina gasta lo de siempre' : 'Se podrá comparar cuando la app de Tanqueo tenga más de un mes de datos',
-      detalle: raras.map(function(x){ return x.cod + ': ' + g1(x.a) + (x.km ? ' km/gal' : ' gal/h') + ' (antes ' + g1(x.b) + ')'; })
-        .concat(alertasApp.map(function(t){ return t.cod + ' ' + dcorta(t.fecha) + ': ' + t.just; })).slice(0, 5).join(' — '),
+    var comparables = cons.filter(function(x){ return x.v != null; }), raras = comparables.filter(function(x){ return x.v > 25; }).sort(function(a, b){ return b.v - a.v; });
+    ind({ id:'consumo', grupo:'combustible', titulo:'Consumo fuera de lo normal', valor: comparables.length ? String(raras.length) : '—',
+      nivel: raras.some(function(x){ return x.v > 50; }) ? 'rojo' : raras.length ? 'ambar' : comparables.length ? 'verde' : 'gris',
+      linea: raras.length ? plural(raras.length, 'máquina gasta', 'máquinas gastan') + ' más de lo normal' :
+        comparables.length ? 'Cada máquina gasta lo de siempre' : 'Se compara cuando cada máquina tenga al menos 3 tanqueos anteriores',
+      detalle: raras.map(function(x){ return x.cod + ': ' + g2(x.tasa) + (x.km ? ' km/gal' : ' gal/h') + ' (lo normal ' + g2(x.normal) + ')'; }).join(' — '),
       accion: raras.length ? 'Revisar si es el motor (filtros, inyección), el trabajo que hizo o el combustible que se le está entregando: ' + raras.map(function(x){ return x.cod; }).join(', ') + '.' : '' });
 
-    /* 12. Tanque del almacén */
-    var mov = D.tanque, ajustes = mov.filter(function(m){ return m.tipo === 'AJUSTE' && m.fecha >= mesIni; });
-    var faltante = ajustes.reduce(function(a, m){ return a + (m.dif < 0 ? -m.dif : 0); }, 0);
-    var conSaldo = T.filter(function(t){ return t.saldo != null; }), saldo = conSaldo.length ? conSaldo[conSaldo.length - 1].saldo : null;
+    /* 11b. Tanqueos que no cuadran con el trabajo */
+    var usosH = window.Horometros ? Horometros.usos() : {};
+    var raros = M.filter(function(t){ var dd = destino(t.cod); return dd === 'maquina' || dd === 'camion'; }).map(function(t){
+      var por = [], grave = false;
+      if (paradoEl(D, t.cod, t.fecha)){ por.push('estaba en el taller ese día'); grave = true; }
+      else if (destino(t.cod) === 'maquina' && !(D.prog[t.fecha] && D.prog[t.fecha][t.cod]) && !usosH[t.cod + '|' + t.fecha] && !D.pre[t.cod + '|' + t.fecha])
+        por.push('sin programación, preoperativo ni cierre ese día');
+      var tt = C ? C.deTanqueo(T, t) : null, nm = C ? C.normal(T, t.cod, t.ts) : { tasa:null };
+      if (tt != null && nm.tasa){ var vv = t.tipo === 'km' ? nm.tasa / tt : tt / nm.tasa;
+        if (vv > 1.6) por.push('gastó ' + g2(tt) + (t.tipo === 'km' ? ' km/gal' : ' gal/h') + ' (lo normal ' + g2(nm.tasa) + ')'); }
+      return por.length ? { t:t, por:por, grave:grave } : null;
+    }).filter(Boolean);
+    ind({ id:'tqraros', grupo:'combustible', titulo:'Tanqueos que no cuadran', valor: M.length ? String(raros.length) : '—',
+      nivel: !M.length ? 'gris' : raros.some(function(x){ return x.grave; }) ? 'rojo' : raros.length ? 'ambar' : 'verde',
+      linea: !M.length ? 'Todavía no hay tanqueos ' + enMes : raros.length ? 'Combustible que no cuadra con el trabajo de la máquina' : 'Todo el combustible coincide con el trabajo registrado',
+      detalle: raros.slice(0, 4).map(function(x){ return x.t.cod + ' ' + dcorta(x.t.fecha) + ' (' + g1(x.t.gal) + ' gal): ' + x.por.join('; '); }).join(' — '),
+      accion: raros.length ? 'Pedirle a Leanis la explicación de ' + plural(raros.length, 'tanqueo', 'tanqueos') + ' que no cuadran con el trabajo (están en la pestaña Combustible).' : '' });
+
+    /* 12. Tanque del almacén: saldo, autonomía, requisición y cierres de Leanis */
+    var movs = D.movs || [], saldo = C && (movs.length || TODOS.length) ? C.saldo(movs, TODOS) : null;
+    var aut = C && saldo != null ? C.autonomia(TODOS, saldo) : null;
+    var cierresL = movs.filter(function(m){ return m.cierre; }), cierresMes = cierresL.filter(function(m){ return m.ts >= tsIni; });
+    var faltante = cierresMes.reduce(function(a, m){ return a + (m.dif < 0 ? -m.dif : 0); }, 0);
+    var precioV = (movs.filter(function(m){ return m.tipo === 'LLEGADA' && m.precio > 0; }).pop() || {}).precio || (M.length ? costoM / Math.max(galM, 1) : 0);
     var reqAb = D.alertas.filter(function(a){ return a.abierta; });
-    var hayTanque = mov.length || conSaldo.length || D.alertas.length;
+    var hayTanque = movs.length || D.alertas.length;
     var limFalt = Math.max(10, galM * 0.02);
     ind({ id:'tanque', grupo:'combustible', titulo:'Tanque del almacén', valor: saldo == null ? '—' : g1(saldo) + ' gal',
-      nivel: !hayTanque ? 'gris' : faltante > limFalt ? 'rojo' : (reqAb.length || faltante > 0) ? 'ambar' : 'verde',
-      linea: !hayTanque ? 'Sin movimientos del tanque todavía' : faltante > 0 ? 'Al medir el tanque faltaron ' + g1(faltante) + ' gal ' + enMes : 'Lo medido cuadra con lo despachado',
-      detalle: (reqAb.length ? 'Requisición de combustible abierta (saldo bajo) desde el ' + dcorta(reqAb[reqAb.length - 1].fecha) : '') ,
-      accion: faltante > limFalt ? 'Falta combustible en el tanque que no está en ningún despacho (' + g1(faltante) + ' gal). Revisar fugas o salidas sin registrar.' :
+      nivel: !hayTanque ? 'gris' : faltante > limFalt ? 'rojo' : (reqAb.length || faltante > 0 || (aut && aut.dias != null && aut.dias < 5)) ? 'ambar' : 'verde',
+      linea: !hayTanque ? 'Sin movimientos del tanque todavía' : (aut && aut.dias != null ? 'Alcanza para ' + Math.round(aut.dias) + ' días' : 'Sin consumo reciente para calcular autonomía') +
+        (cierresMes.length ? ' · ' + (faltante > 0 ? 'faltaron ' + g1(faltante) + ' gal en los cierres' : 'los cierres cuadran') : ''),
+      detalle: [reqAb.length ? 'Requisición de combustible abierta desde el ' + dcorta(reqAb[reqAb.length - 1].fecha) : '',
+        cierresL.length ? 'Último cierre ' + dcorta(cierresL[cierresL.length - 1].fecha) + ': ' + (cierresL[cierresL.length - 1].dif ? (cierresL[cierresL.length - 1].dif > 0 ? '+' : '') + g1(cierresL[cierresL.length - 1].dif) + ' gal' : 'cuadró') : 'Todavía no hay cierres (se hacen en cada llegada)'].filter(Boolean).join(' — '),
+      accion: faltante > limFalt ? 'En los cierres del almacén faltaron ' + g1(faltante) + ' gal' + (precioV ? ' (' + peso(faltante * precioV) + ')' : '') + ' que no están en ningún despacho. Revisar las explicaciones de Leanis.' :
         reqAb.length ? 'El tanque está bajo y la requisición sigue abierta: confirmar la compra.' : '' });
 
     /* 13. Programación de hoy */
@@ -526,12 +515,37 @@
       var x = sis[k] = sis[k] || { k:k, n:0, d:0 }; x.n++; x.d += duracion(e);
     });
     X.sistemas = Object.keys(sis).map(function(k){ return sis[k]; }).sort(function(a, b){ return b.n - a.n || b.d - a.d; });
-    X.comb = Object.keys(cm).map(function(c){ var x = cm[c], e = eq(c) || {}, a = c3[c];
-      return { cod:c, nombre:e.nombre || '', n:x.n, gal:x.gal, costo:M.filter(function(t){ return t.cod === c; }).reduce(function(s, t){ return s + t.costo; }, 0),
-        tasa:x.tasa, antes: a && a.tasa != null ? a.tasa : null, km:x.km };
-    }).sort(function(a, b){ return b.gal - a.gal; });
-    X.tanqueos = T.slice(-10).reverse();
-    X.mov = D.tanque.slice(-8).reverse();
+    X.comb = cons; X.raros = raros; X.precio = precioV;
+    // combustible por labor: los galones de cada máquina se reparten entre sus labores según las
+    // horas del cierre de jornada (o los días programados si no hay horas); camiones = transporte
+    var lab = {}, cierresH = window.Horometros ? Horometros.cierres() : [];
+    cons.forEach(function(x){
+      var pesos = {}, totalH = 0, totalD = 0, porDia = {};
+      if (x.km){ pesos.Transporte = 1; }
+      else {
+        cierresH.forEach(function(c){ if (c.cod === x.cod && c.fecha >= mesIni && c.fecha <= hy && c.horas) porDia[c.fecha] = (porDia[c.fecha] || 0) + c.horas; });
+        laborales(mesIni, hy).forEach(function(f){
+          var a = D.prog[f] && D.prog[f][x.cod]; if (!a) return;
+          var l = a.labor || 'Sin labor'; totalD++;
+          if (porDia[f]){ pesos[l] = (pesos[l] || 0) + porDia[f]; totalH += porDia[f]; }
+          else if (!totalH) pesos[l] = (pesos[l] || 0) + 0;      // se completa abajo si no hay horas
+        });
+        if (!totalH){ pesos = {}; laborales(mesIni, hy).forEach(function(f){ var a = D.prog[f] && D.prog[f][x.cod]; if (a) pesos[a.labor || 'Sin labor'] = (pesos[a.labor || 'Sin labor'] || 0) + 1; }); }
+        if (!Object.keys(pesos).length) pesos['Sin labor registrada'] = 1;
+      }
+      var tot = Object.keys(pesos).reduce(function(a, k){ return a + pesos[k]; }, 0) || 1;
+      Object.keys(pesos).forEach(function(k){ var y = lab[k] = lab[k] || { k:k, gal:0, costo:0 };
+        y.gal += x.gal * pesos[k] / tot; y.costo += (x.costo || x.gal * precioV) * pesos[k] / tot; });
+    });
+    X.labor = Object.keys(lab).map(function(k){ return lab[k]; }).sort(function(a, b){ return b.gal - a.gal; });
+    // otros consumos: vehículos por placa y lo demás por tipo
+    var otros = {};
+    M.forEach(function(t){ var dd = destino(t.cod); if (dd !== 'vehiculo' && dd !== 'otro') return;
+      var o = otros[t.cod] = otros[t.cod] || { cod:t.cod, nombre: placas[t.cod] || t.nom || t.cod, tipo:dd, n:0, gal:0, costo:0 };
+      o.n++; o.gal += t.gal; o.costo += t.costo || t.gal * precioV; });
+    X.otros = Object.keys(otros).map(function(k){ return otros[k]; }).sort(function(a, b){ return b.gal - a.gal; });
+    X.cierres = cierresL.slice().reverse().slice(0, 8);
+    X.llegadas = movs.filter(function(m){ return m.tipo === 'LLEGADA'; }).reverse().slice(0, 6);
     return { I:I, X:X };
   }
 
@@ -570,10 +584,10 @@
       filas.map(function(f){ return '<tr>' + f.map(function(v, i){ return '<td' + (cols[i].n ? ' class="n"' : '') + '>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
   }
   /* barras horizontales de una sola serie, con el valor escrito al lado */
-  function barras(l, clase, vacio){
+  function barras(l, clase, vacio, ancho){
     if (!l.length) return '<div class="ft-vacio">' + esc(vacio) + '</div>';
     var max = Math.max.apply(null, l.map(function(x){ return x.v; })) || 1;
-    return '<div class="ft-bars">' + l.map(function(x){
+    return '<div class="ft-bars' + (ancho ? ' ancho' : '') + '">' + l.map(function(x){
       return '<div class="ft-bar" title="' + esc(x.t || '') + '"><span class="k">' + esc(x.k) + '</span><span class="tr"><i class="' + clase + '" style="width:' + Math.max(2, x.v / max * 100) + '%"></i></span><span class="v">' + esc(x.lbl) + '</span></div>';
     }).join('') + '</div>';
   }
@@ -667,24 +681,36 @@
       bloque('Horas trabajadas ' + X.enMes, 'Horas de motor según el horómetro del cierre de jornada.', barras(hrs, 'verde', 'Todavía no hay cierres de jornada con horómetro ' + X.enMes + '.'));
   }
   function pCombustible(I, X){
-    var filas = X.comb.map(function(x){
-      var cons = x.tasa == null ? '<span class="ft-mute">Falta historia</span>' : g1(x.tasa) + (x.km ? ' km/gal' : ' gal/h');
-      var antes = x.antes == null || x.tasa == null ? '—' : (function(){ var v = x.km ? (x.antes - x.tasa) / x.antes * 100 : (x.tasa - x.antes) / x.antes * 100;
-        return v > 25 ? pill(v > 50 ? 'rojo' : 'ambar', '▲ ' + Math.round(v) + '%') : Math.abs(v) < 5 ? '<span class="ft-mute">igual</span>' : (v > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(v)) + '%'; })();
-      return [maq(x), String(x.n), g1(x.gal), x.costo ? peso(x.costo) : '—', cons, antes];
-    });
-    var tq = X.tanqueos.map(function(t){ return ['<span class="ft-nw">' + dcorta(t.fecha) + '</span>' + (t.hora ? '<div class="ft-sub">' + esc(t.hora) + '</div>' : ''), '<b class="ft-cod">' + esc(t.cod) + '</b>', g1(t.gal),
-      t.lec == null ? '—' : g1(t.lec), esc(t.recibe || ''), t.just ? '<span class="ft-alerta">' + esc(t.just) + '</span>' : ''];
-    });
-    var mv = X.mov.map(function(m){ return [dcorta(m.fecha), m.tipo === 'LLEGADA' ? 'Llegada' : 'Medición', g1(m.gal),
-      m.tipo === 'AJUSTE' ? (m.dif < 0 ? pill('rojo', 'Faltan ' + g1(-m.dif)) : m.dif > 0 ? pill('ambar', 'Sobran ' + g1(m.dif)) : pill('verde', 'Cuadra')) : '', esc(m.nota)]; });
+    function variacion(x){
+      if (x.v == null) return '<span class="ft-mute">' + (x.tasa == null ? 'Pocos datos' : 'Sin historia') + '</span>';
+      return x.v > 25 ? pill(x.v > 50 ? 'rojo' : 'ambar', '▲ ' + Math.round(x.v) + '%') : Math.abs(x.v) < 5 ? '<span class="ft-mute">normal</span>' : (x.v > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(x.v)) + '%';
+    }
+    var u = function(x){ return x.km ? ' km/gal' : ' gal/h'; };
+    var filas = X.comb.map(function(x){ return [maq(x), g1(x.gal), x.costo ? peso(x.costo) : '—',
+      x.tasa == null ? '<span class="ft-mute">—</span>' : g2(x.tasa) + u(x), x.normal == null ? '<span class="ft-mute">—</span>' : g2(x.normal) + u(x), variacion(x)]; });
+    var raros = X.raros.map(function(r){ var t = r.t; return ['<span class="ft-nw">' + dcorta(t.fecha) + '</span>' + (t.hora ? '<div class="ft-sub">' + esc(t.hora) + '</div>' : ''),
+      '<b class="ft-cod">' + esc(t.cod) + '</b>', g1(t.gal), esc(t.recibe || ''),
+      r.por.map(function(p){ return '<div>' + (r.grave ? pill('rojo', p) : esc(p)) + '</div>'; }).join(''), t.just ? '<span class="ft-alerta">' + esc(t.just) + '</span>' : '<span class="ft-mute">—</span>']; });
+    var labor = X.labor.map(function(x){ return { k:x.k, v:x.gal, lbl:g1(x.gal) + ' gal · ' + peso(x.costo), t:x.k }; });
+    var otros = X.otros.map(function(o){ return ['<b class="ft-cod">' + esc(o.cod) + '</b>' + (o.tipo === 'vehiculo' ? ' <span class="ft-nom">' + esc(o.nombre) + '</span>' : ''),
+      o.tipo === 'vehiculo' ? 'Vehículo' : 'Por tipo', String(o.n), g1(o.gal), peso(o.costo)]; });
+    var cier = X.cierres.map(function(m){ var dd = m.dif || 0;
+      return [dcorta(m.fecha), m.teorico == null ? '—' : g1(m.teorico), g1(m.gal),
+        dd < 0 ? pill(Math.abs(dd) > 2 ? 'rojo' : 'ambar', 'Faltan ' + g1(-dd)) : dd > 0 ? pill('ambar', 'Sobran ' + g1(dd)) : pill('verde', 'Cuadra'),
+        dd && X.precio ? peso(Math.abs(dd) * X.precio) : '—', esc(m.motivo || '')]; });
+    var lleg = X.llegadas.map(function(m){ return [dcorta(m.fecha), g1(m.gal), m.precio ? peso(m.precio) : '—', esc(m.nota || '')]; });
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'combustible'; }).map(tarjeta).join('') + '</div>' +
-      bloque('Consumo por máquina ' + X.enMes, 'Galones despachados y consumo por hora de motor (km por galón en camiones), comparado con los 3 meses anteriores.',
-        tabla([{ t:'Máquina' }, { t:'Tanqueos', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'Consumo', n:1 }, { t:'vs. antes', n:1 }], filas, 'Todavía no hay tanqueos ' + X.enMes + ' en la app de Tanqueo.')) +
+      bloque('Consumo por máquina ' + X.enMes, 'Galones y consumo por hora de motor (km por galón en camiones), comparado con lo normal de cada máquina: sus 10 tanqueos anteriores.',
+        tabla([{ t:'Máquina' }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'Consumo', n:1 }, { t:'Lo normal', n:1 }, { t:'Variación', n:1 }], filas, 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.')) +
+      bloque('Tanqueos que no cuadran', 'Máquina en el taller ese día, sin trabajo registrado, o que gastó mucho más de lo normal. Al lado, la justificación que escribió Leanis.',
+        tabla([{ t:'Fecha' }, { t:'Equipo' }, { t:'Galones', n:1 }, { t:'Recibió' }, { t:'Por qué no cuadra' }, { t:'Justificación' }], raros, 'Todo el combustible coincide con el trabajo registrado.')) +
       '<div class="ft-dos">' +
-        bloque('Últimos tanqueos', '', tabla([{ t:'Fecha' }, { t:'Máquina' }, { t:'Galones', n:1 }, { t:'Horómetro', n:1 }, { t:'Recibió' }, { t:'Alerta' }], tq, 'Todavía no hay tanqueos.')) +
-        bloque('Movimientos del tanque', 'Llegadas de combustible y mediciones del tanque.', tabla([{ t:'Fecha' }, { t:'Tipo' }, { t:'Galones', n:1 }, { t:'Medición' }, { t:'Nota' }], mv, 'Sin movimientos todavía.')) +
-      '</div>';
+        bloque('Combustible por labor', 'Los galones de cada máquina repartidos entre sus labores según las horas del cierre de jornada (o los días programados).', barras(labor, 'verde', 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.', true)) +
+        bloque('Otros consumos', 'Vehículos por placa; guadañas, motobombas y estacionaria por tipo.', tabla([{ t:'Destino' }, { t:'Control' }, { t:'Tanqueos', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }], otros, 'Sin otros consumos ' + X.enMes + '.')) +
+      '</div>' +
+      bloque('Cierres del almacén', 'Leanis mide el tanque en cada llegada: lo que debería haber contra lo medido, y su explicación cuando no cuadra.',
+        tabla([{ t:'Fecha' }, { t:'Debería', n:1 }, { t:'Medido', n:1 }, { t:'Diferencia' }, { t:'Valor', n:1 }, { t:'Explicación' }], cier, 'Todavía no hay cierres. El primero se hace en la próxima llegada de combustible.')) +
+      bloque('Llegadas de combustible', '', tabla([{ t:'Fecha' }, { t:'Galones', n:1 }, { t:'Precio/gal', n:1 }, { t:'Proveedor o remisión' }], lleg, 'Sin llegadas registradas.'));
   }
 
   function pintar(R, act){
@@ -736,7 +762,7 @@
     (window.Horometros ? Horometros.cierres() : []).forEach(function(c){
       if (c.fecha >= desde && c.fecha <= hasta && c.horas != null && eq(c.cod) && !esCamion(c.cod)){ h += c.horas; hd++; }
     });
-    var T = D.tanq.filter(function(t){ return !t.dudoso && t.fecha >= desde && t.fecha <= hasta; });
+    var T = D.tanq.filter(function(t){ return !t.anulado && !t.dudoso && t.fecha >= desde && t.fecha <= hasta; });
     return { disp:disp.pct, perdidos:disp.perdidos, total:disp.total, fallas:fallasEntre(D, desde, hasta), uso:u.pct, pre:u.prePct,
       horas:h, jornadas:hd, gal:T.reduce(function(a, t){ return a + t.gal; }, 0), costo:T.reduce(function(a, t){ return a + t.costo; }, 0), tanqueos:T.length };
   }
@@ -896,8 +922,8 @@
         var tl = taller(r[0]), al = {};
         (r[7] || []).forEach(function(a){ var id = String(a[3] || '').trim(); if (id) al[id] = { fecha:aIso(a[0]), abierta:String(a[2] || '').trim().toUpperCase() === 'ABIERTA' }; });
         var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]),
-          tanq:tanqueos(r[5]),
-          tanque:(r[6] || []).map(function(m){ return { fecha:aIso(m[0]), tipo:String(m[2] || '').trim().toUpperCase(), gal:num(m[4]) || 0, dif:num(m[6]) || 0, nota:String(m[8] || '').trim() }; }),
+          tanq: window.Combustible ? Combustible.tanqueos(r[5]) : [],
+          movs: window.Combustible ? Combustible.movimientos(r[6]) : [],
           alertas:Object.keys(al).map(function(k){ return al[k]; }), viejo:r[10], cierres:cierresDe(r[12]) };
         listo = true; DATOS = D;
         var R = indicadores(D);
