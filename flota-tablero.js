@@ -216,6 +216,84 @@
     });
   }
 
+  /* Combustible de un período (fechas aaaa-mm-dd): lo usan la pestaña
+     Combustible (el mes) y el informe semanal (la semana), así no hay dos
+     cálculos. El consumo sale de Combustible en maestros.js. */
+  function combustibleDe(D, desdeF, hastaF){
+    var C = window.Combustible, p = desdeF.split('-'), q = hastaF.split('-');
+    var tsIni = new Date(+p[0], +p[1] - 1, +p[2]).getTime(), tsFin = Math.min(Date.now(), new Date(+q[0], +q[1] - 1, +q[2] + 1).getTime() - 1);
+    var placas = {}; ((window.Maestros && Maestros.get('VEHICULOS')) || []).forEach(function(v){ placas[v.placa] = v.nombre || 'Vehículo'; });
+    function destino(cod){ return eq(cod) ? (esCamion(cod) ? 'camion' : 'maquina') : placas[cod] ? 'vehiculo' : 'otro'; }
+    function suma(l, k){ return l.reduce(function(a, t){ return a + (t[k] || 0); }, 0); }
+    var TODOS = D.tanq.filter(function(t){ return !t.anulado; }), T = TODOS.filter(function(t){ return !t.dudoso; });
+    var M = T.filter(function(t){ return t.ts >= tsIni && t.ts <= tsFin; });
+    var movs = D.movs || [], precio = (movs.filter(function(m){ return m.tipo === 'LLEGADA' && m.precio > 0; }).pop() || {}).precio || 0;
+    var R = { todos:TODOS, M:M, n:M.length, gal:suma(M, 'gal'), costo:suma(M, 'costo'), placas:placas,
+      dudosos: TODOS.filter(function(t){ return t.dudoso && t.ts >= tsIni && t.ts <= tsFin; }) };
+    if (!precio && R.gal) precio = R.costo / R.gal;
+    R.precio = precio;
+    // consumo por máquina en el período y lo normal de cada una (sus tanqueos anteriores)
+    var cods = {}; M.forEach(function(t){ var dd = destino(t.cod); if (dd === 'maquina' || dd === 'camion') cods[t.cod] = true; });
+    R.cons = Object.keys(cods).map(function(c){
+      var a = C ? C.consumo(T, c, tsIni, tsFin) : { tasa:null }, nm = C ? C.normal(T, c, tsIni) : { tasa:null }, l = M.filter(function(t){ return t.cod === c; });
+      var v = a.tasa != null && nm.tasa ? (a.km ? (nm.tasa - a.tasa) / nm.tasa * 100 : (a.tasa - nm.tasa) / nm.tasa * 100) : null;   // en km/gal, menos es peor
+      return { cod:c, nombre:(eq(c) || {}).nombre || '', km:a.km, tasa:a.tasa, normal:nm.tasa, v:v, gal:suma(l, 'gal'), costo:suma(l, 'costo'), n:l.length,
+        gH:a.gal, hH:a.avance, gN:nm.gal, hN:nm.avance };
+    }).sort(function(a, b){ return b.gal - a.gal; });
+    var gH = 0, hH = 0, gN = 0, hN = 0;
+    R.cons.forEach(function(x){ if (x.km) return; if (x.tasa != null){ gH += x.gH; hH += x.hH; } if (x.normal != null){ gN += x.gN; hN += x.hN; } });
+    R.tasa = hH >= 20 ? gH / hH : null; R.normal = hN >= 20 ? gN / hN : null;
+    R.varTasa = R.tasa != null && R.normal ? (R.tasa - R.normal) / R.normal * 100 : null;
+    R.raras = R.cons.filter(function(x){ return x.v != null && x.v > 25; }).sort(function(a, b){ return b.v - a.v; });
+    R.comparables = R.cons.filter(function(x){ return x.v != null; }).length;
+    // tanqueos que no cuadran con el trabajo de la máquina
+    var usosH = window.Horometros ? Horometros.usos() : {};
+    R.raros = M.filter(function(t){ var dd = destino(t.cod); return dd === 'maquina' || dd === 'camion'; }).map(function(t){
+      var por = [], grave = false;
+      if (paradoEl(D, t.cod, t.fecha)){ por.push('estaba en el taller ese día'); grave = true; }
+      else if (destino(t.cod) === 'maquina' && !(D.prog[t.fecha] && D.prog[t.fecha][t.cod]) && !usosH[t.cod + '|' + t.fecha] && !D.pre[t.cod + '|' + t.fecha])
+        por.push('sin programación, preoperativo ni cierre ese día');
+      var tt = C ? C.deTanqueo(T, t) : null, nm = C ? C.normal(T, t.cod, t.ts) : { tasa:null };
+      if (tt != null && nm.tasa){ var vv = t.tipo === 'km' ? nm.tasa / tt : tt / nm.tasa;
+        if (vv > 1.6) por.push('gastó ' + g2(tt) + (t.tipo === 'km' ? ' km/gal' : ' gal/h') + ' (lo normal ' + g2(nm.tasa) + ')'); }
+      return por.length ? { t:t, por:por, grave:grave } : null;
+    }).filter(Boolean);
+    // combustible por labor: los galones de cada máquina se reparten entre sus labores según las
+    // horas del cierre de jornada (o los días programados si no hay horas); camiones = transporte
+    var lab = {}, cierresH = window.Horometros ? Horometros.cierres() : [], dias = laborales(desdeF, hastaF);
+    R.cons.forEach(function(x){
+      var pesos = {}, totalH = 0, porDia = {};
+      if (x.km) pesos.Transporte = 1;
+      else {
+        cierresH.forEach(function(c){ if (c.cod === x.cod && c.fecha >= desdeF && c.fecha <= hastaF && c.horas) porDia[c.fecha] = (porDia[c.fecha] || 0) + c.horas; });
+        dias.forEach(function(f){ var a = D.prog[f] && D.prog[f][x.cod]; if (a && porDia[f]){ var l = a.labor || 'Sin labor'; pesos[l] = (pesos[l] || 0) + porDia[f]; totalH += porDia[f]; } });
+        if (!totalH){ pesos = {}; dias.forEach(function(f){ var a = D.prog[f] && D.prog[f][x.cod]; if (a){ var l = a.labor || 'Sin labor'; pesos[l] = (pesos[l] || 0) + 1; } }); }
+        if (!Object.keys(pesos).length) pesos['Sin labor registrada'] = 1;
+      }
+      var tot = Object.keys(pesos).reduce(function(a, k){ return a + pesos[k]; }, 0) || 1;
+      Object.keys(pesos).forEach(function(k){ var y = lab[k] = lab[k] || { k:k, gal:0, costo:0 };
+        y.gal += x.gal * pesos[k] / tot; y.costo += (x.costo || x.gal * precio) * pesos[k] / tot; });
+    });
+    R.labor = Object.keys(lab).map(function(k){ return lab[k]; }).sort(function(a, b){ return b.gal - a.gal; });
+    // otros consumos: vehículos por placa y lo demás por tipo
+    var otros = {};
+    M.forEach(function(t){ var dd = destino(t.cod); if (dd !== 'vehiculo' && dd !== 'otro') return;
+      var o = otros[t.cod] = otros[t.cod] || { cod:t.cod, nombre: placas[t.cod] || t.nom || t.cod, tipo:dd, n:0, gal:0, costo:0 };
+      o.n++; o.gal += t.gal; o.costo += t.costo || t.gal * precio; });
+    R.otros = Object.keys(otros).map(function(k){ return otros[k]; }).sort(function(a, b){ return b.gal - a.gal; });
+    R.otrosGal = suma(R.otros, 'gal'); R.otrosCosto = suma(R.otros, 'costo');
+    // cierres de Leanis en el período, y el tanque
+    R.cierresTodos = movs.filter(function(m){ return m.cierre; });
+    R.cierres = R.cierresTodos.filter(function(m){ return m.ts >= tsIni && m.ts <= tsFin; });
+    R.faltante = R.cierres.reduce(function(a, m){ return a + (m.dif < 0 ? -m.dif : 0); }, 0);
+    R.faltanteValor = R.faltante * precio;
+    R.saldo = C && (movs.length || TODOS.length) ? C.saldo(movs, TODOS) : null;
+    R.autonomia = C && R.saldo != null ? C.autonomia(TODOS, R.saldo) : null;
+    R.llegadas = movs.filter(function(m){ return m.tipo === 'LLEGADA'; });
+    R.hayTanque = movs.length > 0;
+    return R;
+  }
+
   /* ---------------- indicadores ---------------- */
   function indicadores(D){
     var hy = hoy(), mesIni = hy.slice(0, 8) + '01';
@@ -357,33 +435,13 @@
       detalle: laboral(hy) ? 'Hoy: ' + preHoy + ' preoperativos' + (progHoy ? ' de ' + progHoy + ' máquinas programadas' : '') : 'Hoy no es día laboral',
       accion: u.prePct != null && u.prePct < 90 ? 'Hay máquinas saliendo sin revisión: así no se ven a tiempo los daños.' : '' });
 
-    /* 10–12b. Combustible: todo sale del cálculo compartido (Combustible en
-       maestros.js), el mismo de la app de Tanqueo. */
-    var C = window.Combustible, tsIni = new Date(+mesIni.slice(0, 4), +mesIni.slice(5, 7) - 1, +mesIni.slice(8, 10)).getTime(), tsHoy = Date.now();
-    var placas = {}; ((window.Maestros && Maestros.get('VEHICULOS')) || []).forEach(function(v){ placas[v.placa] = v.nombre || 'Vehículo'; });
-    function destino(cod){ return eq(cod) ? (esCamion(cod) ? 'camion' : 'maquina') : placas[cod] ? 'vehiculo' : 'otro'; }
-    var TODOS = D.tanq.filter(function(t){ return !t.anulado; });
-    var T = TODOS.filter(function(t){ return !t.dudoso; });
-    var M = T.filter(function(t){ return t.ts >= tsIni && t.ts <= tsHoy; });
-    var dud = TODOS.filter(function(t){ return t.dudoso && t.ts >= tsIni; });
-    var P = antes ? T.filter(function(t){ return t.fecha >= pmIni && t.fecha <= pmMismo; }) : [];
-    function suma(l, k){ return l.reduce(function(a, t){ return a + (t[k] || 0); }, 0); }
-    var galM = suma(M, 'gal'), galP = suma(P, 'gal'), costoM = suma(M, 'costo');
-    // consumo por máquina en el período y lo normal de cada una (sus tanqueos anteriores)
-    var codsMaq = {}; M.forEach(function(t){ if (destino(t.cod) === 'maquina' || destino(t.cod) === 'camion') codsMaq[t.cod] = true; });
-    var cons = Object.keys(codsMaq).map(function(c){
-      var a = C ? C.consumo(T, c, tsIni, tsHoy) : { tasa:null }, nm = C ? C.normal(T, c, tsIni) : { tasa:null }, l = M.filter(function(t){ return t.cod === c; });
-      var v = a.tasa != null && nm.tasa ? (a.km ? (nm.tasa - a.tasa) / nm.tasa * 100 : (a.tasa - nm.tasa) / nm.tasa * 100) : null;   // en km/gal, menos es peor
-      return { cod:c, nombre:(eq(c) || {}).nombre || '', km:a.km, tasa:a.tasa, normal:nm.tasa, v:v, gal:suma(l, 'gal'), costo:suma(l, 'costo'), n:l.length };
-    }).sort(function(a, b){ return b.gal - a.gal; });
-    var flota = cons.filter(function(x){ return !x.km; });
-    var gH = 0, hH = 0, gN = 0, hN = 0;
-    if (C) flota.forEach(function(x){ var a = C.consumo(T, x.cod, tsIni, tsHoy), nm = C.normal(T, x.cod, tsIni);
-      if (a.tasa != null){ gH += a.gal; hH += a.avance; } if (nm.tasa != null){ gN += nm.gal; hN += nm.avance; } });
-    var tasaM = hH >= 20 ? gH / hH : null, tasaN = hN >= 20 ? gN / hN : null, varTasa = tasaM != null && tasaN ? (tasaM - tasaN) / tasaN * 100 : null;
-    ind({ id:'comb', grupo:'combustible', titulo:'Combustible ' + delMes, valor: TODOS.length ? g1(galM) + ' gal' : '—',
-      nivel: !TODOS.length ? 'gris' : varTasa == null ? 'verde' : varTasa > 50 ? 'rojo' : varTasa > 25 ? 'ambar' : 'verde',   // misma regla que por máquina
-      linea: !TODOS.length ? 'Todavía no hay tanqueos en la app de Tanqueo' : plural(M.length, 'tanqueo', 'tanqueos') + (costoM ? ' · ' + peso(costoM) : '') +
+    /* 10–12b. Combustible (combustibleDe: el mismo cálculo del informe semanal) */
+    var CB = combustibleDe(D, mesIni, hy), M = CB.M, galM = CB.gal, costoM = CB.costo, dud = CB.dudosos;
+    var P = antes ? CB.todos.filter(function(t){ return !t.dudoso && t.fecha >= pmIni && t.fecha <= pmMismo; }) : [];
+    var galP = P.reduce(function(a, t){ return a + t.gal; }, 0), tasaM = CB.tasa, varTasa = CB.varTasa;
+    ind({ id:'comb', grupo:'combustible', titulo:'Combustible ' + delMes, valor: CB.todos.length ? g1(galM) + ' gal' : '—',
+      nivel: !CB.todos.length ? 'gris' : varTasa == null ? 'verde' : varTasa > 50 ? 'rojo' : varTasa > 25 ? 'ambar' : 'verde',   // misma regla que por máquina
+      linea: !CB.todos.length ? 'Todavía no hay tanqueos en la app de Tanqueo' : plural(M.length, 'tanqueo', 'tanqueos') + (costoM ? ' · ' + peso(costoM) : '') +
         (tasaM != null ? ' · ' + g2(tasaM) + ' gal por hora de máquina' : ''),
       comp: (galP ? comparar(galM, galP, ' gal', true, 'el mismo tramo de ' + nombrePrev, true, 1).replace(/ftc-c (mejor|peor)/, 'ftc-c igual') : '') +
         (dud.length ? '<div class="ftc-c igual">No se contó ' + (dud.length === 1 ? 'un tanqueo mal digitado' : dud.length + ' tanqueos mal digitados') + ': ' +
@@ -391,26 +449,16 @@
         (varTasa != null ? '<div class="ftc-c ' + (varTasa > 25 ? 'peor' : varTasa < -5 ? 'mejor' : 'igual') + '">' + (Math.abs(varTasa) < 5 ? 'Consumo por hora normal' : 'Consumo por hora ' + (varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(varTasa)) + '% vs. lo normal') + '</div>' : '') });
 
     /* 11. Consumo fuera de lo normal por máquina */
-    var comparables = cons.filter(function(x){ return x.v != null; }), raras = comparables.filter(function(x){ return x.v > 25; }).sort(function(a, b){ return b.v - a.v; });
-    ind({ id:'consumo', grupo:'combustible', titulo:'Consumo fuera de lo normal', valor: comparables.length ? String(raras.length) : '—',
-      nivel: raras.some(function(x){ return x.v > 50; }) ? 'rojo' : raras.length ? 'ambar' : comparables.length ? 'verde' : 'gris',
+    var raras = CB.raras;
+    ind({ id:'consumo', grupo:'combustible', titulo:'Consumo fuera de lo normal', valor: CB.comparables ? String(raras.length) : '—',
+      nivel: raras.some(function(x){ return x.v > 50; }) ? 'rojo' : raras.length ? 'ambar' : CB.comparables ? 'verde' : 'gris',
       linea: raras.length ? plural(raras.length, 'máquina gasta', 'máquinas gastan') + ' más de lo normal' :
-        comparables.length ? 'Cada máquina gasta lo de siempre' : 'Se compara cuando cada máquina tenga al menos 3 tanqueos anteriores',
+        CB.comparables ? 'Cada máquina gasta lo de siempre' : 'Se compara cuando cada máquina tenga al menos 3 tanqueos anteriores',
       detalle: raras.map(function(x){ return x.cod + ': ' + g2(x.tasa) + (x.km ? ' km/gal' : ' gal/h') + ' (lo normal ' + g2(x.normal) + ')'; }).join(' — '),
       accion: raras.length ? 'Revisar si es el motor (filtros, inyección), el trabajo que hizo o el combustible que se le está entregando: ' + raras.map(function(x){ return x.cod; }).join(', ') + '.' : '' });
 
     /* 11b. Tanqueos que no cuadran con el trabajo */
-    var usosH = window.Horometros ? Horometros.usos() : {};
-    var raros = M.filter(function(t){ var dd = destino(t.cod); return dd === 'maquina' || dd === 'camion'; }).map(function(t){
-      var por = [], grave = false;
-      if (paradoEl(D, t.cod, t.fecha)){ por.push('estaba en el taller ese día'); grave = true; }
-      else if (destino(t.cod) === 'maquina' && !(D.prog[t.fecha] && D.prog[t.fecha][t.cod]) && !usosH[t.cod + '|' + t.fecha] && !D.pre[t.cod + '|' + t.fecha])
-        por.push('sin programación, preoperativo ni cierre ese día');
-      var tt = C ? C.deTanqueo(T, t) : null, nm = C ? C.normal(T, t.cod, t.ts) : { tasa:null };
-      if (tt != null && nm.tasa){ var vv = t.tipo === 'km' ? nm.tasa / tt : tt / nm.tasa;
-        if (vv > 1.6) por.push('gastó ' + g2(tt) + (t.tipo === 'km' ? ' km/gal' : ' gal/h') + ' (lo normal ' + g2(nm.tasa) + ')'); }
-      return por.length ? { t:t, por:por, grave:grave } : null;
-    }).filter(Boolean);
+    var raros = CB.raros;
     ind({ id:'tqraros', grupo:'combustible', titulo:'Tanqueos que no cuadran', valor: M.length ? String(raros.length) : '—',
       nivel: !M.length ? 'gris' : raros.some(function(x){ return x.grave; }) ? 'rojo' : raros.length ? 'ambar' : 'verde',
       linea: !M.length ? 'Todavía no hay tanqueos ' + enMes : raros.length ? 'Combustible que no cuadra con el trabajo de la máquina' : 'Todo el combustible coincide con el trabajo registrado',
@@ -418,18 +466,14 @@
       accion: raros.length ? 'Pedirle a Leanis la explicación de ' + plural(raros.length, 'tanqueo', 'tanqueos') + ' que no cuadran con el trabajo (están en la pestaña Combustible).' : '' });
 
     /* 12. Tanque del almacén: saldo, autonomía, requisición y cierres de Leanis */
-    var movs = D.movs || [], saldo = C && (movs.length || TODOS.length) ? C.saldo(movs, TODOS) : null;
-    var aut = C && saldo != null ? C.autonomia(TODOS, saldo) : null;
-    var cierresL = movs.filter(function(m){ return m.cierre; }), cierresMes = cierresL.filter(function(m){ return m.ts >= tsIni; });
-    var faltante = cierresMes.reduce(function(a, m){ return a + (m.dif < 0 ? -m.dif : 0); }, 0);
-    var precioV = (movs.filter(function(m){ return m.tipo === 'LLEGADA' && m.precio > 0; }).pop() || {}).precio || (M.length ? costoM / Math.max(galM, 1) : 0);
+    var saldo = CB.saldo, aut = CB.autonomia, cierresL = CB.cierresTodos, faltante = CB.faltante, precioV = CB.precio;
     var reqAb = D.alertas.filter(function(a){ return a.abierta; });
-    var hayTanque = movs.length || D.alertas.length;
+    var hayTanque = CB.hayTanque || D.alertas.length;
     var limFalt = Math.max(10, galM * 0.02);
     ind({ id:'tanque', grupo:'combustible', titulo:'Tanque del almacén', valor: saldo == null ? '—' : g1(saldo) + ' gal',
       nivel: !hayTanque ? 'gris' : faltante > limFalt ? 'rojo' : (reqAb.length || faltante > 0 || (aut && aut.dias != null && aut.dias < 5)) ? 'ambar' : 'verde',
       linea: !hayTanque ? 'Sin movimientos del tanque todavía' : (aut && aut.dias != null ? 'Alcanza para ' + Math.round(aut.dias) + ' días' : 'Sin consumo reciente para calcular autonomía') +
-        (cierresMes.length ? ' · ' + (faltante > 0 ? 'faltaron ' + g1(faltante) + ' gal en los cierres' : 'los cierres cuadran') : ''),
+        (CB.cierres.length ? ' · ' + (faltante > 0 ? 'faltaron ' + g1(faltante) + ' gal en los cierres' : 'los cierres cuadran') : ''),
       detalle: [reqAb.length ? 'Requisición de combustible abierta desde el ' + dcorta(reqAb[reqAb.length - 1].fecha) : '',
         cierresL.length ? 'Último cierre ' + dcorta(cierresL[cierresL.length - 1].fecha) + ': ' + (cierresL[cierresL.length - 1].dif ? (cierresL[cierresL.length - 1].dif > 0 ? '+' : '') + g1(cierresL[cierresL.length - 1].dif) + ' gal' : 'cuadró') : 'Todavía no hay cierres (se hacen en cada llegada)'].filter(Boolean).join(' — '),
       accion: faltante > limFalt ? 'En los cierres del almacén faltaron ' + g1(faltante) + ' gal' + (precioV ? ' (' + peso(faltante * precioV) + ')' : '') + ' que no están en ningún despacho. Revisar las explicaciones de Leanis.' :
@@ -515,37 +559,9 @@
       var x = sis[k] = sis[k] || { k:k, n:0, d:0 }; x.n++; x.d += duracion(e);
     });
     X.sistemas = Object.keys(sis).map(function(k){ return sis[k]; }).sort(function(a, b){ return b.n - a.n || b.d - a.d; });
-    X.comb = cons; X.raros = raros; X.precio = precioV;
-    // combustible por labor: los galones de cada máquina se reparten entre sus labores según las
-    // horas del cierre de jornada (o los días programados si no hay horas); camiones = transporte
-    var lab = {}, cierresH = window.Horometros ? Horometros.cierres() : [];
-    cons.forEach(function(x){
-      var pesos = {}, totalH = 0, totalD = 0, porDia = {};
-      if (x.km){ pesos.Transporte = 1; }
-      else {
-        cierresH.forEach(function(c){ if (c.cod === x.cod && c.fecha >= mesIni && c.fecha <= hy && c.horas) porDia[c.fecha] = (porDia[c.fecha] || 0) + c.horas; });
-        laborales(mesIni, hy).forEach(function(f){
-          var a = D.prog[f] && D.prog[f][x.cod]; if (!a) return;
-          var l = a.labor || 'Sin labor'; totalD++;
-          if (porDia[f]){ pesos[l] = (pesos[l] || 0) + porDia[f]; totalH += porDia[f]; }
-          else if (!totalH) pesos[l] = (pesos[l] || 0) + 0;      // se completa abajo si no hay horas
-        });
-        if (!totalH){ pesos = {}; laborales(mesIni, hy).forEach(function(f){ var a = D.prog[f] && D.prog[f][x.cod]; if (a) pesos[a.labor || 'Sin labor'] = (pesos[a.labor || 'Sin labor'] || 0) + 1; }); }
-        if (!Object.keys(pesos).length) pesos['Sin labor registrada'] = 1;
-      }
-      var tot = Object.keys(pesos).reduce(function(a, k){ return a + pesos[k]; }, 0) || 1;
-      Object.keys(pesos).forEach(function(k){ var y = lab[k] = lab[k] || { k:k, gal:0, costo:0 };
-        y.gal += x.gal * pesos[k] / tot; y.costo += (x.costo || x.gal * precioV) * pesos[k] / tot; });
-    });
-    X.labor = Object.keys(lab).map(function(k){ return lab[k]; }).sort(function(a, b){ return b.gal - a.gal; });
-    // otros consumos: vehículos por placa y lo demás por tipo
-    var otros = {};
-    M.forEach(function(t){ var dd = destino(t.cod); if (dd !== 'vehiculo' && dd !== 'otro') return;
-      var o = otros[t.cod] = otros[t.cod] || { cod:t.cod, nombre: placas[t.cod] || t.nom || t.cod, tipo:dd, n:0, gal:0, costo:0 };
-      o.n++; o.gal += t.gal; o.costo += t.costo || t.gal * precioV; });
-    X.otros = Object.keys(otros).map(function(k){ return otros[k]; }).sort(function(a, b){ return b.gal - a.gal; });
-    X.cierres = cierresL.slice().reverse().slice(0, 8);
-    X.llegadas = movs.filter(function(m){ return m.tipo === 'LLEGADA'; }).reverse().slice(0, 6);
+    X.comb = CB.cons; X.raros = CB.raros; X.precio = CB.precio; X.labor = CB.labor; X.otros = CB.otros;
+    X.cierres = CB.cierresTodos.slice().reverse().slice(0, 8);
+    X.llegadas = CB.llegadas.slice().reverse().slice(0, 6);
     return { I:I, X:X };
   }
 
@@ -783,6 +799,10 @@
     var parcial = w.desde < INICIO;
     P = P || { disp:null, perdidos:0, total:0, fallas:null, uso:null, pre:null, horas:0, jornadas:0, gal:0, costo:0, tanqueos:0 };
     var ind = {}; I.forEach(function(x){ ind[x.id] = x; });
+    // combustible de la semana: el mismo cálculo de la pestaña Combustible
+    var CS = combustibleDe(D, parcial ? INICIO : w.desde, w.hasta);
+    var nComb = !CS.n ? 'gris' : (CS.faltante > Math.max(10, CS.gal * 0.02) || CS.raros.some(function(x){ return x.grave; }) || (CS.varTasa != null && CS.varTasa > 50)) ? 'rojo' :
+      (CS.faltante > 0 || CS.raros.length || (CS.varTasa != null && CS.varTasa > 25)) ? 'ambar' : 'verde';
     var k = [
       { t:'Disponibilidad', v: A.disp == null ? '—' : Math.round(A.disp) + '%', n:nivelPct(A.disp, META, 75), d: difTxt(A.disp, P.disp, ' pts'), s:'Meta ' + META + '% · ' + plural(A.perdidos, 'día-máquina perdido', 'días-máquina perdidos') },
       { t:'Fallas nuevas', v:String(A.fallas.length), n: P.fallas && A.fallas.length > P.fallas.length ? 'ambar' : 'verde', d: P.fallas ? difTxt(A.fallas.length, P.fallas.length, '', true) : '', s:'Máquinas que entraron al taller por daño' },
@@ -790,10 +810,10 @@
         s: A.jornadas ? g1(A.horas / A.jornadas) + ' h por máquina en cada jornada' : 'Sin cierres de jornada con horómetro' },
       { t:'Uso de la maquinaria', v: A.uso == null ? '—' : Math.round(A.uso) + '%', n:nivelPct(A.uso, 80, 60), d: difTxt(A.uso, P.uso, ' pts'), s:'Días buenas con trabajo registrado' },
       { t:'Preoperativos', v: A.pre == null ? '—' : Math.round(A.pre) + '%', n:nivelPct(A.pre, 90, 70), d: difTxt(A.pre, P.pre, ' pts'), s:'Días trabajados con revisión al arrancar' },
-      { t:'Combustible', v: A.tanqueos ? g1(A.gal) + ' gal' : '—', n: A.tanqueos ? 'verde' : 'gris', d: P.tanqueos ? difTxt(A.gal, P.gal, ' gal', true, 1).replace(/class="(me|pe)"/, 'class="ig"') : '',
-        s: A.tanqueos ? plural(A.tanqueos, 'tanqueo', 'tanqueos') + (A.costo ? ' · ' + peso(A.costo) : '') : 'Sin tanqueos en la app de Tanqueo' }
+      { t:'Combustible', v: CS.n ? (CS.costo ? millones(CS.costo) : g1(CS.gal) + ' gal') : '—', n: nComb, d: P.tanqueos ? difTxt(A.gal, P.gal, ' gal', true, 1).replace(/class="(me|pe)"/, 'class="ig"') : '',
+        s: CS.n ? g1(CS.gal) + ' gal en ' + plural(CS.n, 'tanqueo', 'tanqueos') + (CS.tasa != null ? ' · ' + g2(CS.tasa) + ' gal/h' : '') : 'Sin tanqueos en la app de Tanqueo' }
     ];
-    var riesgos = ['largas', 'reparaciones', 'riesgo', 'repetidas', 'mtto', 'consumo', 'tanque'].map(function(id){ return ind[id]; })
+    var riesgos = ['largas', 'reparaciones', 'riesgo', 'repetidas', 'mtto', 'consumo', 'tqraros', 'tanque'].map(function(id){ return ind[id]; })
       .filter(function(x){ return x && (x.nivel === 'rojo' || x.nivel === 'ambar'); });
     var todos = k.map(function(x){ return x.n; }).concat(riesgos.map(function(x){ return x.nivel; }));
     var nivel = todos.indexOf('rojo') >= 0 ? 'rojo' : todos.indexOf('ambar') >= 0 ? 'ambar' : 'verde';
@@ -837,10 +857,20 @@
         (A.fallas.length ? '<li><b>Fallas nuevas:</b> ' + A.fallas.map(function(e){ return esc(e.cod); }).join(', ') + '.</li>' : '') +
         '</ul>' +
         '<h2>Riesgos abiertos hoy</h2>' + (riesgos.length ? '<ul>' + riesgos.map(function(x){
-          return '<li class="' + x.nivel + '"><b>' + esc(x.titulo) + ':</b> ' + esc(x.linea) + (x.detalle ? '. <span class="g">' + esc(x.detalle.length > 160 ? x.detalle.slice(0, 157) + '…' : x.detalle) + '</span>' : '') + '</li>';
+          return '<li class="' + x.nivel + '"><b>' + esc(x.titulo) + ':</b> ' + esc(x.linea) + (x.detalle ? '. <span class="g">' + esc(x.detalle.length > 105 ? x.detalle.slice(0, 102) + '…' : x.detalle) + '</span>' : '') + '</li>';
         }).join('') + '</ul>' : '<p>Sin riesgos abiertos.</p>') + '</div></div>';
 
-    h += '<h2>Decisiones y acciones</h2>' + (acciones.length ? '<ol>' + acciones.slice(0, 6).map(function(x){
+    // combustible: lo que la gerencia necesita ver de la semana (sin el detalle de la pestaña)
+    if (CS.n || CS.cierres.length){
+      var sinLab = CS.labor.filter(function(x){ return x.k !== 'Sin labor registrada'; });
+      h += '<h2>Combustible de la semana</h2><div class="fi-cb">' +
+        '<div><b>' + (CS.costo ? peso(CS.costo) : g1(CS.gal) + ' gal') + '</b><span>' + g1(CS.gal) + ' gal despachados' + (CS.otrosGal ? ', ' + g1(CS.otrosGal) + ' a vehículos y otros equipos' : '') + '</span></div>' +
+        '<div><b>' + (CS.tasa != null ? g2(CS.tasa) + ' gal/h' : '—') + '</b><span>' + (CS.varTasa != null ? 'Consumo por hora ' + (Math.abs(CS.varTasa) < 5 ? 'normal' : (CS.varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(CS.varTasa)) + '% vs. lo normal') : 'Consumo por hora de las máquinas') + '</span></div>' +
+        '<div><b>' + (CS.cierres.length ? (CS.faltante ? peso(CS.faltanteValor) : 'Cuadró') : '—') + '</b><span>' + (CS.cierres.length ? (CS.faltante ? 'Faltante en el tanque (' + g1(CS.faltante) + ' gal)' : 'Cierre del almacén') : 'Sin cierre esta semana') + '</span></div>' +
+        '<div><b>' + CS.raros.length + '</b><span>' + (CS.raros.length === 1 ? 'Tanqueo que no cuadra' : 'Tanqueos que no cuadran') + ' con el trabajo</span></div></div>' +
+        (sinLab.length ? '<p class="fi-lab"><b>Por labor:</b> ' + sinLab.slice(0, 4).map(function(x){ return esc(x.k) + ' ' + peso(x.costo) + ' (' + g1(x.gal) + ' gal)'; }).join(' · ') + '</p>' : '');
+    }
+    h += '<h2>Decisiones y acciones</h2>' + (acciones.length ? '<ol>' + acciones.slice(0, 5).map(function(x){
         var a = x.corta || x.accion;
         return '<li><b>' + esc(x.titulo) + '.</b> ' + esc(a.length > 260 ? a.slice(0, 257) + '…' : a) + '</li>'; }).join('') + '</ol>' : '<p>No hay decisiones pendientes esta semana.</p>');
     if (obs) h += '<h2>Observaciones del Superintendente</h2><p class="fi-obs">' + esc(obs) + '</p>';
