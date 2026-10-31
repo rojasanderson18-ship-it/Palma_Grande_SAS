@@ -317,6 +317,11 @@
     R.saldo = C && (movs.length || TODOS.length) ? C.saldo(movs, TODOS) : null;
     R.autonomia = C && R.saldo != null ? C.autonomia(TODOS, R.saldo) : null;
     R.llegadas = movs.filter(function(m){ return m.tipo === 'LLEGADA'; });
+    // diferencia con el proveedor: lo medido con regleta en el carrotanque contra la orden (PR-ALM-01)
+    R.llegadasPer = R.llegadas.filter(function(m){ return m.ts >= tsIni && m.ts <= tsFin; });
+    R.difProv = R.llegadasPer.reduce(function(a, m){ return a + (m.esperado ? m.difProv : 0); }, 0);
+    R.faltaProv = R.llegadasPer.reduce(function(a, m){ return a + (m.esperado && m.difProv < 0 ? -m.difProv : 0); }, 0);
+    R.faltaProvValor = R.llegadasPer.reduce(function(a, m){ return a + (m.esperado && m.difProv < 0 ? -m.difProv * (m.precio || precio) : 0); }, 0);
     R.hayTanque = movs.length > 0;
     return R;
   }
@@ -513,12 +518,15 @@
     var hayTanque = CB.hayTanque || D.alertas.length;
     var limFalt = Math.max(10, galM * 0.02);
     ind({ id:'tanque', grupo:'combustible', titulo:'Tanque del almacén', valor: saldo == null ? '—' : g1(saldo) + ' gal',
-      nivel: !hayTanque ? 'gris' : faltante > limFalt ? 'rojo' : (reqAb.length || faltante > 0 || (aut && aut.dias != null && aut.dias < 5)) ? 'ambar' : 'verde',
+      nivel: !hayTanque ? 'gris' : faltante > limFalt ? 'rojo' : (reqAb.length || faltante > 0 || CB.faltaProv > 0 || (aut && aut.dias != null && aut.dias < 5)) ? 'ambar' : 'verde',
       linea: !hayTanque ? 'Sin movimientos del tanque todavía' : (aut && aut.dias != null ? 'Alcanza para ' + Math.round(aut.dias) + ' días' : 'Sin consumo reciente para calcular autonomía') +
-        (CB.cierres.length ? ' · ' + (faltante > 0 ? 'faltaron ' + g1(faltante) + ' gal en los cierres' : 'los cierres cuadran') : ''),
+        (CB.cierres.length ? ' · ' + (faltante > 0 ? 'faltaron ' + g1(faltante) + ' gal cuando se vació' : 'cuadró cuando se vació') : '') +
+        (CB.faltaProv > 0 ? ' · el proveedor entregó ' + g1(CB.faltaProv) + ' gal menos' : ''),
       detalle: [reqAb.length ? 'Requisición de combustible abierta desde el ' + dcorta(reqAb[reqAb.length - 1].fecha) : '',
-        cierresL.length ? 'Último cierre ' + dcorta(cierresL[cierresL.length - 1].fecha) + ': ' + (cierresL[cierresL.length - 1].dif ? (cierresL[cierresL.length - 1].dif > 0 ? '+' : '') + g1(cierresL[cierresL.length - 1].dif) + ' gal' : 'cuadró') : 'Todavía no hay cierres (se hacen en cada llegada)'].filter(Boolean).join(' — '),
-      accion: faltante > limFalt ? 'En los cierres del almacén faltaron ' + g1(faltante) + ' gal' + (precioV ? ' (' + peso(faltante * precioV) + ')' : '') + ' que no están en ningún despacho. Revisar las explicaciones de Leanis.' :
+        cierresL.length ? 'Último cierre ' + dcorta(cierresL[cierresL.length - 1].fecha) + ': ' + (cierresL[cierresL.length - 1].dif ? (cierresL[cierresL.length - 1].dif > 0 ? '+' : '') + g1(cierresL[cierresL.length - 1].dif) + ' gal' : 'cuadró') : 'Se cuadra cuando el tanque se vacía (todavía no ha pasado)',
+        CB.llegadasPer.length ? 'Llegadas: ' + CB.llegadasPer.map(function(m){ return dcorta(m.fecha) + ' ' + g1(m.gal) + ' gal' + (m.esperado ? (m.difProv ? ' (' + (m.difProv > 0 ? '+' : '') + g1(m.difProv) + ' vs. orden)' : ' (completo)') : ''); }).join(', ') : ''].filter(Boolean).join(' — '),
+      accion: faltante > limFalt ? 'Cuando el tanque se vació faltaban ' + g1(faltante) + ' gal' + (precioV ? ' (' + peso(faltante * precioV) + ')' : '') + ' que no están en ningún despacho. Revisar las explicaciones de Leanis.' :
+        CB.faltaProv > 0 ? 'El proveedor entregó ' + g1(CB.faltaProv) + ' gal menos de lo ordenado' + (CB.faltaProvValor ? ' (' + peso(CB.faltaProvValor) + ')' : '') + ' según la regleta: hacer el reclamo con la remisión firmada.' :
         reqAb.length ? 'El tanque está bajo y la requisición sigue abierta: confirmar la compra.' : '' });
 
     /* 13. Programación de hoy */
@@ -814,10 +822,12 @@
     var otros = X.otros.map(function(o){ return ['<b class="ft-cod">' + esc(o.cod) + '</b>' + (o.tipo === 'vehiculo' ? ' <span class="ft-nom">' + esc(o.nombre) + '</span>' : ''),
       o.tipo === 'vehiculo' ? 'Vehículo' : 'Por tipo', String(o.n), g1(o.gal), peso(o.costo)]; });
     var cier = X.cierres.map(function(m){ var dd = m.dif || 0;
-      return [dcorta(m.fecha), m.teorico == null ? '—' : g1(m.teorico), g1(m.gal),
+      return [dcorta(m.fecha), m.teorico == null ? '—' : g1(m.teorico), m.vacio ? 'vacío' : g1(m.gal),
         dd < 0 ? pill(Math.abs(dd) > 2 ? 'rojo' : 'ambar', 'Faltan ' + g1(-dd)) : dd > 0 ? pill('ambar', 'Sobran ' + g1(dd)) : pill('verde', 'Cuadra'),
         dd && X.precio ? peso(Math.abs(dd) * X.precio) : '—', esc(m.motivo || '')]; });
-    var lleg = X.llegadas.map(function(m){ return [dcorta(m.fecha), g1(m.gal), m.precio ? peso(m.precio) : '—', esc(m.nota || '')]; });
+    var lleg = X.llegadas.map(function(m){ return [dcorta(m.fecha), m.esperado ? g1(m.esperado) : '—', g1(m.gal),
+      !m.esperado ? '<span class="ft-mute">—</span>' : m.difProv < 0 ? pill('rojo', 'Faltan ' + g1(-m.difProv)) : m.difProv > 0 ? pill('ambar', 'Sobran ' + g1(m.difProv)) : pill('verde', 'Completo'),
+      m.precio ? peso(m.precio) : '—', esc(m.nota || '') + (m.obs ? '<div class="ft-sub">' + esc(m.obs) + '</div>' : '')]; });
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'combustible'; }).map(tarjeta).join('') + '</div>' +
       bloque('Consumo por máquina ' + X.enMes, 'Galones y consumo por hora de motor (km por galón en camiones), comparado con lo normal de cada máquina: sus 10 tanqueos anteriores.',
         tabla([{ t:'Máquina' }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'Consumo', n:1 }, { t:'Lo normal', n:1 }, { t:'Variación', n:1 }], filas, 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.')) +
@@ -827,9 +837,10 @@
         bloque('Combustible por labor', 'Lo despachado a cada máquina, repartido entre las labores que el operario confirmó en el cierre según sus horas (si el cierre no trae la labor, la programada). Camiones = transporte.', barras(labor, 'verde', 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.', true)) +
         bloque('Otros consumos', 'Vehículos por placa; guadañas, motobombas y estacionaria por tipo.', tabla([{ t:'Destino' }, { t:'Control' }, { t:'Tanqueos', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }], otros, 'Sin otros consumos ' + X.enMes + '.')) +
       '</div>' +
-      bloque('Cierres del almacén', 'Leanis mide el tanque en cada llegada: lo que debería haber contra lo medido, y su explicación cuando no cuadra.',
-        tabla([{ t:'Fecha' }, { t:'Debería', n:1 }, { t:'Medido', n:1 }, { t:'Diferencia' }, { t:'Valor', n:1 }, { t:'Explicación' }], cier, 'Todavía no hay cierres. El primero se hace en la próxima llegada de combustible.')) +
-      bloque('Llegadas de combustible', '', tabla([{ t:'Fecha' }, { t:'Galones', n:1 }, { t:'Precio/gal', n:1 }, { t:'Proveedor o remisión' }], lleg, 'Sin llegadas registradas.'));
+      bloque('Llegadas de combustible', 'Lo medido con regleta en el carrotanque antes de descargar contra la orden de compra (procedimiento PR-ALM-01). Al tanque entra lo medido.',
+        tabla([{ t:'Fecha' }, { t:'Orden', n:1 }, { t:'Regleta', n:1 }, { t:'Diferencia' }, { t:'Precio/gal', n:1 }, { t:'Proveedor o remisión' }], lleg, 'Sin llegadas registradas.')) +
+      bloque('Cierres del almacén', 'El tanque no tiene regleta: se cuadra cuando se vacía. Lo que debería haber según la app contra cero, y la explicación de Leanis cuando no cuadra.',
+        tabla([{ t:'Fecha' }, { t:'Debería', n:1 }, { t:'Quedó', n:1 }, { t:'Diferencia' }, { t:'Valor', n:1 }, { t:'Explicación' }], cier, 'Todavía no hay cierres: se hace la próxima vez que el tanque se vacíe.'));
   }
 
   function pintar(R, act){
@@ -989,7 +1000,9 @@
       h += '<h2>Combustible</h2><div class="fi-cb">' +
         '<div><b>' + (CS.costo ? peso(CS.costo) : g1(CS.gal) + ' gal') + '</b><span>' + g1(CS.gal) + ' gal despachados' + (CS.otrosGal ? ', ' + g1(CS.otrosGal) + ' a vehículos y otros equipos' : '') + '</span></div>' +
         '<div><b>' + (CS.tasa != null ? g2(CS.tasa) + ' gal/h' : '—') + '</b><span>' + (CS.varTasa != null ? 'Consumo por hora ' + (Math.abs(CS.varTasa) < 5 ? 'normal' : (CS.varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(CS.varTasa)) + '% vs. lo normal') : 'Consumo por hora de las máquinas') + '</span></div>' +
-        '<div><b>' + (CS.cierres.length ? (CS.faltante ? peso(CS.faltanteValor) : 'Cuadró') : '—') + '</b><span>' + (CS.cierres.length ? (CS.faltante ? 'Faltante en el tanque (' + g1(CS.faltante) + ' gal)' : 'Cierre del almacén') : 'Sin cierre del almacén esta semana') + '</span></div>' +
+        (CS.cierres.length
+          ? '<div><b>' + (CS.faltante ? peso(CS.faltanteValor) : 'Cuadró') + '</b><span>' + (CS.faltante ? 'Faltante cuando el tanque se vació (' + g1(CS.faltante) + ' gal)' : 'El tanque se vació y cuadró') + '</span></div>'
+          : '<div><b>' + (CS.llegadasPer.length ? (CS.faltaProv ? peso(CS.faltaProvValor) : 'Completo') : '—') + '</b><span>' + (CS.llegadasPer.length ? (CS.faltaProv ? 'El proveedor entregó ' + g1(CS.faltaProv) + ' gal menos (regleta)' : 'Llegadas completas según la regleta') : 'Sin llegadas ni cierre esta semana') + '</span></div>') +
         '<div><b>' + CS.raros.length + '</b><span>' + (CS.raros.length === 1 ? 'Tanqueo que no cuadra' : 'Tanqueos que no cuadran') + ' con el trabajo</span></div></div>';
     }
 
