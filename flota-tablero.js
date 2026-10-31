@@ -260,53 +260,15 @@
   var CUMPLE_OK = 85;
   function operacionDe(D, desde, hasta, CB){
     if (desde < INICIO) desde = INICIO;
-    var hy = hoy(), usos = window.Horometros ? Horometros.usos() : {}, cier = D.cierres || {};
-    var O = { prog:0, cumplidas:0, otraLabor:0, otrosLotes:0, noTrabajo:0, sinCierre:0, sinDato:0, enTaller:0, sinProgramar:0, conDato:0,
-      porMaq:{}, sinProg:[], labor:{}, lotes:{}, horas:0, gal:0, costo:0 };
-    var tasas = {}; ((CB && CB.cons) || []).forEach(function(x){ var t = x.tasa != null ? x.tasa : x.normal; if (t != null && !x.km) tasas[x.cod] = t; });
-    var tasaFlota = CB && CB.tasa != null ? CB.tasa : null, precio = CB ? CB.precio || 0 : 0;
-    function pm(cod){ return O.porMaq[cod] = O.porMaq[cod] || { cod:cod, prog:0, cumplidas:0, otras:0, noTrabajo:0, sinCierre:0 }; }
-    laborales(desde, hasta > hy ? hy : hasta).forEach(function(f){
-      maquinaria().forEach(function(m){
-        var k = m.cod + '|' + f, p = D.prog[f] && D.prog[f][m.cod], cs = cier[k] || [], trabajo = cs.length || D.pre[k] || usos[k];
-        var est = cs.filter(function(x){ return x.laborId; });
-        if (est.length) O.conDato++;
-        if (!p){ if (trabajo && f < hy || cs.length){ O.sinProgramar++; O.sinProg.push({ cod:m.cod, fecha:f, labor: est.length ? laborTxt(est[0].laborId) : '' }); } return; }
-        if (f === hy && !cs.length) return;                 // hoy todavía no termina
-        var x = pm(m.cod);
-        if (paradoEl(D, m.cod, f)){ O.enTaller++; return; }
-        O.prog++; x.prog++;
-        if (est.some(function(c){ return c.segun === 'Sí'; })){ O.cumplidas++; x.cumplidas++; }
-        else if (est.some(function(c){ return c.segun === 'Otros lotes'; })){ O.otrosLotes++; x.otras++; }
-        else if (est.length){ O.otraLabor++; x.otras++; }
-        else if (cs.length) O.sinDato++;
-        else if (trabajo){ O.sinCierre++; x.sinCierre++; }
-        else { O.noTrabajo++; x.noTrabajo++; }
-      });
-    });
-    // horas por labor y por lote
-    Object.keys(cier).forEach(function(k){
-      cier[k].forEach(function(c){
-        if (c.fecha < desde || c.fecha > hasta || !c.laborId || !(c.horas > 0) || !eq(c.cod) || esCamion(c.cod)) return;
-        O.horas += c.horas;
-        O.labor[c.laborId] = (O.labor[c.laborId] || 0) + c.horas;
-        var t = tasas[c.cod] != null ? tasas[c.cod] : tasaFlota, gal = t != null ? c.horas * t : 0;
-        O.gal += gal; O.costo += gal * precio;
-        var ls = window.Lotes ? Lotes.partir(c.lotes) : String(c.lotes || '').split(/[,\s]+/).filter(Boolean);
-        if (!ls.length) return;
-        var ha = ls.map(function(l){ return (window.Lotes && Lotes.ha(l)) || 0; }), tot = ha.reduce(function(a, v){ return a + v; }, 0);
-        ls.forEach(function(l, i){
-          var w = tot ? ha[i] / tot : 1 / ls.length, y = O.lotes[l] = O.lotes[l] || { lote:l, ha:ha[i], horas:0, gal:0, costo:0, finca:'' };
-          y.horas += c.horas * w; y.gal += gal * w; y.costo += gal * w * precio;
-        });
-      });
-    });
-    var fin = {}; ((window.Lotes && Lotes.lista()) || []).forEach(function(x){ fin[x.cod] = x.finca; });
-    O.listaLotes = Object.keys(O.lotes).map(function(l){ var y = O.lotes[l]; y.finca = fin[l] || ''; y.porHa = y.ha ? y.horas / y.ha : null; y.galHa = y.ha ? y.gal / y.ha : null; return y; })
-      .sort(function(a, b){ return b.horas - a.horas; });
-    O.listaLabor = Object.keys(O.labor).map(function(id){ return { id:id, txt:laborTxt(id), horas:O.labor[id] }; }).sort(function(a, b){ return b.horas - a.horas; });
-    O.pct = O.prog ? O.cumplidas / O.prog * 100 : null;
-    return O;
+    if (!window.Operacion) return { prog:0, cumplidas:0, conDato:0, porMaq:{}, sinProg:[], listaLabor:[], listaLotes:[], pct:null, horas:0, gal:0, costo:0,
+      otraLabor:0, otrosLotes:0, noTrabajo:0, sinCierre:0, sinProgramar:0 };
+    var usos = window.Horometros ? Horometros.usos() : {}, lista = [];
+    Object.keys(D.cierres || {}).forEach(function(k){ D.cierres[k].forEach(function(c){ lista.push(c); }); });
+    // el mismo consumo por hora que usa Gerencia (Operacion.tasas en maestros.js)
+    var tasas = Operacion.tasas(D.tanq || [], new Date(desde + 'T00:00:00').getTime(), new Date(hasta + 'T23:59:59').getTime());
+    if (!tasas.precio && CB) tasas.precio = CB.precio || 0;
+    return Operacion.calcular({ desde:desde, hasta:hasta, hoy:hoy(), maquinas:maquinaria().map(function(m){ return m.cod; }), prog:D.prog, cierres:lista,
+      trabajo:function(cod, f){ return !!(D.pre[cod + '|' + f] || usos[cod + '|' + f]); }, parado:function(cod, f){ return !!paradoEl(D, cod, f); }, tasas:tasas });
   }
   function laborTxt(id){ return window.laborTxt ? window.laborTxt(id) : LABORES[id] || id; }
 
