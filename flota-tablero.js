@@ -108,21 +108,15 @@
     return { eventos:eventos, pend:pend, inicio:inicio };
   }
 
-  /* Programación por fecha → máquina (ProgMaquinaria; lo que no esté ahí, de la hoja anterior) */
-  function programacion(nueva, vieja){
-    var dias = {}, nuevas = {};
+  /* Programación por fecha → máquina (ProgMaquinaria; la hoja anterior ya no se usa) */
+  function programacion(nueva){
+    var dias = {};
     (nueva || []).forEach(function(r){
       var acc = String(r[2] || '').trim().toUpperCase(), f = aIso(r[4]), cod = String(r[5] || '').trim();
       if (!esFecha(f) || !cod) return;
       if (acc === 'QUITAR'){ if (dias[f]) delete dias[f][cod]; return; }
       if (acc === 'ASIGNAR') (dias[f] = dias[f] || {})[cod] = { labor: LABORES[String(r[6] || '').trim()] || String(r[6] || '').trim(),
-        op: [String(r[9] || '').trim(), String(r[12] || '').trim()].filter(Boolean).join(' / ') };
-    });
-    Object.keys(dias).forEach(function(f){ nuevas[f] = true; });
-    (vieja || []).forEach(function(r){
-      var f = aIso(r[0]), cod = codDe(r[2]);
-      if (!esFecha(f) || !cod || nuevas[f] || !eq(cod) || !String(r[3] || '').trim()) return;
-      (dias[f] = dias[f] || {})[cod] = { labor:String(r[3] || '').trim(), op:'' };
+        lotes:String(r[7] == null ? '' : r[7]).trim(), op: [String(r[9] || '').trim(), String(r[12] || '').trim()].filter(Boolean).join(' / ') };
     });
     return dias;
   }
@@ -152,7 +146,8 @@
     (filas || []).forEach(function(r){
       var f = aIso(r[0]), c = codDe(r[3]), op = String(r[2] || '').trim();
       if (c && esFecha(f)) u[c + '|' + f + '|' + op.toLowerCase()] = { cod:c, fecha:f, hora:hhmm(r[1]), op:op, final:num(r[4]),
-        estado:String(r[7] || '').trim().toLowerCase(), novedad:String(r[8] || '').trim(), labor:String(r[9] || '').trim() };
+        estado:String(r[7] || '').trim().toLowerCase(), novedad:String(r[8] || '').trim(), labor:String(r[9] || '').trim(),
+        horas:num(r[6]), laborId:String(r[10] || '').trim(), lotes:String(r[11] == null ? '' : r[11]).trim(), segun:String(r[12] || '').trim() };
     });
     Object.keys(u).forEach(function(k){ var x = u[k]; (o[x.cod + '|' + x.fecha] = o[x.cod + '|' + x.fecha] || []).push(x); });
     return o;
@@ -255,6 +250,65 @@
     });
     return o;
   }
+
+  /* Operación de un período: cumplimiento de la programación, horas por
+     labor y horas y combustible por lote. Sale de los cierres de jornada que
+     traen la labor y los lotes escogidos de la lista (desde el arranque de la
+     captura nueva); los cierres con la labor escrita a mano no se reparten.
+     Las horas de un cierre con varios lotes se reparten según las hectáreas;
+     el combustible es horas × consumo por hora de esa máquina (o de la flota). */
+  var CUMPLE_OK = 85;
+  function operacionDe(D, desde, hasta, CB){
+    if (desde < INICIO) desde = INICIO;
+    var hy = hoy(), usos = window.Horometros ? Horometros.usos() : {}, cier = D.cierres || {};
+    var O = { prog:0, cumplidas:0, otraLabor:0, otrosLotes:0, noTrabajo:0, sinCierre:0, sinDato:0, enTaller:0, sinProgramar:0, conDato:0,
+      porMaq:{}, sinProg:[], labor:{}, lotes:{}, horas:0, gal:0, costo:0 };
+    var tasas = {}; ((CB && CB.cons) || []).forEach(function(x){ var t = x.tasa != null ? x.tasa : x.normal; if (t != null && !x.km) tasas[x.cod] = t; });
+    var tasaFlota = CB && CB.tasa != null ? CB.tasa : null, precio = CB ? CB.precio || 0 : 0;
+    function pm(cod){ return O.porMaq[cod] = O.porMaq[cod] || { cod:cod, prog:0, cumplidas:0, otras:0, noTrabajo:0, sinCierre:0 }; }
+    laborales(desde, hasta > hy ? hy : hasta).forEach(function(f){
+      maquinaria().forEach(function(m){
+        var k = m.cod + '|' + f, p = D.prog[f] && D.prog[f][m.cod], cs = cier[k] || [], trabajo = cs.length || D.pre[k] || usos[k];
+        var est = cs.filter(function(x){ return x.laborId; });
+        if (est.length) O.conDato++;
+        if (!p){ if (trabajo && f < hy || cs.length){ O.sinProgramar++; O.sinProg.push({ cod:m.cod, fecha:f, labor: est.length ? laborTxt(est[0].laborId) : '' }); } return; }
+        if (f === hy && !cs.length) return;                 // hoy todavía no termina
+        var x = pm(m.cod);
+        if (paradoEl(D, m.cod, f)){ O.enTaller++; return; }
+        O.prog++; x.prog++;
+        if (est.some(function(c){ return c.segun === 'Sí'; })){ O.cumplidas++; x.cumplidas++; }
+        else if (est.some(function(c){ return c.segun === 'Otros lotes'; })){ O.otrosLotes++; x.otras++; }
+        else if (est.length){ O.otraLabor++; x.otras++; }
+        else if (cs.length) O.sinDato++;
+        else if (trabajo){ O.sinCierre++; x.sinCierre++; }
+        else { O.noTrabajo++; x.noTrabajo++; }
+      });
+    });
+    // horas por labor y por lote
+    Object.keys(cier).forEach(function(k){
+      cier[k].forEach(function(c){
+        if (c.fecha < desde || c.fecha > hasta || !c.laborId || !(c.horas > 0) || !eq(c.cod) || esCamion(c.cod)) return;
+        O.horas += c.horas;
+        O.labor[c.laborId] = (O.labor[c.laborId] || 0) + c.horas;
+        var t = tasas[c.cod] != null ? tasas[c.cod] : tasaFlota, gal = t != null ? c.horas * t : 0;
+        O.gal += gal; O.costo += gal * precio;
+        var ls = window.Lotes ? Lotes.partir(c.lotes) : String(c.lotes || '').split(/[,\s]+/).filter(Boolean);
+        if (!ls.length) return;
+        var ha = ls.map(function(l){ return (window.Lotes && Lotes.ha(l)) || 0; }), tot = ha.reduce(function(a, v){ return a + v; }, 0);
+        ls.forEach(function(l, i){
+          var w = tot ? ha[i] / tot : 1 / ls.length, y = O.lotes[l] = O.lotes[l] || { lote:l, ha:ha[i], horas:0, gal:0, costo:0, finca:'' };
+          y.horas += c.horas * w; y.gal += gal * w; y.costo += gal * w * precio;
+        });
+      });
+    });
+    var fin = {}; ((window.Lotes && Lotes.lista()) || []).forEach(function(x){ fin[x.cod] = x.finca; });
+    O.listaLotes = Object.keys(O.lotes).map(function(l){ var y = O.lotes[l]; y.finca = fin[l] || ''; y.porHa = y.ha ? y.horas / y.ha : null; y.galHa = y.ha ? y.gal / y.ha : null; return y; })
+      .sort(function(a, b){ return b.horas - a.horas; });
+    O.listaLabor = Object.keys(O.labor).map(function(id){ return { id:id, txt:laborTxt(id), horas:O.labor[id] }; }).sort(function(a, b){ return b.horas - a.horas; });
+    O.pct = O.prog ? O.cumplidas / O.prog * 100 : null;
+    return O;
+  }
+  function laborTxt(id){ return window.laborTxt ? window.laborTxt(id) : LABORES[id] || id; }
 
   /* Combustible de un período (fechas aaaa-mm-dd): lo usan la pestaña
      Combustible (el mes) y el informe semanal (la semana), así no hay dos
@@ -571,6 +625,20 @@
       comp: hP.t ? comparar(hM.t, hP.t, ' h', false, 'el mismo tramo de ' + nombrePrev, true, 1) : '',
       detalle: hDia != null && hDia < 5 ? 'Jornadas cortas: menos de 5 horas de motor por máquina al día.' : '' });
 
+    /* 14b. Cumplimiento de la programación (cierres con la labor escogida de la lista) */
+    var OP = operacionDe(D, mesIni, hy, CB);
+    var noCumple = Object.keys(OP.porMaq).map(function(c){ return OP.porMaq[c]; }).filter(function(x){ return x.prog && x.cumplidas < x.prog; })
+      .sort(function(a, b){ return (a.cumplidas / a.prog) - (b.cumplidas / b.prog); });
+    ind({ id:'cumple', grupo:'operacion', titulo:'Cumplimiento de la programación', valor: OP.pct == null || !OP.conDato ? '—' : Math.round(OP.pct) + '%',
+      nivel: OP.pct == null || !OP.conDato ? 'gris' : OP.pct >= CUMPLE_OK ? 'verde' : OP.pct >= 70 ? 'ambar' : 'rojo',
+      linea: !OP.conDato ? 'Se mide con los cierres de jornada que traen la labor (versión nueva del Preoperativo)' :
+        OP.cumplidas + ' de ' + plural(OP.prog, 'máquina-día programada', 'máquinas-día programadas') + ' hicieron lo programado',
+      detalle: [OP.otraLabor ? plural(OP.otraLabor, 'hizo otra labor', 'hicieron otra labor') : '', OP.otrosLotes ? OP.otrosLotes + ' en otros lotes' : '',
+        OP.noTrabajo ? OP.noTrabajo + ' no trabajaron' : '', OP.sinCierre ? OP.sinCierre + ' sin cierre' : '',
+        OP.sinProgramar ? plural(OP.sinProgramar, 'trabajó sin programar', 'trabajaron sin programar') : ''].filter(Boolean).join(' · '),
+      accion: OP.conDato && OP.pct != null && OP.pct < CUMPLE_OK && noCumple.length ? 'Revisar con los supervisores por qué no se cumple lo programado: ' +
+        noCumple.slice(0, 4).map(function(x){ return x.cod + ' (' + x.cumplidas + ' de ' + x.prog + ')'; }).join(', ') + '.' : '' });
+
     /* 15. Preoperativo viejo todavía en uso: lo que manda no llega al Taller */
     var V = D.viejo;
     if (V && (V.preop.length || V.nov.length || V.tanq.length)){
@@ -621,6 +689,9 @@
     X.mttos = (window.Mantenimientos ? Mantenimientos.todos() : []).filter(function(m){ return m.fecha >= INICIO && eq(m.cod); }).slice(0, 8).map(function(m){
       var c = window.Reparaciones ? Reparaciones.de(m.id).compras : null;
       return { cod:m.cod, fecha:m.fecha, h:m.h, por:m.por, que:(m.items || []).map(function(i){ return i.comp; }).join(', '), costo: c ? (c.repuestos || 0) + (c.mano || 0) : 0 }; });
+    X.op = { labor:OP.listaLabor, lotes:OP.listaLotes.slice(0, 20), nLotes:OP.listaLotes.length, horas:OP.horas, gal:OP.gal, costo:OP.costo,
+      porMaq:Object.keys(OP.porMaq).map(function(c){ return OP.porMaq[c]; }).sort(function(a, b){ return b.prog - a.prog; }), sinProg:OP.sinProg.slice(-8).reverse(),
+      conDato:OP.conDato, precio:CB.precio };
     X.comb = CB.cons; X.raros = CB.raros; X.precio = CB.precio; X.labor = CB.labor; X.otros = CB.otros;
     X.cierres = CB.cierresTodos.slice().reverse().slice(0, 8);
     X.llegadas = CB.llegadas.slice().reverse().slice(0, 6);
@@ -684,7 +755,7 @@
   function pResumen(I){
     var rojos = I.filter(function(x){ return x.nivel === 'rojo'; }), ambar = I.filter(function(x){ return x.nivel === 'ambar'; });
     var acciones = rojos.concat(ambar).filter(function(x){ return x.accion; });
-    var clave = { flota:['hoy', 'mes'], operacion:['proghoy', 'preop'], combustible:['comb', 'tanque'] };
+    var clave = { flota:['hoy', 'mes'], operacion:['proghoy', 'cumple'], combustible:['comb', 'tanque'] };
     var h = '<div class="ft-areas">' + GRUPOS.map(function(gr){
       var l = I.filter(function(x){ return x.grupo === gr[0]; }), n = peor(l);
       var r = l.filter(function(x){ return x.nivel === 'rojo'; }).length, a = l.filter(function(x){ return x.nivel === 'ambar'; }).length;
@@ -770,7 +841,30 @@
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'operacion'; }).map(tarjeta).join('') + '</div>' +
       bloque('Hoy, máquina por máquina', 'Programación, preoperativo al arrancar y cierre de jornada al terminar (hora, operario, horómetro, horas y novedad).',
         tabla([{ t:'Máquina' }, { t:'Estado' }, { t:'Labor programada' }, { t:'Preoperativo' }, { t:'Cierre de jornada' }], hoyF)) +
-      bloque('Horas trabajadas ' + X.enMes, 'Horas de motor según el horómetro del cierre de jornada.', barras(hrs, 'verde', 'Todavía no hay cierres de jornada con horómetro ' + X.enMes + '.'));
+      bloque('Horas trabajadas ' + X.enMes, 'Horas de motor según el horómetro del cierre de jornada.', barras(hrs, 'verde', 'Todavía no hay cierres de jornada con horómetro ' + X.enMes + '.')) +
+      operacionHtml(X);
+  }
+  function operacionHtml(X){
+    var O = X.op;
+    if (!O) return '';
+    var vacio = 'Se llena con los cierres de jornada que traen la labor y los lotes (versión nueva del Preoperativo).';
+    var cumple = tabla([{ t:'Máquina' }, { t:'Programada', n:1 }, { t:'Hizo lo programado', n:1 }, { t:'Otra labor o lotes', n:1 }, { t:'No trabajó', n:1 }, { t:'Sin cierre', n:1 }],
+      O.porMaq.filter(function(x){ return x.prog; }).map(function(x){
+        var pc = x.cumplidas / x.prog * 100;
+        return ['<b class="ft-cod">' + esc(x.cod) + '</b>', String(x.prog), '<span class="' + (pc >= CUMPLE_OK ? 'ft-ok' : pc >= 70 ? 'ft-al' : 'ft-ma') + '">' + x.cumplidas + '</span>',
+          x.otras ? String(x.otras) : '—', x.noTrabajo ? String(x.noTrabajo) : '—', x.sinCierre ? String(x.sinCierre) : '—'];
+      }), O.conDato ? 'Sin máquinas programadas.' : vacio) +
+      (O.sinProg.length ? '<div class="ft-sub" style="margin-top:8px;max-width:none">Trabajaron sin programar: ' + O.sinProg.map(function(x){ return esc(x.cod) + ' ' + dcorta(x.fecha) + (x.labor ? ' (' + esc(x.labor) + ')' : ''); }).join(', ') + '</div>' : '');
+    var lab = barras(O.labor.map(function(x){ return { k:x.txt, v:x.horas, lbl:g1(x.horas) + ' h', t:x.txt + ': ' + g1(x.horas) + ' horas de máquina' }; }), 'verde', vacio, true);
+    var lotes = tabla([{ t:'Lote' }, { t:'Finca' }, { t:'ha', n:1 }, { t:'Horas', n:1 }, { t:'h/ha', n:1 }, { t:'Combustible', n:1 }, { t:'$/ha', n:1 }],
+      O.lotes.map(function(y){
+        return ['<b class="ft-cod">' + esc(y.lote) + '</b>', esc(y.finca || '—'), y.ha ? g1(y.ha) : '—', g1(y.horas), y.porHa != null ? g2(y.porHa) : '—',
+          y.gal ? g1(y.gal) + ' gal' : '—', y.ha && y.costo ? peso(y.costo / y.ha) : '—'];
+      }), vacio);
+    return bloque('Cumplimiento de la programación ' + X.enMes, 'Máquinas-día programadas (sin contar los días en taller) y lo que dijo el operario en el cierre de jornada.', cumple) +
+      '<div class="ft-dos">' + bloque('Horas por labor ' + X.enMes, 'Horas de motor de los cierres de jornada, según la labor que hizo.', lab) +
+        bloque('Lotes con más horas de máquina', 'Si una máquina trabajó varios lotes, sus horas se reparten por hectáreas. Combustible = horas × consumo por hora de la máquina.' +
+          (O.nLotes > O.lotes.length ? ' Los ' + O.lotes.length + ' de ' + O.nLotes + ' lotes con más horas.' : ''), lotes) + '</div>';
   }
   function pCombustible(I, X){
     function variacion(x){
@@ -889,7 +983,7 @@
       { t:'Combustible', v: CS.n ? (CS.costo ? millones(CS.costo) : g1(CS.gal) + ' gal') : '—', n: nComb, d: P.tanqueos ? difTxt(A.gal, P.gal, ' gal', true, 1).replace(/class="(me|pe)"/, 'class="ig"') : '',
         s: CS.n ? g1(CS.gal) + ' gal en ' + plural(CS.n, 'tanqueo', 'tanqueos') + (CS.tasa != null ? ' · ' + g2(CS.tasa) + ' gal/h' : '') : 'Sin tanqueos en la app de Tanqueo' }
     ];
-    var riesgos = ['largas', 'reparaciones', 'riesgo', 'repetidas', 'mtto', 'costotaller', 'consumo', 'tqraros', 'tanque'].map(function(id){ return ind[id]; })
+    var riesgos = ['largas', 'reparaciones', 'riesgo', 'repetidas', 'mtto', 'costotaller', 'cumple', 'consumo', 'tqraros', 'tanque'].map(function(id){ return ind[id]; })
       .filter(function(x){ return x && (x.nivel === 'rojo' || x.nivel === 'ambar'); });
     var todos = k.map(function(x){ return x.n; }).concat(riesgos.map(function(x){ return x.nivel; }));
     var nivel = todos.indexOf('rojo') >= 0 ? 'rojo' : todos.indexOf('ambar') >= 0 ? 'ambar' : 'verde';
@@ -904,6 +998,7 @@
     var entraron = D.eventos.filter(function(e){ return eq(e.cod) && e.inicio >= desdeEf && e.inicio <= w.hasta; });
     var salieron = D.eventos.filter(function(e){ return eq(e.cod) && e.fin && e.fin >= desdeEf && e.fin <= w.hasta; });
     // taller y mantenimiento de la semana
+    var OPs = operacionDe(D, desdeEf, w.hasta, CS);
     var CTs = costoTaller(D, desdeEf, w.hasta), proxS = (ULT.R.X.mtto || []).filter(function(m){ return !m.camion && urgenteMtto(m); });
     var acciones = I.filter(function(x){ return x.accion && (x.nivel === 'rojo' || x.nivel === 'ambar'); })
       .sort(function(a, b){ return (a.nivel === 'rojo' ? 0 : 1) - (b.nivel === 'rojo' ? 0 : 1); });
@@ -936,6 +1031,12 @@
         '<li><b>Mantenimientos hechos:</b> ' + (CTs.mttos.length ? CTs.mttos.map(function(m){ return esc(m.cod); }).join(', ') : 'ninguno') + '.</li>' +
         '<li><b>Costo del taller:</b> ' + (CTs.total ? peso(CTs.total) + ' (reparaciones ' + millones(CTs.rep) + ', preventivo ' + millones(CTs.prev) + ')' : 'sin costos registrados') +
           (CTs.sinCosto.length ? '; ' + plural(CTs.sinCosto.length, 'mantenimiento', 'mantenimientos') + ' sin costo de Compras' : '') + '.</li>' +
+        (OPs.conDato ? '<li><b>Cumplimiento de la programación:</b> ' + (OPs.pct == null ? '—' : Math.round(OPs.pct) + '%') + ' (' + OPs.cumplidas + ' de ' + OPs.prog + ' máquinas-día)' +
+          (OPs.otraLabor + OPs.otrosLotes ? '; ' + (OPs.otraLabor + OPs.otrosLotes) + ' en otra labor o lotes' : '') + (OPs.noTrabajo ? '; ' + OPs.noTrabajo + ' no trabajaron' : '') +
+          (OPs.sinProgramar ? '; ' + OPs.sinProgramar + ' sin programar' : '') + '.</li>' +
+          (OPs.listaLabor.length ? '<li><b>Horas por labor:</b> ' + OPs.listaLabor.slice(0, 4).map(function(x){ return esc(x.txt) + ' ' + g1(x.horas) + ' h'; }).join(' · ') + '.</li>' : '') +
+          (OPs.listaLotes.length ? '<li><b>Lotes con más horas:</b> ' + OPs.listaLotes.slice(0, 4).map(function(y){ return esc(y.lote) + ' ' + g1(y.horas) + ' h' +
+            (y.porHa != null ? ' (' + g2(y.porHa) + ' h/ha' + (y.costo && y.ha ? ', ' + peso(y.costo / y.ha) + '/ha' : '') + ')' : ''); }).join(' · ') + '.</li>' : '') : '') +
         (proxS.length ? '<li><b>Mantenimiento que toca:</b> ' + proxS.slice(0, 6).map(function(m){ return esc(m.cod) + (m.nivel === 'vencido' ? ' (vencido)' : m.cuando ? ' (' + dcorta(m.cuando) + ')' : ''); }).join(', ') + '.</li>' : '') +
         '</ul>' +
         '<h2>Riesgos abiertos hoy</h2>' + (riesgos.length ? '<ul>' + riesgos.map(function(x){
@@ -1027,14 +1128,15 @@
     var viejo = window.AppVieja ? AppVieja.traer().catch(function(){ return null; }) : Promise.resolve(null);
     var repar = window.Reparaciones ? Reparaciones.traer().catch(function(){}) : Promise.resolve();
     var mttos = window.Mantenimientos ? Mantenimientos.traer().catch(function(){}) : Promise.resolve();
-    Promise.all([leer('Taller'), talvez('ProgMaquinaria'), talvez('Programacion'), talvez('PreopDiario'), talvez('Preoperativos'),
+    if (window.Lotes) Lotes.traer().catch(function(){});   // hectáreas de cada lote (Agrovisión → Lotes)
+    Promise.all([leer('Taller'), talvez('ProgMaquinaria'), Promise.resolve(null), talvez('PreopDiario'), talvez('Preoperativos'),
       talvez('Combustible'), talvez('CombustibleTanque'), talvez('CombustibleAlertas'), mae, hor, viejo, repar, talvez('CierreJornada'), mttos])
       .then(function(r){
         FLOTA = window.Maestros ? Maestros.flota() : []; EQ = {};
         FLOTA.forEach(function(f){ EQ[f.cod] = f; });
         var tl = taller(r[0]), al = {};
         (r[7] || []).forEach(function(a){ var id = String(a[3] || '').trim(); if (id) al[id] = { fecha:aIso(a[0]), abierta:String(a[2] || '').trim().toUpperCase() === 'ABIERTA' }; });
-        var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1], r[2]), pre:preops(r[3], r[4]),
+        var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1]), pre:preops(r[3], r[4]),
           tanq: window.Combustible ? Combustible.tanqueos(r[5]) : [],
           movs: window.Combustible ? Combustible.movimientos(r[6]) : [],
           alertas:Object.keys(al).map(function(k){ return al[k]; }), viejo:r[10], cierres:cierresDe(r[12]) };
