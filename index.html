@@ -537,7 +537,9 @@ a.mtab:hover{color:#16a34a;}
 .ft-op input{margin-top:3px;accent-color:#16a34a}
 .ft-obs-l{display:block;font-size:12.5px;font-weight:700;color:#4b5563;margin-top:12px}
 .ft-obs-l textarea{display:block;width:100%;margin-top:6px;border:1px solid #d1d5db;border-radius:10px;padding:9px 10px;font:inherit;font-size:13px;font-weight:400;resize:vertical}
-.ft-mod-b{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.ft-mod-b{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+.ft-mod-b #ft-mod-wa{border-color:#16a34a;color:#15803d}
+#ft-mod-n{white-space:pre-wrap;max-height:40vh;overflow:auto}
 .ft-mod-b button{border:1px solid #d1d5db;background:#fff;border-radius:9px;padding:8px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ft-mod-b #ft-mod-si{background:#16a34a;border-color:#16a34a;color:#fff}
 .ft-mod-n{font-size:11.5px;color:#9ca3af;margin-top:10px}
@@ -568,6 +570,7 @@ a.mtab:hover{color:#16a34a;}
 .fi-kc .d{font-size:8.5px;font-weight:700;margin-top:2px}
 .fi .me{color:#15803d} .fi .pe{color:#b42318} .fi .ig{color:#6b7280}
 .fi-dos{display:grid;grid-template-columns:1.05fr 1fr;gap:14px}
+.fi-dos.fi-taller{grid-template-columns:1.55fr 1fr}
 .fi table{width:100%;border-collapse:collapse;font-size:9.5px}
 .fi th{text-align:left;font-size:8.5px;color:#6b7280;text-transform:uppercase;border-bottom:1px solid #d1d5db;padding:2px 4px}
 .fi td{border-bottom:1px solid #eef0f4;padding:3px 4px;vertical-align:top}
@@ -578,7 +581,7 @@ a.mtab:hover{color:#16a34a;}
 .fi .g{color:#6b7280}
 .fi p{margin:0}
 .fi-obs{white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:6px;padding:6px 8px;background:#fafafa}
-.fi-fir{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px}
+.fi-fir{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:12px}
 .fi-fir div{border-top:1px solid #1a1f2e;padding-top:3px;font-weight:700;font-size:10px}
 .fi-fir span{display:block;font-weight:400;color:#6b7280;font-size:9px}
 .fi-cb{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -586,7 +589,7 @@ a.mtab:hover{color:#16a34a;}
 .fi-cb b{display:block;font-size:13px}
 .fi-cb span{display:block;font-size:8.5px;color:#6b7280;line-height:1.3}
 .fi-lab{margin-top:4px!important;font-size:9.5px}
-.fi-pie{margin-top:8px;font-size:8px;color:#9ca3af;line-height:1.35}
+.fi-pie{margin-top:5px;font-size:8px;color:#9ca3af;line-height:1.35}
 @media (max-width:600px){
   .ft-ver{flex-wrap:wrap;padding:16px}
   .ft-ver-t{font-size:18px}
