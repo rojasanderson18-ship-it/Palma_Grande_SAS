@@ -39,7 +39,7 @@
   function dias(a, b){ var p = a.split('-'), q = b.split('-'); return Math.round((new Date(+q[0], +q[1] - 1, +q[2]) - new Date(+p[0], +p[1] - 1, +p[2])) / 86400000); }
   function num(v){ if (v === '' || v == null) return null; var n = +String(v).replace(',', '.'); return isNaN(n) ? null : n; }
   function g2(v){ return String(Math.round(v * 100) / 100).replace('.', ','); }   // consumo por hora: 1,25 gal/h
-  function g1(v){ return String(Math.round(v * 10) / 10).replace('.', ','); }
+  function g1(v){ return (Math.round(v * 10) / 10).toLocaleString('es-CO', { maximumFractionDigits:1 }); }   // 1.980 · 25,5
   function peso(v){ return '$' + Math.round(v).toLocaleString('es-CO'); }
   function dcorta(f){ var p = String(f).split('-'); return (+p[2]) + ' ' + MESES[+p[1] - 1].slice(0, 3); }
   function plural(n, uno, varios){ return n + ' ' + (n === 1 ? uno : varios); }
@@ -323,6 +323,8 @@
     R.faltaProv = R.llegadasPer.reduce(function(a, m){ return a + (m.esperado && m.difProv < 0 ? -m.difProv : 0); }, 0);
     R.faltaProvValor = R.llegadasPer.reduce(function(a, m){ return a + (m.esperado && m.difProv < 0 ? -m.difProv * (m.precio || precio) : 0); }, 0);
     R.hayTanque = movs.length > 0;
+    // balance del período (Combustible.balance en maestros.js, el mismo de Gerencia y la app de Tanqueo)
+    R.bal = C && C.balance && (movs.length || D.tanq.length) ? C.balance(movs, D.tanq, tsIni, tsFin, destino) : null;
     return R;
   }
 
@@ -633,6 +635,11 @@
     X.op = { labor:OP.listaLabor, lotes:OP.listaLotes.slice(0, 20), nLotes:OP.listaLotes.length, horas:OP.horas, gal:OP.gal, costo:OP.costo,
       porMaq:Object.keys(OP.porMaq).map(function(c){ return OP.porMaq[c]; }).sort(function(a, b){ return b.prog - a.prog; }), sinProg:OP.sinProg.slice(-8).reverse(),
       conDato:OP.conDato, precio:CB.precio };
+    X.bal = CB.bal ? { inicial:CB.bal.inicial, galLlegadas:CB.bal.galLlegadas, nLlegadas:CB.bal.llegadas.length, galDespachos:CB.bal.galDespachos,
+      costoDespachos:CB.bal.costoDespachos, ajusteNeto:CB.bal.ajusteNeto, final:CB.bal.final, nAjustes:CB.bal.ajustes.length,
+      porDestino: Object.keys(CB.bal.porDestino).map(function(k){ var x = CB.bal.porDestino[k]; return { k:k, gal:x.gal, costo:x.costo, n:x.n, equipos:Object.keys(x.cods).length }; }),
+      anulados: CB.bal.anulados.map(function(t){ return { cod:t.cod, fecha:t.fecha, gal:t.gal }; }),
+      dudosos: CB.dudosos.map(function(t){ return { cod:t.cod, fecha:t.fecha, gal:t.gal, recibe:t.recibe || '' }; }) } : null;
     X.comb = CB.cons; X.raros = CB.raros; X.precio = CB.precio; X.labor = OP.listaLabor.filter(function(x){ return x.gal; }); X.otros = CB.otros;
     X.cierres = CB.cierresTodos.slice().reverse().slice(0, 8);
     X.llegadas = CB.llegadas.slice().reverse().slice(0, 6);
@@ -828,20 +835,50 @@
     var lleg = X.llegadas.map(function(m){ return [dcorta(m.fecha), m.esperado ? g1(m.esperado) : '—', g1(m.gal),
       !m.esperado ? '<span class="ft-mute">—</span>' : m.difProv < 0 ? pill('rojo', 'Faltan ' + g1(-m.difProv)) : m.difProv > 0 ? pill('ambar', 'Sobran ' + g1(m.difProv)) : pill('verde', 'Completo'),
       m.precio ? peso(m.precio) : '—', esc(m.nota || '') + (m.obs ? '<div class="ft-sub">' + esc(m.obs) + '</div>' : '')]; });
+    var B = X.bal, NOMDEST = { maquina:'Máquinas', camion:'Camiones', vehiculo:'Vehículos (por placa)', otro:'Otros (guadañas, motobombas, estacionaria)' };
+    function gl(v){ return (v < 0 ? '−' : '') + g1(Math.abs(v)) + ' gal'; }
+    var balance = !B ? '<div class="ft-vacio">Todavía no hay movimientos del tanque.</div>' :
+      '<div class="ft-bal"><div><span>Saldo al inicio</span><b>' + gl(B.inicial) + '</b></div><i>+</i>' +
+      '<div><span>Llegadas (' + B.nLlegadas + ')</span><b>' + gl(B.galLlegadas) + '</b></div><i>−</i>' +
+      '<div><span>Despachado</span><b>' + gl(B.galDespachos) + '</b></div>' +
+      (B.ajusteNeto ? '<i>' + (B.ajusteNeto > 0 ? '+' : '−') + '</i><div><span>Ajustes (' + B.nAjustes + ')</span><b>' + gl(Math.abs(B.ajusteNeto)) + '</b></div>' : '') +
+      '<i>=</i><div class="fin"><span>Saldo al final</span><b>' + gl(B.final) + '</b></div></div>' +
+      (B.ajusteNeto ? '<div class="ft-sub">Ajustes: saldo inicial o cierre por tanque vacío dentro del período (lo que la app corrigió contra lo que se sabe que había).</div>' : '') +
+      tabla([{ t:'Destino' }, { t:'Equipos', n:1 }, { t:'Tanqueos', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }],
+        B.porDestino.slice().sort(function(a, b){ return b.gal - a.gal; }).map(function(x){ return [esc(NOMDEST[x.k] || x.k), String(x.equipos), String(x.n), g1(x.gal), x.costo ? peso(x.costo) : '—']; })
+          .concat(B.porDestino.length > 1 ? [['<b>Total despachado</b>', '', '<b>' + B.porDestino.reduce(function(a, x){ return a + x.n; }, 0) + '</b>', '<b>' + g1(B.galDespachos) + '</b>', '<b>' + peso(B.costoDespachos) + '</b>']] : []),
+        'Sin despachos ' + X.enMes + '.');
+    var lotesH = ((X.op && X.op.lotes) || []).filter(function(y){ return y.ha && y.costo; }).sort(function(a, b){ return b.costo / b.ha - a.costo / a.ha; }).slice(0, 8)
+      .map(function(y){ return ['<b class="ft-cod">' + esc(y.lote) + '</b>', esc(y.finca || '—'), g1(y.ha), g1(y.gal) + ' gal', peso(y.costo), peso(y.costo / y.ha)]; });
+    var perdidas = B ? B.dudosos.map(function(t){ return [dcorta(t.fecha), '<b class="ft-cod">' + esc(t.cod) + '</b>', g1(t.gal), pill('ambar', 'Mal digitado: corregir en Tanqueo'), esc(t.recibe)]; })
+      .concat(B.anulados.map(function(t){ return [dcorta(t.fecha), '<b class="ft-cod">' + esc(t.cod) + '</b>', g1(t.gal), '<span class="ft-mute">Anulado</span>', '']; })) : [];
+    function sec(n, t, sub){ return '<div class="ft-sec"><span>' + n + '</span><div><b>' + t + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div></div>'; }
     return '<div class="ft-grid">' + I.filter(function(x){ return x.grupo === 'combustible'; }).map(tarjeta).join('') + '</div>' +
-      bloque('Consumo por máquina ' + X.enMes, 'Galones y consumo por hora de motor (km por galón en camiones), comparado con lo normal de cada máquina: sus 10 tanqueos anteriores.',
-        tabla([{ t:'Máquina' }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'Consumo', n:1 }, { t:'Lo normal', n:1 }, { t:'Variación', n:1 }], filas, 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.')) +
-      bloque('Tanqueos que no cuadran', 'Máquina en el taller ese día, sin trabajo registrado, o que gastó mucho más de lo normal. Al lado, la justificación que escribió Leanis.',
-        tabla([{ t:'Fecha' }, { t:'Equipo' }, { t:'Galones', n:1 }, { t:'Recibió' }, { t:'Por qué no cuadra' }, { t:'Justificación' }], raros, 'Todo el combustible coincide con el trabajo registrado.')) +
+      sec('1', '¿Cuadra? Balance ' + X.enMes, 'Lo que había, lo que entró, lo que salió y lo que queda') +
+      bloque('Balance del tanque ' + X.enMes, 'Despachado por destino: todo lo que salió del tanque.', balance) +
+      sec('2', '¿En qué se gastó?', 'Por labor, por lote y otros consumos') +
       '<div class="ft-dos">' +
         bloque('Combustible por labor', 'Lo despachado a cada máquina, repartido entre las labores que el operario confirmó en el cierre según sus horas (si el cierre no trae la labor, la programada). Camiones = transporte.', barras(labor, 'verde', 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.', true)) +
         bloque('Otros consumos', 'Vehículos por placa; guadañas, motobombas y estacionaria por tipo.', tabla([{ t:'Destino' }, { t:'Control' }, { t:'Tanqueos', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }], otros, 'Sin otros consumos ' + X.enMes + '.')) +
       '</div>' +
+      bloque('Lotes que más combustible gastan por hectárea', 'Si una máquina trabajó varios lotes, se reparte por las horas de cada lote y sus hectáreas.',
+        tabla([{ t:'Lote' }, { t:'Finca' }, { t:'ha', n:1 }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'$/ha', n:1 }], lotesH, 'Se llena con los cierres de jornada que traen la labor y los lotes.')) +
+      sec('3', '¿Se gastó bien?', 'Consumo de cada máquina contra lo normal, y tanqueos que no cuadran con el trabajo') +
+      bloque('Consumo por máquina ' + X.enMes, 'Galones y consumo por hora de motor (km por galón en camiones), comparado con lo normal de cada máquina: sus 10 tanqueos anteriores.',
+        tabla([{ t:'Máquina' }, { t:'Galones', n:1 }, { t:'Costo', n:1 }, { t:'Consumo', n:1 }, { t:'Lo normal', n:1 }, { t:'Variación', n:1 }], filas, 'Todavía no hay tanqueos de máquinas ' + X.enMes + '.')) +
+      bloque('Tanqueos que no cuadran', 'Máquina en el taller ese día, sin trabajo registrado, o que gastó mucho más de lo normal. Al lado, la justificación que escribió Leanis.',
+        tabla([{ t:'Fecha' }, { t:'Equipo' }, { t:'Galones', n:1 }, { t:'Recibió' }, { t:'Por qué no cuadra' }, { t:'Justificación' }], raros, 'Todo el combustible coincide con el trabajo registrado.')) +
+      sec('4', '¿Hubo pérdidas?', 'Llegadas contra la orden, cierres del tanque, tanqueos mal digitados y anulados') +
       bloque('Llegadas de combustible', 'Lo medido con regleta en el carrotanque antes de descargar contra la orden de compra (procedimiento PR-ALM-01). Al tanque entra lo medido.',
         tabla([{ t:'Fecha' }, { t:'Orden', n:1 }, { t:'Regleta', n:1 }, { t:'Diferencia' }, { t:'Precio/gal', n:1 }, { t:'Proveedor o remisión' }], lleg, 'Sin llegadas registradas.')) +
-      bloque('Cierres del almacén', 'El tanque no tiene regleta: se cuadra cuando se vacía. Lo que debería haber según la app contra cero, y la explicación de Leanis cuando no cuadra.',
-        tabla([{ t:'Fecha' }, { t:'Debería', n:1 }, { t:'Quedó', n:1 }, { t:'Diferencia' }, { t:'Valor', n:1 }, { t:'Explicación' }], cier, 'Todavía no hay cierres: se hace la próxima vez que el tanque se vacíe.'));
+      '<div class="ft-dos">' +
+        bloque('Cierres del almacén', 'El tanque no tiene regleta: se cuadra cuando se vacía. Lo que debería haber según la app contra cero, y la explicación de Leanis.',
+          tabla([{ t:'Fecha' }, { t:'Debería', n:1 }, { t:'Quedó', n:1 }, { t:'Diferencia' }, { t:'Valor', n:1 }, { t:'Explicación' }], cier, 'Todavía no hay cierres: se hace la próxima vez que el tanque se vacíe.')) +
+        bloque('Tanqueos mal digitados y anulados ' + X.enMes, 'Un tanqueo con galones fuera de toda proporción no se cuenta en el consumo, pero sí resta del tanque hasta que Leanis lo corrija en la app.',
+          tabla([{ t:'Fecha' }, { t:'Equipo' }, { t:'Galones', n:1 }, { t:'Estado' }, { t:'Recibió' }], perdidas, 'Ninguno ' + X.enMes + '.')) +
+      '</div>';
   }
+
 
   function pintar(R, act){
     ULT = { R:R, act:act };
@@ -995,15 +1032,23 @@
       (R.lotes.length ? '<li><b>Lotes que más gastan por hectárea:</b> ' + R.lotes.map(function(y){ return esc(y.lote) + ' (' + g2(y.porHa) + ' h/ha' + (y.costo ? ', ' + peso(y.costo / y.ha) + '/ha' : '') + ')'; }).join(' · ') + '.</li>' : '') +
       '</ul>';
 
-    // 3. combustible
-    if (CS.n || CS.cierres.length){
+    // 3. combustible: las mismas 4 preguntas de la pestaña Combustible
+    var BL = CS.bal;
+    if (BL && (CS.n || CS.cierres.length || BL.llegadas.length)){
+      var NOMD = { maquina:'máquinas', camion:'camiones', vehiculo:'vehículos', otro:'otros' };
+      var dest = Object.keys(BL.porDestino).map(function(k){ return { k:k, c:BL.porDestino[k].costo || BL.porDestino[k].gal * CS.precio }; }).sort(function(a, b){ return b.c - a.c; });
+      var perd = (CS.faltante ? CS.faltanteValor : 0) + (CS.faltaProv ? CS.faltaProvValor : 0);
       h += '<h2>Combustible</h2><div class="fi-cb">' +
-        '<div><b>' + (CS.costo ? peso(CS.costo) : g1(CS.gal) + ' gal') + '</b><span>' + g1(CS.gal) + ' gal despachados' + (CS.otrosGal ? ', ' + g1(CS.otrosGal) + ' a vehículos y otros equipos' : '') + '</span></div>' +
-        '<div><b>' + (CS.tasa != null ? g2(CS.tasa) + ' gal/h' : '—') + '</b><span>' + (CS.varTasa != null ? 'Consumo por hora ' + (Math.abs(CS.varTasa) < 5 ? 'normal' : (CS.varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(CS.varTasa)) + '% vs. lo normal') : 'Consumo por hora de las máquinas') + '</span></div>' +
-        (CS.cierres.length
-          ? '<div><b>' + (CS.faltante ? peso(CS.faltanteValor) : 'Cuadró') + '</b><span>' + (CS.faltante ? 'Faltante cuando el tanque se vació (' + g1(CS.faltante) + ' gal)' : 'El tanque se vació y cuadró') + '</span></div>'
-          : '<div><b>' + (CS.llegadasPer.length ? (CS.faltaProv ? peso(CS.faltaProvValor) : 'Completo') : '—') + '</b><span>' + (CS.llegadasPer.length ? (CS.faltaProv ? 'El proveedor entregó ' + g1(CS.faltaProv) + ' gal menos (regleta)' : 'Llegadas completas según la regleta') : 'Sin llegadas ni cierre esta semana') + '</span></div>') +
-        '<div><b>' + CS.raros.length + '</b><span>' + (CS.raros.length === 1 ? 'Tanqueo que no cuadra' : 'Tanqueos que no cuadran') + ' con el trabajo</span></div></div>';
+        '<div><b>' + g1(BL.final) + ' gal</b><span><i>¿Cuadra?</i> ' + g1(BL.inicial) + ' al inicio + ' + g1(BL.galLlegadas) + ' llegadas − ' + g1(BL.galDespachos) + ' despachados' +
+          (BL.ajusteNeto ? ' ' + (BL.ajusteNeto > 0 ? '+' : '−') + ' ' + g1(Math.abs(BL.ajusteNeto)) + ' de ajustes' : '') + '</span></div>' +
+        '<div><b>' + (BL.costoDespachos ? millones(BL.costoDespachos) : g1(BL.galDespachos) + ' gal') + '</b><span><i>¿En qué?</i> ' +
+          (dest.length ? dest.map(function(x){ return (NOMD[x.k] || x.k) + ' ' + millones(x.c); }).join(' · ') : 'sin despachos') + '</span></div>' +
+        '<div><b>' + (CS.tasa != null ? g2(CS.tasa) + ' gal/h' : '—') + '</b><span><i>¿Se gastó bien?</i> ' + (CS.varTasa != null ? (Math.abs(CS.varTasa) < 5 ? 'consumo normal' : (CS.varTasa > 0 ? '▲ ' : '▼ ') + Math.round(Math.abs(CS.varTasa)) + '% vs. lo normal') : 'consumo por hora') +
+          ' · ' + plural(CS.raros.length, 'tanqueo no cuadra', 'tanqueos no cuadran') + '</span></div>' +
+        '<div><b>' + (perd ? peso(perd) : 'Ninguna') + '</b><span><i>¿Pérdidas?</i> ' +
+          ([CS.cierres.length ? (CS.faltante ? 'faltaron ' + g1(CS.faltante) + ' gal al vaciarse' : 'el tanque se vació y cuadró') : '',
+           CS.llegadasPer.length ? (CS.faltaProv ? 'el proveedor entregó ' + g1(CS.faltaProv) + ' gal menos' : 'llegadas completas') : '',
+           BL.dudosos.length ? plural(BL.dudosos.length, 'tanqueo mal digitado', 'tanqueos mal digitados') : ''].filter(Boolean).join(' · ') || 'sin llegadas ni cierres en la semana') + '</span></div></div>';
     }
 
     // 4. decisiones (la única lista de alertas)
