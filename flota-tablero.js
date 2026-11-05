@@ -325,6 +325,8 @@
     R.hayTanque = movs.length > 0;
     // balance del período (Combustible.balance en maestros.js, el mismo de Gerencia y la app de Tanqueo)
     R.bal = C && C.balance && (movs.length || D.tanq.length) ? C.balance(movs, D.tanq, tsIni, tsFin, destino) : null;
+    // gasolina en canecas (Combustible.gasolina en maestros.js, el mismo de Gerencia)
+    R.gas = C && C.gasolina ? C.gasolina(D.gasM || [], D.gasT || [], tsIni, tsFin) : null;
     return R;
   }
 
@@ -530,6 +532,17 @@
       accion: faltante > limFalt ? 'Cuando el tanque se vació faltaban ' + g1(faltante) + ' gal' + (precioV ? ' (' + peso(faltante * precioV) + ')' : '') + ' que no están en ningún despacho. Revisar las explicaciones de Leanis.' :
         CB.faltaProv > 0 ? 'El proveedor entregó ' + g1(CB.faltaProv) + ' gal menos de lo ordenado' + (CB.faltaProvValor ? ' (' + peso(CB.faltaProvValor) + ')' : '') + ' según la regleta: hacer el reclamo con la remisión firmada.' :
         reqAb.length ? 'El tanque está bajo y la requisición sigue abierta: confirmar la compra.' : '' });
+
+    /* 12b. Gasolina: guadañas, motobombas, estacionaria, Stihl y vehículos de gasolina */
+    var G = CB.gas, limG = G ? Math.max(2, G.gal * 0.05) : 0;
+    ind({ id:'gasolina', grupo:'combustible', titulo:'Gasolina ' + delMes, valor: G && G.gal ? g1(G.gal) + ' gal' : '—',
+      nivel: !G ? 'gris' : G.faltante > limG ? 'rojo' : G.faltante > 0 ? 'ambar' : 'verde',
+      linea: !G ? 'Todavía no se lleva la gasolina en la app de Tanqueo' : (G.costo ? peso(G.costo) + ' · ' : '') + 'en las canecas debe haber ' + g1(G.saldo) + ' gal' +
+        (G.conteos.length ? ' · ' + (G.faltante ? 'faltaron ' + g1(G.faltante) + ' gal al contar' : 'el conteo cuadró') : ''),
+      detalle: G ? [G.porEq.map(function(x){ return x.cod + ' ' + g1(x.gal) + ' gal'; }).join(', '),
+        G.llegadas.length ? 'Llegó de la estación: ' + G.llegadas.map(function(m){ return dcorta(m.fecha) + ' ' + g1(m.gal) + ' gal'; }).join(', ') : '',
+        !G.conteos.length && G.gal ? 'No se han contado las canecas ' + enMes : ''].filter(Boolean).join(' — ') : '',
+      accion: G && G.faltante > limG ? 'En el conteo de canecas faltaron ' + g1(G.faltante) + ' gal de gasolina' + (G.faltanteValor ? ' (' + peso(G.faltanteValor) + ')' : '') + '. Pedirle la explicación a Leanis.' : '' });
 
     /* 13. Programación de hoy */
     var progD = D.prog[hy] || {}, progTaller = Object.keys(progD).filter(function(c){ return paradas[c]; });
@@ -1050,6 +1063,15 @@
            CS.llegadasPer.length ? (CS.faltaProv ? 'el proveedor entregó ' + g1(CS.faltaProv) + ' gal menos' : 'llegadas completas') : '',
            BL.dudosos.length ? plural(BL.dudosos.length, 'tanqueo mal digitado', 'tanqueos mal digitados') : ''].filter(Boolean).join(' · ') || 'sin llegadas ni cierres en la semana') + '</span></div></div>';
     }
+    // gasolina en canecas, en una línea
+    var GS = CS.gas;
+    if (GS && (GS.gal || GS.llegadas.length || GS.conteos.length)){
+      if (h.indexOf('<h2>Combustible</h2>') < 0) h += '<h2>Combustible</h2>';
+      h += '<p class="fi-obs" style="margin-top:6px"><b>Gasolina (canecas):</b> ' + [GS.gal ? g1(GS.gal) + ' gal entregados' + (GS.costo ? ' · ' + peso(GS.costo) : '') : 'sin entregas',
+        GS.llegadas.length ? 'llegó de la estación ' + g1(GS.bal.galLlegadas) + ' gal' : '',
+        'deben quedar ' + g1(GS.saldo) + ' gal',
+        GS.conteos.length ? (GS.faltante ? 'faltaron ' + g1(GS.faltante) + ' gal al contar' + (GS.faltanteValor ? ' (' + peso(GS.faltanteValor) + ')' : '') : 'el conteo cuadró') : ''].filter(Boolean).join(' · ') + '.</p>';
+    }
 
     // 4. decisiones (la única lista de alertas)
     h += '<h2>Decisiones y acciones</h2>' + (R.acciones.length ? '<ol>' + R.acciones.map(function(x){
@@ -1075,6 +1097,8 @@
     var t = ['*Informe semanal · Maquinaria y combustible*', 'Semana ' + txtSemana(w), '',
       bola[R.nivel] + ' ' + R.veredicto + '. ' + R.enTaller + ' de ' + maquinaria().length + ' máquinas en taller.', ''];
     R.k.forEach(function(x){ t.push(bola[x.n] + ' ' + x.t + ': *' + x.v + '*'); });
+    var GS = R.CS && R.CS.gas;
+    if (GS && GS.gal) t.push((GS.faltante ? bola.ambar : bola.verde) + ' Gasolina: *' + g1(GS.gal) + ' gal*' + (GS.costo ? ' · ' + peso(GS.costo) : '') + (GS.faltante ? ' · faltaron ' + g1(GS.faltante) + ' gal al contar' : ''));
     if (R.enT.length){ t.push(''); t.push('*En taller:* ' + R.enT.slice(0, 5).map(function(x){ return x.f.cod + ' (' + x.d + ' d' + (x.r.estado ? ', ' + x.r.estado.toLowerCase() : '') + ')'; }).join(', ')); }
     if (R.acciones.length){ t.push(''); t.push('*Decisiones:*'); R.acciones.forEach(function(x, i){ t.push((i + 1) + '. ' + x.titulo + ': ' + corto(x.corta || x.accion, 160)); }); }
     if (obs){ t.push(''); t.push('*Observaciones:* ' + corto(obs, 300)); }
@@ -1161,6 +1185,9 @@
         var D = { eventos:tl.eventos, pend:tl.pend, inicio:tl.inicio, prog:programacion(r[1]), pre:preops(r[3], r[4]),
           tanq: window.Combustible ? Combustible.tanqueos(r[5]) : [],
           movs: window.Combustible ? Combustible.movimientos(r[6]) : [],
+          // gasolina (canecas): cuenta aparte del tanque de ACPM
+          gasT: window.Combustible ? Combustible.tanqueos(r[5], 'gasolina') : [],
+          gasM: window.Combustible ? Combustible.movimientos(r[6], 'gasolina') : [],
           alertas:Object.keys(al).map(function(k){ return al[k]; }), viejo:r[10], cierres:cierresDe(r[12]) };
         listo = true; DATOS = D;
         var R = indicadores(D);
