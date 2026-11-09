@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F6B3A">
+<title>Control de Casino · Palma Grande</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/casino.css">
+</head>
+<body>
+
+<!-- ═════ Configuración inicial: URL del backend ═════ -->
+<section id="pSetup" class="pant" hidden>
+  <header class="hdr hdr-verde">
+    <div class="hdr-sub">Palma Grande S.A.S.</div>
+    <div class="hdr-tit">Control de Casino</div>
+  </header>
+  <div class="cuerpo">
+    <p class="txt">Pegue la URL de la aplicación web del casino (Apps Script, termina en <b>/exec</b>).</p>
+    <label class="campo">URL del backend
+      <input id="setupUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+    </label>
+    <div class="error" id="setupError"></div>
+    <button class="btn btn-prim" id="setupGuardar">Guardar y continuar</button>
+  </div>
+</section>
+
+<!-- ═════ Ingreso por usuario + PIN ═════ -->
+<section id="pLogin" class="pant" hidden>
+  <header class="hdr hdr-verde">
+    <div class="hdr-sub">Palma Grande S.A.S.</div>
+    <div class="hdr-tit">Control de Casino</div>
+    <div class="hdr-linea" id="loginFecha"></div>
+  </header>
+  <div class="cuerpo">
+    <label class="campo">Usuario
+      <input id="loginUsuario" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ej. marta.casino">
+    </label>
+    <div class="campo-lbl">PIN</div>
+    <div class="pin-dots" id="pinDots" aria-label="PIN de 5 dígitos"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="pin-pad" id="pinPad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="C" class="pin-sec" aria-label="Borrar">⌫</button><button data-k="0">0</button>
+      <button data-k="OK" class="pin-ok" aria-label="Ingresar">OK</button>
+    </div>
+    <div class="error" id="loginError" role="alert"></div>
+    <div class="nota" id="loginNota"></div>
+    <button class="btn-link" id="loginCambiarUrl">Cambiar URL del backend</button>
+  </div>
+</section>
+
+<!-- ═════ Tablet no autorizada ═════ -->
+<section id="pTablet" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-sub">Configuración</div>
+    <div class="hdr-tit">Autorizar esta tablet</div>
+  </header>
+  <div class="cuerpo">
+    <div id="tabletAdmin">
+      <p class="txt">Esta tablet todavía no está autorizada para registrar raciones. Póngale un nombre para identificarla en los reportes.</p>
+      <label class="campo">Nombre de la tablet
+        <input id="tabletNombre" type="text" maxlength="60" placeholder="Tablet 01 · Casino finca principal">
+      </label>
+      <div class="error" id="tabletError"></div>
+      <button class="btn btn-prim" id="tabletAutorizar">Autorizar tablet</button>
+    </div>
+    <p class="txt" id="tabletNoAdmin" hidden>Esta tablet no está autorizada. Un usuario <b>ADMIN</b> debe ingresar y autorizarla.</p>
+    <button class="btn btn-sec" data-salir>Cambiar de usuario</button>
+  </div>
+</section>
+
+<!-- ═════ Roles con pantallas de fases siguientes ═════ -->
+<section id="pOtroRol" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-sub" id="otroRolUsuario"></div>
+    <div class="hdr-tit">Control de Casino</div>
+  </header>
+  <div class="cuerpo">
+    <p class="txt">Las pantallas de su rol (pedidos de campo y autorización) se habilitan en la próxima fase.</p>
+    <button class="btn btn-sec" data-salir>Salir</button>
+  </div>
+</section>
+
+<!-- ═════ 1 · Registro en casino ═════ -->
+<section id="pRegistro" class="pant" hidden>
+  <header class="hdr hdr-verde">
+    <div class="hdr-fila">
+      <div class="hdr-sub" id="regCasino">Casino</div>
+      <span class="sync" id="regSync" title="Estado de sincronización"></span>
+    </div>
+    <div class="hdr-tit" id="regServicio">—</div>
+    <div class="hdr-linea" id="regLinea"></div>
+  </header>
+  <div class="cuerpo reg">
+    <div class="reg-cam">
+      <div class="cam" id="camBox">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="cam-ovalo"></div>
+        <div class="cam-estado" id="camEstado">Iniciando cámara…</div>
+      </div>
+    </div>
+    <div class="reg-lado">
+      <div class="ficha" id="ficha" aria-live="polite">
+        <div class="ficha-vacia">Esperando trabajador…<br><span>Rostro o cédula</span></div>
+      </div>
+      <button class="btn btn-prim btn-xl" id="btnEntregar" disabled>Entregar ración</button>
+      <div class="fila-btns">
+        <button class="btn btn-sec" id="btnCedula">Buscar por cédula</button>
+        <button class="btn btn-sec" id="btnVisitante">Visitante</button>
+      </div>
+      <div class="contadores" id="contadores"></div>
+      <div id="avisos"></div>
+      <div class="pie">
+        <span id="regPie"></span>
+        <span class="pie-btns">
+          <button class="btn-ico" id="btnAdmin" hidden title="Administración" aria-label="Administración">⚙</button>
+          <button class="btn-ico" data-salir title="Cambiar de usuario" aria-label="Cambiar de usuario">⎋</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ Administración (ADMIN) ═════ -->
+<section id="pAdmin" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-fila">
+      <button class="btn-link" id="adminVolver">← Volver al registro</button>
+    </div>
+    <div class="hdr-tit">Administración del casino</div>
+    <nav class="tabs" id="adminTabs">
+      <button data-tab="personas" class="on">Personas</button>
+      <button data-tab="rostros">Rostros</button>
+      <button data-tab="sas">SAS</button>
+      <button data-tab="hoy">Hoy</button>
+      <button data-tab="tablet">Tablet</button>
+    </nav>
+  </header>
+  <div class="cuerpo">
+    <div class="tab" data-panel="personas">
+      <div class="fila-btns">
+        <button class="btn btn-prim" id="perNueva">+ Nueva persona</button>
+        <button class="btn btn-sec" id="perSync">Copiar de Asistencia</button>
+      </div>
+      <input class="buscar" id="perBuscar" type="search" placeholder="Buscar por nombre o cédula">
+      <div class="filtros" id="perFiltros">
+        <button data-f="" class="on">Todas</button><button data-f="SIN">Sin clasificar</button>
+        <button data-f="EMPRESA">Empresa</button><button data-f="SAS">SAS</button><button data-f="INA">Inactivas</button>
+      </div>
+      <div class="lista" id="perLista"></div>
+    </div>
+    <div class="tab" data-panel="rostros" hidden>
+      <p class="txt" id="rosResumen"></p>
+      <div class="fila-btns">
+        <button class="btn btn-sec" id="rosImportar">Importar respaldo</button>
+        <button class="btn btn-sec" id="rosExportar">Respaldar rostros</button>
+      </div>
+      <button class="btn btn-sec" id="rosLocal" hidden>Leer rostros de Asistencia de este navegador</button>
+      <input type="file" id="rosArchivo" accept="application/json,.json" hidden>
+      <input class="buscar" id="rosBuscar" type="search" placeholder="Buscar persona para enrolar">
+      <div class="filtros" id="rosFiltros">
+        <button data-f="" class="on">Todas</button><button data-f="SIN" >Sin rostro</button><button data-f="CON">Con rostro</button>
+      </div>
+      <div class="lista" id="rosLista"></div>
+    </div>
+    <div class="tab" data-panel="sas" hidden>
+      <button class="btn btn-prim" id="sasNueva">+ Nueva SAS</button>
+      <div class="lista" id="sasLista"></div>
+    </div>
+    <div class="tab" data-panel="hoy" hidden>
+      <p class="txt">Registros de hoy. Anular exige motivo y queda en el Log (no se borra nada).</p>
+      <div class="lista" id="hoyLista"></div>
+    </div>
+    <div class="tab" data-panel="tablet" hidden>
+      <div class="tarjeta" id="tabInfo"></div>
+      <div class="fila-btns">
+        <button class="btn btn-sec" id="tabSync">Sincronizar ahora</button>
+        <button class="btn btn-sec" id="tabCatalogo">Actualizar datos</button>
+      </div>
+      <button class="btn btn-sec" id="tabUrl">Cambiar URL del backend</button>
+      <button class="btn btn-sec" id="tabReautorizar">Volver a autorizar esta tablet</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ Modales ═════ -->
+<div class="modal" id="modalCedula" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit">Buscar por cédula</div>
+    <input id="cedInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="15" placeholder="Número de cédula" autocomplete="off">
+    <div class="error" id="cedError"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" data-cerrar="modalCedula">Cancelar</button>
+      <button class="btn btn-prim" id="cedBuscar">Buscar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalVisitante" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit">Visitante</div>
+    <div class="nota" id="visServicio"></div>
+    <label class="campo">Nombre completo *<input id="visNombre" type="text" maxlength="80"></label>
+    <label class="campo">Cédula (opcional)<input id="visDoc" type="text" inputmode="numeric" maxlength="15"></label>
+    <label class="campo">Empresa / motivo<input id="visEmpresa" type="text" maxlength="120"></label>
+    <label class="campo">Autoriza *<input id="visAutoriza" type="text" maxlength="80" placeholder="Quién autoriza la ración"></label>
+    <div class="nota">Se carga a: <b id="visCargo">Palma Grande S.A.S</b></div>
+    <div class="error" id="visError"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" data-cerrar="modalVisitante">Cancelar</button>
+      <button class="btn btn-prim" id="visGuardar">Entregar ración</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalPersona" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit" id="perTitulo">Persona</div>
+    <label class="campo">Cédula *<input id="perDoc" type="text" inputmode="numeric" maxlength="15"></label>
+    <label class="campo">Nombre completo *<input id="perNombre" type="text" maxlength="80"></label>
+    <label class="campo">Cargo<input id="perCargo" type="text" maxlength="60"></label>
+    <div class="nota" id="perOrigen"></div>
+    <div class="campo-lbl">Tipo de pago *</div>
+    <div class="seg" id="perTipo"><button data-v="EMPRESA">EMPRESA</button><button data-v="SAS">SAS</button></div>
+    <label class="campo" id="perSasCampo">SAS contratista *<select id="perSas"></select></label>
+    <label class="campo" id="perCcCampo">Centro de costo *<input id="perCc" type="text" maxlength="60"></label>
+    <label class="campo">Cuadrilla<input id="perCuadrilla" type="text" maxlength="40"></label>
+    <label class="check"><input id="perActivo" type="checkbox" checked> Activa en el casino</label>
+    <div class="error" id="perError"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" data-cerrar="modalPersona">Cancelar</button>
+      <button class="btn btn-prim" id="perGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalSAS" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit" id="sasTitulo">SAS contratista</div>
+    <label class="campo">Nombre *<input id="sasNombre" type="text" maxlength="80"></label>
+    <label class="campo">NIT<input id="sasNit" type="text" maxlength="20"></label>
+    <label class="check"><input id="sasActivo" type="checkbox" checked> Activa (contrato vigente)</label>
+    <div class="error" id="sasError"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" data-cerrar="modalSAS">Cancelar</button>
+      <button class="btn btn-prim" id="sasGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalEnrolar" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit" id="enrTitulo">Enrolar rostro</div>
+    <div class="cam cam-sm"><video id="videoEnrolar" playsinline muted autoplay></video><div class="cam-ovalo"></div></div>
+    <div class="enr-paso" id="enrPaso"></div>
+    <div class="enr-barra"><i id="enrBarra"></i></div>
+    <div class="nota" id="enrNota"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" id="enrCancelar">Cancelar</button>
+      <button class="btn btn-prim" id="enrIniciar">Iniciar captura</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalTexto" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit mt-titulo"></div>
+    <input type="text">
+    <div class="error mt-error"></div>
+    <div class="fila-btns"><button class="btn btn-sec mt-no">Cancelar</button><button class="btn btn-prim mt-ok">Aceptar</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modalConfirmar" hidden>
+  <div class="modal-caja">
+    <div class="mc-texto txt"></div>
+    <div class="fila-btns"><button class="btn btn-sec mc-no">Cancelar</button><button class="btn btn-prim mc-ok">Aceptar</button></div>
+  </div>
+</div>
+
+<script src="lib/face-api.min.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/rostros.js"></script>
+<script src="js/registro.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

@@ -246,3 +246,15 @@ Cubre toda creación, cambio, anulación, cambio de estado, sincronización e in
 6. **Visitantes**: ¿su consumo va a un centro de costo de la empresa o a quien lo autoriza?
 
 Cuando apruebes (o ajustes) este modelo, sigo con la **Fase 2: Pantalla 1, Registro en casino**, con el backend que necesita.
+
+---
+
+## 8. Decisiones aprobadas (9 nov 2026)
+
+- Modelo **aprobado**, con **PIN por usuario**.
+- Los trabajadores de SAS **no** están en Asistencia: se crean en el casino (`origen = MANUAL`) y su rostro **se enrola en el casino**.
+- La asignación a supervisores se hace con la columna `cuadrilla` y las SAS o cuadrillas asignadas en `Usuarios`.
+- Valores: Desayuno $9.000 · Almuerzo $9.000 · Cena $8.600 (iguales para EMPRESA y SAS). El refrigerio queda inactivo hasta que se defina su valor.
+- Visitantes: el consumo se carga a **Palma Grande S.A.S**.
+- Se agrega la hoja `Dispositivos` (tablets autorizadas).
+- Los rostros se guardan en IndexedDB y no en localStorage, porque localStorage comparte cupo con Asistencia en el mismo origen.
