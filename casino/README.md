@@ -3,8 +3,10 @@
 Módulo independiente: HTML/CSS/JS puro (sin build) + Google Apps Script + Google Sheets.
 No modifica otros módulos ni Asistencia. Fechas siempre en `America/Bogota`.
 
-Estado: **Fase 2 — Pantalla 1 (Registro en casino)** + administración mínima necesaria para operarla.
-Pantallas 2–6 (pedidos de campo, autorización, programación, cierre por SAS, tablero) en fases siguientes.
+Estado:
+- **Pantalla 1 — Registro en casino** + administración mínima para operarla.
+- **Pantalla 2 — Pedido de campo (supervisor)**.
+- Pantallas 3–6 (autorización, programación del día, cierre por SAS, tablero) en fases siguientes.
 
 ## Instalación (una sola vez)
 
@@ -30,7 +32,24 @@ Pantallas 2–6 (pedidos de campo, autorización, programación, cierre por SAS,
    - **Rostros**: "Importar respaldo" acepta el archivo de respaldo cifrado de Asistencia (se asocia por nombre → cédula).
      Los trabajadores de SAS se **enrolan aquí** (5 capturas). Use **Respaldar rostros** después de enrolar y guarde
      el archivo: los rostros viven solo en la tablet y ese archivo sirve para otra tablet o si se borra el navegador.
-4. Cierre sesión (⎋) e ingrese con el usuario del casino (rol `CASINO`).
+   - **Puntos**: cree los puntos de entrega (lote / finca) que el supervisor elige en el pedido de campo.
+4. Cierre sesión (**Salir**) e ingrese con el usuario del casino (rol `CASINO`).
+
+## Supervisores (pantalla 2)
+
+- Se crean desde el menú **Casino → 2 · Crear usuario** con rol `SUPERVISOR`: se indica el **nombre de la SAS**
+  (vacío si es supervisor de la empresa) y, opcionalmente, sus **cuadrillas** separadas por coma.
+  Para cambiarlas después: **Casino → Asignar SAS / cuadrillas a supervisor**.
+- El supervisor entra desde su celular a la misma dirección con su usuario y PIN (no hace falta autorizar el teléfono).
+- Ve solo los trabajadores activos de su SAS (o de EMPRESA) y de sus cuadrillas. La columna `cuadrilla` de cada
+  persona se llena en Administración → Personas.
+- Corte: hoja `Config`, clave `hora_corte_pedidos` (08:00). Lo decide la hora del servidor: después del corte
+  el pedido queda **extemporáneo** y exige justificación. Quitar trabajadores después del corte no lo vuelve extemporáneo;
+  agregarlos sí.
+- Un trabajador no puede estar en dos pedidos del mismo servicio el mismo día, ni pedirse si ya comió en el casino.
+- Se puede ajustar o cancelar (con motivo) hasta el despacho. Si se ajusta un pedido ya autorizado, vuelve a quedar
+  pendiente de autorización. Nada se borra.
+- Enviar un pedido necesita señal. Si no hay, la selección queda guardada en el teléfono para reintentar.
 
 ## Cómo funciona sin señal
 

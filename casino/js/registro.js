@@ -52,6 +52,8 @@ function ruta() {
       return;
     }
     entrarRegistro();
+  } else if (s.usuario.rol === 'SUPERVISOR') {
+    entrarSupervisor();
   } else {
     $('otroRolUsuario').textContent = `${s.usuario.nombre} · ${s.usuario.rol}`;
     mostrar('pOtroRol');
@@ -214,7 +216,7 @@ async function cargarCatalogo(silencioso) {
       if (/autoriz|revocad/i.test(r.error || '')) agregarAviso('cat-auth', 'El servidor rechazó esta tablet: ' + r.error + ' Un ADMIN debe volver a autorizarla (Administración → Tablet). Lo pendiente sigue guardado.');
       return false;
     }
-    const cat = { config: r.config, servicios: r.servicios, sas: r.sas, personas: r.personas,
+    const cat = { config: r.config, servicios: r.servicios, sas: r.sas, personas: r.personas, puntos: r.puntos || [],
                   dispositivo: r.dispositivo, actualizado: Date.now() };
     lsSet(LS.catalogo, cat);
     App.catalogo = cat;

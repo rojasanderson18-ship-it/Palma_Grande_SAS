@@ -258,3 +258,9 @@ Cuando apruebes (o ajustes) este modelo, sigo con la **Fase 2: Pantalla 1, Regis
 - Visitantes: el consumo se carga a **Palma Grande S.A.S**.
 - Se agrega la hoja `Dispositivos` (tablets autorizadas).
 - Los rostros se guardan en IndexedDB y no en localStorage, porque localStorage comparte cupo con Asistencia en el mismo origen.
+
+## 9. Agregados en la pantalla 2
+
+- Hoja `Puntos_Entrega` (id, nombre, finca, activo), administrada desde la tablet.
+- `Pedidos_Campo.motivo_cancelacion` y el estado `ANULADO` (cancelado por el supervisor antes del despacho, con motivo).
+- El supervisor se asigna a una SAS (o a la empresa) y, opcionalmente, a cuadrillas (hoja `Usuarios`).

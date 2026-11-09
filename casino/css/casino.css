@@ -39,7 +39,6 @@ input,select{font-family:inherit;font-size:16px}
 .btn-prim{border:0;background:var(--verde);color:#fff;font-weight:700;font-size:16px}
 .btn-prim:disabled{background:#AEB8AF;cursor:not-allowed}
 .btn-xl{height:56px;border-radius:14px;font-size:17px}
-.btn-sec{flex:1}
 .btn-link{background:none;border:0;color:var(--verde);font-weight:600;font-size:14px;padding:6px 0;text-align:left}
 .hdr-verde .btn-link{color:#fff}
 .btn-ico{width:40px;height:40px;border-radius:10px;border:1px solid var(--borde2);background:#fff;font-size:18px;color:var(--txt2)}
@@ -137,3 +136,28 @@ input,select{font-family:inherit;font-size:16px}
 }
 @media (max-width:819px){.reg-lado{display:flex;flex-direction:column;gap:14px}}
 .mc-texto{white-space:pre-line}
+
+/* Pantalla 2 · Pedido de campo */
+.corte{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;font-size:13px;font-weight:600;margin-top:4px}
+.corte-ok{background:var(--aviso-bg);color:var(--aviso)}
+.corte-tarde{background:var(--err-bg);color:var(--err)}
+.pila{display:flex;flex-direction:column;gap:12px}
+.centro{text-align:center}
+.pedido .ped-cab{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pedido .ped-cab b{font-size:16px}
+.ped-n{font-size:20px;font-weight:700}
+.ped-estado{display:flex;gap:6px;flex-wrap:wrap}
+.etq-err{background:var(--err-bg);color:var(--err)}
+.checklist{background:#fff;border:1px solid var(--borde);border-radius:12px;overflow:hidden}
+.ck-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:var(--gris-cab);font-size:13px;font-weight:600;color:var(--txt2)}
+.ck-cab .btn-link{padding:4px 0;font-size:13px;white-space:nowrap}
+.ck-buscar{border-radius:0!important;border-width:0 0 1px 0!important}
+.ck{display:flex;align-items:center;gap:12px;padding:12px;border-top:1px solid var(--gris-cab);font-size:15px;min-height:48px;cursor:pointer}
+.ck:first-child{border-top:0}
+.ck input{width:22px;height:22px;accent-color:var(--verde);flex:0 0 auto}
+.ck-txt{flex:1;min-width:0}
+.ck-txt small{display:block;font-size:12px;color:var(--txt3)}
+.ck-nota{margin-left:auto;font-size:12px;color:var(--txt3);text-align:right}
+.ck-off{color:var(--txt3);cursor:default}
+.campo textarea{border:1px solid var(--borde2);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:16px;resize:vertical;background:#fff;color:var(--txt)}
+.btn-salir{width:auto;padding:0 12px;font-size:13px;font-weight:600;flex:0 0 auto}

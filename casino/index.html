@@ -82,8 +82,44 @@
     <div class="hdr-tit">Control de Casino</div>
   </header>
   <div class="cuerpo">
-    <p class="txt">Las pantallas de su rol (pedidos de campo y autorización) se habilitan en la próxima fase.</p>
+    <p class="txt">La pantalla de autorización de pedidos se habilita en la próxima fase.</p>
     <button class="btn btn-sec" data-salir>Salir</button>
+  </div>
+</section>
+
+<!-- ═════ 2 · Pedido de campo (supervisor) ═════ -->
+<section id="pSupervisor" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-fila">
+      <div class="hdr-sub" id="supQuien">Supervisor</div>
+      <button class="btn-ico btn-salir" data-salir>Salir</button>
+    </div>
+    <div class="hdr-tit" id="supTitulo">Almuerzos a campo</div>
+    <div class="corte" id="supCorte" hidden></div>
+  </header>
+  <div class="cuerpo" id="supLista">
+    <div class="error" id="supError"></div>
+    <div id="supPedidos" class="pila"></div>
+    <button class="btn btn-prim btn-xl" id="supNuevo">+ Nuevo pedido</button>
+    <button class="btn btn-sec" id="supRecargar">Actualizar estados</button>
+    <div class="nota centro" id="supNota"></div>
+  </div>
+  <div class="cuerpo" id="supForm" hidden>
+    <button class="btn-link" id="pedVolver">← Mis pedidos</button>
+    <label class="campo" id="pedServCampo">Servicio<select id="pedServicio"></select></label>
+    <label class="campo">Punto de entrega<select id="pedPunto"></select></label>
+    <div class="checklist">
+      <div class="ck-cab"><span id="pedConteo">Trabajadores activos</span><button class="btn-link" id="pedTodos">Marcar todos</button></div>
+      <input class="buscar ck-buscar" id="pedBuscar" type="search" placeholder="Buscar trabajador">
+      <div id="pedLista"></div>
+    </div>
+    <label class="campo" id="pedJustCampo" hidden>Justificación (pedido extemporáneo) *
+      <textarea id="pedJust" maxlength="500" rows="3" placeholder="Ej. llegó personal adicional de la cuadrilla 3"></textarea>
+    </label>
+    <div class="tarjeta" id="pedEstado" hidden></div>
+    <div class="error" id="pedError" role="alert"></div>
+    <button class="btn btn-prim btn-xl" id="pedEnviar" disabled>Enviar pedido</button>
+    <div class="nota centro" id="pedPie"></div>
   </div>
 </section>
 
@@ -120,7 +156,7 @@
         <span id="regPie"></span>
         <span class="pie-btns">
           <button class="btn-ico" id="btnAdmin" hidden title="Administración" aria-label="Administración">⚙</button>
-          <button class="btn-ico" data-salir title="Cambiar de usuario" aria-label="Cambiar de usuario">⎋</button>
+          <button class="btn-ico btn-salir" data-salir>Salir</button>
         </span>
       </div>
     </div>
@@ -138,6 +174,7 @@
       <button data-tab="personas" class="on">Personas</button>
       <button data-tab="rostros">Rostros</button>
       <button data-tab="sas">SAS</button>
+      <button data-tab="puntos">Puntos</button>
       <button data-tab="hoy">Hoy</button>
       <button data-tab="tablet">Tablet</button>
     </nav>
@@ -172,6 +209,11 @@
     <div class="tab" data-panel="sas" hidden>
       <button class="btn btn-prim" id="sasNueva">+ Nueva SAS</button>
       <div class="lista" id="sasLista"></div>
+    </div>
+    <div class="tab" data-panel="puntos" hidden>
+      <p class="txt">Puntos de entrega que el supervisor elige en el pedido de campo.</p>
+      <button class="btn btn-prim" id="ptoNuevo">+ Nuevo punto</button>
+      <div class="lista" id="ptoLista"></div>
     </div>
     <div class="tab" data-panel="hoy" hidden>
       <p class="txt">Registros de hoy. Anular exige motivo y queda en el Log (no se borra nada).</p>
@@ -254,6 +296,20 @@
   </div>
 </div>
 
+<div class="modal" id="modalPunto" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit" id="ptoTitulo">Punto de entrega</div>
+    <label class="campo">Nombre *<input id="ptoNombre" type="text" maxlength="80" placeholder="Lote 12"></label>
+    <label class="campo">Finca<input id="ptoFinca" type="text" maxlength="60" placeholder="Finca 1"></label>
+    <label class="check"><input id="ptoActivo" type="checkbox" checked> Activo</label>
+    <div class="error" id="ptoError"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" data-cerrar="modalPunto">Cancelar</button>
+      <button class="btn btn-prim" id="ptoGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modalEnrolar" hidden>
   <div class="modal-caja">
     <div class="modal-tit" id="enrTitulo">Enrolar rostro</div>
@@ -288,6 +344,7 @@
 <script src="js/comun.js"></script>
 <script src="js/rostros.js"></script>
 <script src="js/registro.js"></script>
+<script src="js/supervisor.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

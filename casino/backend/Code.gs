@@ -50,7 +50,9 @@ const HOJAS = {
                     'registrado_en','offline'],
   Pedidos_Campo:   ['id','fecha','servicio','sas','cuadrilla','supervisor','punto_entrega','personas','cantidad',
                     'estado','extemporaneo','justificacion','autorizado_por','hora_autorizacion','motivo_rechazo',
-                    'despachado_por','hora_despacho','conductor','creado_en','modificado_por','modificado_en'],
+                    'despachado_por','hora_despacho','conductor','creado_en','modificado_por','modificado_en',
+                    'motivo_cancelacion'],
+  Puntos_Entrega:  ['id','nombre','finca','activo','creado_por','creado_en'],
   Cortes_SAS:      ['id','sas','periodo_desde','periodo_hasta','total_raciones','detalle','valor','estado',
                     'creado_por','creado_en','enviado_por','enviado_en','aceptado_por','aceptado_en',
                     'descontado_por','descontado_en','factura_ref','observaciones'],
@@ -456,7 +458,11 @@ const ACCIONES = {
   anularRegistro: accAnularRegistro,
   guardarPersona: accGuardarPersona,
   guardarSAS: accGuardarSAS,
-  sincronizarPersonal: accSincronizarPersonal
+  sincronizarPersonal: accSincronizarPersonal,
+  guardarPunto: accGuardarPunto,
+  datosSupervisor: accDatosSupervisor,
+  guardarPedido: accGuardarPedido,
+  cancelarPedido: accCancelarPedido
 };
 
 /* ── login {usuario, hash, dispositivo} ── */
@@ -524,6 +530,7 @@ function accCatalogo(d) {
     return { id: _txt(r.id), documento: _txt(r.documento), nombre: _txt(r.nombre), servicio: _txt(r.servicio).toUpperCase(), hora: _txtHora(r.hora) };
   });
   return { ok: true, servidor: a, config: _config(), servicios: _servicios(), sas: sas, personas: personas,
+           puntos: _puntos(),
            hoy: { fecha: a.fecha, raciones: hoyR, visitantes: hoyV }, dispositivo: { id: dv.id, nombre: dv.nombre || '' } };
 }
 
@@ -857,6 +864,7 @@ function onOpen() {
     .addItem('1 · Inicializar hojas', 'inicializarHojas')
     .addItem('2 · Crear usuario', 'menuCrearUsuario')
     .addItem('Cambiar PIN de usuario', 'menuCambiarPin')
+    .addItem('Asignar SAS / cuadrillas a supervisor', 'menuAsignarSupervisor')
     .addItem('ID del Sheet de Asistencia', 'menuAsistenciaId')
     .addItem('Copiar personal de Asistencia ahora', 'menuSincronizar')
     .addToUi();
@@ -890,21 +898,27 @@ function menuCrearUsuario() {
   const usuario = _pedir(ui, 'Usuario (sin espacios, ej. marta.casino):'); if (!usuario) return;
   const nombre  = _pedir(ui, 'Nombre completo:'); if (!nombre) return;
   const rol     = (_pedir(ui, 'Rol (' + ROLES.join(' / ') + '):') || '').toUpperCase(); if (!rol) return;
-  let sas = '';
-  if (rol === 'SUPERVISOR') sas = _pedir(ui, 'ID de la SAS que supervisa (vacío si es de la empresa):') || '';
+  let sas = '', cuadrillas = '';
+  if (rol === 'SUPERVISOR') {
+    sas = _pedir(ui, 'Nombre o ID de la SAS que supervisa (vacío si es supervisor de la empresa):') || '';
+    cuadrillas = _pedir(ui, 'Cuadrillas a cargo, separadas por coma (vacío = todas las de su SAS/empresa):') || '';
+  }
   const pin     = _pedir(ui, 'PIN de 5 dígitos (se guarda cifrado):'); if (!pin) return;
-  const r = crearUsuario(usuario, nombre, rol, pin, sas);
+  const r = crearUsuario(usuario, nombre, rol, pin, sas, cuadrillas);
   ui.alert(r.ok ? 'Usuario creado: ' + usuario.toLowerCase() : r.error);
 }
 
-function crearUsuario(usuario, nombre, rol, pin, sas) {
+function crearUsuario(usuario, nombre, rol, pin, sas, cuadrillas) {
   usuario = String(usuario || '').toLowerCase().trim();
   rol = String(rol || '').toUpperCase().trim();
   if (!/^[a-z0-9._-]{3,40}$/.test(usuario)) return { ok: false, error: 'Usuario inválido (3–40 letras, números, . _ -).' };
   if (ROLES.indexOf(rol) === -1) return { ok: false, error: 'Rol inválido.' };
   if (!/^\d{5}$/.test(String(pin))) return { ok: false, error: 'El PIN debe tener 5 dígitos.' };
   if (_buscarFila('Usuarios', 'usuario', usuario)) return { ok: false, error: 'Ese usuario ya existe.' };
-  const fila = { usuario: usuario, nombre: _san(nombre, 80), rol: rol, sas: _san(sas, 40), cuadrillas: '',
+  const rs = _resolverSAS(sas);
+  if (!rs.ok) return rs;
+  sas = rs.id;
+  const fila = { usuario: usuario, nombre: _san(nombre, 80), rol: rol, sas: sas, cuadrillas: _normCuadrillas(cuadrillas),
                  pin_hash: _pinHash(_sha256Hex(String(pin))), activo: 'SI', creado_en: _ahora().ts };
   _append('Usuarios', [fila]);
   CacheService.getScriptCache().remove('USUARIOS');
@@ -944,4 +958,269 @@ function menuSincronizar() {
 // Solo si el script NO está vinculado al Sheet del casino.
 function setSheetId(id) {
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', String(id).trim());
+}
+
+
+/* ══════════════════════════════════════════════════════
+   PANTALLA 2 · PEDIDOS DE CAMPO (supervisor)
+══════════════════════════════════════════════════════ */
+function _normCuadrillas(c) {
+  return String(c || '').split(',').map(function (x) { return _san(x, 40).toUpperCase(); })
+    .filter(function (x) { return x; }).join(', ');
+}
+
+// Acepta el ID o el nombre de la SAS (sin distinguir mayúsculas). Vacío = empresa.
+function _resolverSAS(valor) {
+  const v = _txt(valor);
+  if (!v) return { ok: true, id: '' };
+  const lista = _sasLista();
+  const s = lista.filter(function (x) { return x.id === v; })[0] ||
+            lista.filter(function (x) { return x.nombre.toUpperCase() === v.toUpperCase(); })[0];
+  if (!s) return { ok: false, error: 'No existe la SAS "' + v + '". Créela primero en la tablet (Administración → SAS).' };
+  return { ok: true, id: s.id };
+}
+
+function menuAsignarSupervisor() {
+  const ui = SpreadsheetApp.getUi();
+  const usuario = (_pedir(ui, 'Usuario del supervisor:') || '').toLowerCase(); if (!usuario) return;
+  const f = _buscarFila('Usuarios', 'usuario', usuario);
+  if (!f) { ui.alert('Usuario no encontrado.'); return; }
+  const sas = _pedir(ui, 'Nombre o ID de la SAS (vacío = supervisor de la empresa). Actual: ' + (_txt(f.sas) || 'empresa'));
+  if (sas === null) return;
+  const rs = _resolverSAS(sas); if (!rs.ok) { ui.alert(rs.error); return; }
+  const cuad = _pedir(ui, 'Cuadrillas separadas por coma (vacío = todas). Actual: ' + (_txt(f.cuadrillas) || 'todas'));
+  if (cuad === null) return;
+  const antes = { sas: _txt(f.sas), cuadrillas: _txt(f.cuadrillas) };
+  const despues = { sas: rs.id, cuadrillas: _normCuadrillas(cuad) };
+  _actualizarFila('Usuarios', f._fila, despues);
+  CacheService.getScriptCache().remove('USUARIOS');
+  _log({ usuario: Session.getEffectiveUser().getEmail(), accion: 'ASIGNAR_SUPERVISOR', hoja: 'Usuarios',
+         registro_id: usuario, antes: antes, despues: despues });
+  ui.alert('Asignación guardada.');
+}
+
+function _puntos() {
+  return _leer('Puntos_Entrega').map(function (p) {
+    return { id: _txt(p.id), nombre: _txt(p.nombre), finca: _txt(p.finca), activo: _txt(p.activo).toUpperCase() !== 'NO' };
+  }).filter(function (p) { return p.id && p.nombre; });
+}
+
+/* ── guardarPunto {token(ADMIN), punto:{id?, nombre, finca, activo}} ── */
+function accGuardarPunto(d) {
+  const sv = _validarSesion(d.token, ['ADMIN']);
+  if (!sv.ok) return sv;
+  const p = d.punto || {};
+  const nombre = _san(p.nombre, 80), finca = _san(p.finca, 60);
+  if (!nombre) return { ok: false, error: 'Escriba el nombre del punto de entrega.' };
+  const activo = _txt(p.activo).toUpperCase() === 'NO' ? 'NO' : 'SI';
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const id = _txt(p.id);
+    if (id) {
+      const ex = _buscarFila('Puntos_Entrega', 'id', id);
+      if (!ex) return { ok: false, error: 'Punto no encontrado.' };
+      const antes = _limpio(ex), cambios = { nombre: nombre, finca: finca, activo: activo };
+      _actualizarFila('Puntos_Entrega', ex._fila, cambios);
+      _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'EDITAR', hoja: 'Puntos_Entrega',
+             registro_id: id, antes: antes, despues: cambios, dispositivo: _txt(d.dispositivo) });
+      return { ok: true, id: id };
+    }
+    const dup = _puntos().some(function (x) { return x.nombre.toUpperCase() === nombre.toUpperCase() && x.finca.toUpperCase() === finca.toUpperCase(); });
+    if (dup) return { ok: false, error: 'Ya existe un punto con ese nombre en esa finca.' };
+    const nuevo = { id: _uid('PE'), nombre: nombre, finca: finca, activo: activo,
+                    creado_por: sv.usuario.usuario, creado_en: _ahora().ts };
+    _append('Puntos_Entrega', [nuevo]);
+    _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'CREAR', hoja: 'Puntos_Entrega',
+           registro_id: nuevo.id, despues: nuevo, dispositivo: _txt(d.dispositivo) });
+    return { ok: true, id: nuevo.id };
+  } finally { lock.releaseLock(); }
+}
+
+// Trabajadores que el supervisor puede pedir: activos y elegibles de su SAS
+// (o de EMPRESA si no tiene SAS), filtrados por sus cuadrillas si tiene.
+function _alcanceSupervisor(u, personas, sasMap) {
+  const cuads = u.cuadrillas ? u.cuadrillas.split(',').map(function (x) { return x.trim().toUpperCase(); }).filter(String) : [];
+  const out = {};
+  personas.forEach(function (p) {
+    if (_motivoNoElegible(p, sasMap)) return;
+    if (u.rol !== 'ADMIN') {
+      if (u.sas) { if (p.tipo_pago !== 'SAS' || p.sas !== u.sas) return; }
+      else if (p.tipo_pago !== 'EMPRESA') return;
+      if (cuads.length && cuads.indexOf(p.cuadrilla.toUpperCase()) === -1) return;
+    }
+    out[p.documento] = p;
+  });
+  return out;
+}
+
+function _pedidoObj(r) {
+  let personas = [];
+  try { personas = JSON.parse(_txt(r.personas) || '[]'); } catch (e) {}
+  return {
+    id: _txt(r.id), fecha: _txtFecha(r.fecha), servicio: _txt(r.servicio).toUpperCase(), sas: _txt(r.sas),
+    cuadrilla: _txt(r.cuadrilla), supervisor: _txt(r.supervisor).toLowerCase(), punto_entrega: _txt(r.punto_entrega),
+    personas: personas, cantidad: Number(r.cantidad) || personas.length, estado: _txt(r.estado).toUpperCase(),
+    extemporaneo: _txt(r.extemporaneo).toUpperCase() === 'SI', justificacion: _txt(r.justificacion),
+    autorizado_por: _txt(r.autorizado_por), hora_autorizacion: _txtTs(r.hora_autorizacion),
+    motivo_rechazo: _txt(r.motivo_rechazo), despachado_por: _txt(r.despachado_por),
+    hora_despacho: _txtTs(r.hora_despacho), conductor: _txt(r.conductor), creado_en: _txtTs(r.creado_en),
+    modificado_por: _txt(r.modificado_por), modificado_en: _txtTs(r.modificado_en),
+    motivo_cancelacion: _txt(r.motivo_cancelacion), _fila: r._fila
+  };
+}
+function _pedidosDelDia(fecha) {
+  return _leer('Pedidos_Campo').map(_pedidoObj).filter(function (p) { return p.fecha === fecha; });
+}
+const ESTADOS_PEDIDO_ACTIVOS = ['ENVIADO', 'AUTORIZADO', 'DESPACHADO'];
+
+/* ── datosSupervisor {token(SUPERVISOR|ADMIN)} ── */
+function accDatosSupervisor(d) {
+  const sv = _validarSesion(d.token, ['SUPERVISOR', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const u = sv.usuario, a = _ahora(), cfg = _config();
+  const sasL = _sasLista(); const sasMap = {}; sasL.forEach(function (s) { sasMap[s.id] = s; });
+  const alcance = _alcanceSupervisor(u, _personas(), sasMap);
+  const pedidos = _pedidosDelDia(a.fecha);
+  // Quién ya está en un pedido activo de otro supervisor (para no pedirlo dos veces)
+  const ocupados = {};
+  pedidos.forEach(function (p) {
+    if (ESTADOS_PEDIDO_ACTIVOS.indexOf(p.estado) === -1) return;
+    p.personas.forEach(function (doc) {
+      if (alcance[doc]) (ocupados[p.servicio] = ocupados[p.servicio] || {})[doc] = { pedido: p.id, supervisor: p.supervisor, punto: p.punto_entrega };
+    });
+  });
+  const propios = pedidos.filter(function (p) { return p.supervisor === u.usuario; })
+    .map(function (p) { delete p._fila; return p; });
+  const sas = u.sas ? sasMap[u.sas] : null;
+  return {
+    ok: true, servidor: a, hora_corte: _hhmm(cfg.hora_corte_pedidos || '08:00'),
+    usuario: { usuario: u.usuario, nombre: u.nombre, rol: u.rol, cuadrillas: u.cuadrillas,
+               sas: u.sas, sas_nombre: sas ? sas.nombre : '', sas_activa: sas ? sas.activo : true },
+    servicios: _servicios().filter(function (s) { return s.activo && s.permite_campo; }),
+    puntos: _puntos().filter(function (p) { return p.activo; }),
+    personas: Object.keys(alcance).map(function (k) {
+      const p = alcance[k]; return { documento: p.documento, nombre: p.nombre, cargo: p.cargo, cuadrilla: p.cuadrilla };
+    }).sort(function (x, y) { return x.nombre.localeCompare(y.nombre); }),
+    pedidos: propios, ocupados: ocupados
+  };
+}
+
+/* ── guardarPedido {token, pedido:{id?, servicio, punto, personas[], justificacion}} ──
+   Crea o ajusta un pedido. La hora de corte la decide el SERVIDOR. */
+function accGuardarPedido(d) {
+  const sv = _validarSesion(d.token, ['SUPERVISOR', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const u = sv.usuario, p = d.pedido || {};
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const a = _ahora(), cfg = _config();
+    const corte = _hhmm(cfg.hora_corte_pedidos || '08:00');
+    const despuesCorte = a.hora.slice(0, 5) >= corte;
+    const servs = {}; _servicios().forEach(function (s) { servs[s.id] = s; });
+    const s = servs[_txt(p.servicio).toUpperCase()];
+    if (!s || !s.activo || !s.permite_campo) return { ok: false, error: 'Ese servicio no admite pedidos a campo.' };
+    if (a.hora.slice(0, 5) > s.hora_fin) return { ok: false, error: 'El servicio de ' + s.nombre.toLowerCase() + ' ya cerró.' };
+    const punto = _puntos().filter(function (x) { return x.id === _txt(p.punto) && x.activo; })[0];
+    if (!punto) return { ok: false, error: 'Seleccione un punto de entrega válido.' };
+    const nombrePunto = punto.nombre + (punto.finca ? ' · ' + punto.finca : '');
+
+    const sasMap = {}; _sasLista().forEach(function (x) { sasMap[x.id] = x; });
+    const personas = _personas();
+    const alcance = _alcanceSupervisor(u, personas, sasMap);
+    const docs = [];
+    (p.personas || []).forEach(function (x) { const doc = _txt(x).replace(/\D/g, ''); if (doc && docs.indexOf(doc) === -1) docs.push(doc); });
+    if (!docs.length) return { ok: false, error: 'Marque al menos un trabajador.' };
+    if (docs.length > 300) return { ok: false, error: 'Demasiados trabajadores en un pedido.' };
+    const fuera = docs.filter(function (doc) { return !alcance[doc]; });
+    if (fuera.length) return { ok: false, error: 'Estos trabajadores no están activos o no son de su cuadrilla: ' + fuera.join(', ') };
+
+    const pedidos = _pedidosDelDia(a.fecha);
+    const idEdit = _txt(p.id);
+    const choque = [];
+    pedidos.forEach(function (o) {
+      if (o.id === idEdit || o.servicio !== s.id || ESTADOS_PEDIDO_ACTIVOS.indexOf(o.estado) === -1) return;
+      o.personas.forEach(function (doc) { if (docs.indexOf(doc) !== -1) choque.push(alcance[doc].nombre + ' (pedido de ' + o.supervisor + ')'); });
+    });
+    if (choque.length) return { ok: false, error: 'Ya están en otro pedido de hoy: ' + choque.join(', ') };
+    const comieron = {};
+    _recientes('Raciones', 1).forEach(function (r) {
+      if (_txtFecha(r.fecha) === a.fecha && _txt(r.servicio).toUpperCase() === s.id && _txt(r.estado).toUpperCase() === 'VALIDA')
+        comieron[_txt(r.documento)] = true;
+    });
+    const yaComio = docs.filter(function (doc) { return comieron[doc]; });
+    if (yaComio.length) return { ok: false, error: 'Ya recibieron ' + s.nombre.toLowerCase() + ' hoy: ' +
+      yaComio.map(function (doc) { return alcance[doc].nombre; }).join(', ') };
+
+    const cuadrilla = docs.map(function (doc) { return alcance[doc].cuadrilla; })
+      .filter(function (c, i, arr) { return c && arr.indexOf(c) === i; }).join(', ');
+    const justificacion = _san(p.justificacion, 500);
+
+    if (idEdit) {
+      const ex = pedidos.filter(function (o) { return o.id === idEdit; })[0];
+      if (!ex) return { ok: false, error: 'Pedido no encontrado o no es de hoy.' };
+      if (ex.supervisor !== u.usuario && u.rol !== 'ADMIN') return { ok: false, error: 'Ese pedido es de otro supervisor.' };
+      if (ex.estado === 'DESPACHADO') return { ok: false, error: 'El pedido ya fue despachado: no se puede ajustar.' };
+      if (ex.estado === 'ANULADO') return { ok: false, error: 'El pedido fue cancelado.' };
+      const agregados = docs.filter(function (doc) { return ex.personas.indexOf(doc) === -1; });
+      const cambio = agregados.length || docs.length !== ex.personas.length || ex.punto_entrega !== nombrePunto ||
+                     ex.servicio !== s.id || ex.estado === 'RECHAZADO';
+      if (!cambio) return { ok: true, pedido: _sinFila(ex), sinCambios: true };
+      // Agregar gente (o reenviar un rechazado) después del corte lo vuelve extemporáneo.
+      const extemp = ex.extemporaneo || (despuesCorte && (agregados.length > 0 || ex.estado === 'RECHAZADO'));
+      if (extemp && justificacion.length < 10 && !(ex.extemporaneo && ex.justificacion)) return { ok: false, extemporaneo: true,
+        error: 'Después de las ' + corte + ' el pedido es extemporáneo: escriba la justificación (mínimo 10 caracteres).' };
+      const antes = _limpio(ex);
+      const cambios = {
+        servicio: s.id, punto_entrega: nombrePunto, personas: JSON.stringify(docs), cantidad: docs.length,
+        cuadrilla: cuadrilla, extemporaneo: extemp ? 'SI' : 'NO', justificacion: extemp ? justificacion || ex.justificacion : '',
+        modificado_por: u.usuario, modificado_en: a.ts
+      };
+      // Un pedido ya autorizado o rechazado que cambia vuelve a quedar pendiente de autorización.
+      if (ex.estado !== 'ENVIADO') {
+        cambios.estado = 'ENVIADO'; cambios.autorizado_por = ''; cambios.hora_autorizacion = ''; cambios.motivo_rechazo = '';
+      }
+      _actualizarFila('Pedidos_Campo', ex._fila, cambios);
+      _log({ usuario: u.usuario, rol: u.rol, accion: 'AJUSTAR_PEDIDO', hoja: 'Pedidos_Campo', registro_id: ex.id,
+             antes: antes, despues: cambios });
+      const nuevo = Object.assign({}, ex, cambios, { personas: docs, extemporaneo: extemp, estado: cambios.estado || ex.estado });
+      return { ok: true, pedido: _sinFila(nuevo) };
+    }
+
+    if (despuesCorte && justificacion.length < 10) return { ok: false, extemporaneo: true,
+      error: 'Después de las ' + corte + ' el pedido es extemporáneo: escriba la justificación (mínimo 10 caracteres).' };
+    const fila = {
+      id: 'PC-' + a.fecha.replace(/-/g, '') + '-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase(),
+      fecha: a.fecha, servicio: s.id, sas: u.sas || 'EMPRESA', cuadrilla: cuadrilla, supervisor: u.usuario,
+      punto_entrega: nombrePunto, personas: JSON.stringify(docs), cantidad: docs.length, estado: 'ENVIADO',
+      extemporaneo: despuesCorte ? 'SI' : 'NO', justificacion: despuesCorte ? justificacion : '',
+      creado_en: a.ts, modificado_por: u.usuario, modificado_en: a.ts
+    };
+    _append('Pedidos_Campo', [fila]);
+    _log({ usuario: u.usuario, rol: u.rol, accion: 'CREAR', hoja: 'Pedidos_Campo', registro_id: fila.id, despues: fila });
+    return { ok: true, pedido: _sinFila(_pedidoObj(fila)) };
+  } finally { lock.releaseLock(); }
+}
+function _sinFila(o) { const r = Object.assign({}, o); delete r._fila; return r; }
+
+/* ── cancelarPedido {token, id, motivo} ── no se borra: queda ANULADO */
+function accCancelarPedido(d) {
+  const sv = _validarSesion(d.token, ['SUPERVISOR', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const motivo = _san(d.motivo, 300);
+  if (motivo.length < 5) return { ok: false, error: 'Escriba el motivo de la cancelación.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const f = _buscarFila('Pedidos_Campo', 'id', _txt(d.id));
+    if (!f) return { ok: false, error: 'Pedido no encontrado.' };
+    const ex = _pedidoObj(f);
+    if (ex.supervisor !== sv.usuario.usuario && sv.usuario.rol !== 'ADMIN') return { ok: false, error: 'Ese pedido es de otro supervisor.' };
+    if (ex.estado === 'DESPACHADO') return { ok: false, error: 'El pedido ya fue despachado: no se puede cancelar.' };
+    if (ex.estado === 'ANULADO') return { ok: false, error: 'El pedido ya estaba cancelado.' };
+    const a = _ahora();
+    const cambios = { estado: 'ANULADO', motivo_cancelacion: motivo, modificado_por: sv.usuario.usuario, modificado_en: a.ts };
+    _actualizarFila('Pedidos_Campo', f._fila, cambios);
+    _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'CANCELAR_PEDIDO', hoja: 'Pedidos_Campo',
+           registro_id: ex.id, antes: _limpio(f), despues: cambios });
+    return { ok: true };
+  } finally { lock.releaseLock(); }
 }

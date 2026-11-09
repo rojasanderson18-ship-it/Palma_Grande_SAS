@@ -5,7 +5,7 @@
 ═══════════════════════════════════════════════════════════ */
 'use strict';
 
-const Admin = { tab: 'personas', filtroPer: '', filtroRos: '', editDoc: null, editSas: null, tipo: '' };
+const Admin = { tab: 'personas', filtroPer: '', filtroRos: '', editDoc: null, editSas: null, editPto: null, tipo: '' };
 
 function tokenAdmin() {
   const s = sesion();
@@ -32,7 +32,7 @@ function abrirAdmin() {
 function pintarTab() {
   document.querySelectorAll('#adminTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === Admin.tab));
   document.querySelectorAll('#pAdmin .tab').forEach(p => { p.hidden = p.dataset.panel !== Admin.tab; });
-  ({ personas: pintarPersonas, rostros: pintarRostros, sas: pintarSAS, hoy: pintarHoy, tablet: pintarTablet })[Admin.tab]();
+  ({ personas: pintarPersonas, rostros: pintarRostros, sas: pintarSAS, puntos: pintarPuntos, hoy: pintarHoy, tablet: pintarTablet })[Admin.tab]();
 }
 
 function etiquetaPersona(p) {
@@ -251,6 +251,34 @@ async function guardarSAS() {
   pintarTab();
 }
 
+/* ══════════ Puntos de entrega ══════════ */
+function pintarPuntos() {
+  const lista = ((App.catalogo && App.catalogo.puntos) || []).slice().sort((a, b) => (a.finca + a.nombre).localeCompare(b.finca + b.nombre));
+  $('ptoLista').innerHTML = lista.map(p => `<div class="item"><div class="item-txt"><b>${esc(p.nombre)}</b><span>${esc(p.finca || '—')}</span></div>
+      <span class="etq ${p.activo ? 'etq-emp' : 'etq-gris'}">${p.activo ? 'ACTIVO' : 'INACTIVO'}</span>
+      <button class="btn" data-pto="${esc(p.id)}">Editar</button></div>`).join('');
+  $('ptoLista').querySelectorAll('[data-pto]').forEach(b => { b.onclick = () => abrirPunto(b.dataset.pto); });
+}
+function abrirPunto(id) {
+  const p = id ? ((App.catalogo && App.catalogo.puntos) || []).find(x => x.id === id) : null;
+  Admin.editPto = id || null;
+  $('ptoTitulo').textContent = p ? 'Editar punto de entrega' : 'Nuevo punto de entrega';
+  $('ptoNombre').value = p ? p.nombre : ''; $('ptoFinca').value = p ? p.finca : '';
+  $('ptoActivo').checked = !p || p.activo; $('ptoError').textContent = '';
+  abrirModal('modalPunto');
+}
+async function guardarPunto() {
+  const punto = { id: Admin.editPto || '', nombre: $('ptoNombre').value.trim(), finca: $('ptoFinca').value.trim(),
+                  activo: $('ptoActivo').checked ? 'SI' : 'NO' };
+  if (!punto.nombre) { $('ptoError').textContent = 'Escriba el nombre.'; return; }
+  $('ptoGuardar').disabled = true;
+  const r = await apiAdmin('guardarPunto', { punto });
+  $('ptoGuardar').disabled = false;
+  if (!r || !r.ok) { if (r) $('ptoError').textContent = r.error; return; }
+  cerrarModal('modalPunto'); toast('Punto guardado', 'ok');
+  await cargarCatalogo(true); pintarTab();
+}
+
 /* ══════════ Hoy: anulaciones ══════════ */
 function pintarHoy() {
   const h = hoy();
@@ -365,6 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   $('sasNueva').onclick = () => abrirSAS(null);
+  $('ptoNuevo').onclick = () => abrirPunto(null);
+  $('ptoGuardar').onclick = guardarPunto;
   $('sasGuardar').onclick = guardarSAS;
 
   $('tabSync').onclick = async () => { await sincronizar(); pintarTablet(); toast(totalCola() ? 'Quedan pendientes (¿hay señal?)' : 'Todo enviado', totalCola() ? 'err' : 'ok'); };
