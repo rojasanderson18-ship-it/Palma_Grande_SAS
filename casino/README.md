@@ -6,7 +6,8 @@ No modifica otros módulos ni Asistencia. Fechas siempre en `America/Bogota`.
 Estado:
 - **Pantalla 1 — Registro en casino** + administración mínima para operarla.
 - **Pantalla 2 — Pedido de campo (supervisor)**.
-- Pantallas 3–6 (autorización, programación del día, cierre por SAS, tablero) en fases siguientes.
+- **Pantalla 3 — Autorización de pedidos** (rol `AUTORIZA`: Superintendencia / supervisor Palma Grande).
+- Pantallas 4–6 (programación del día, cierre por SAS, tablero) en fases siguientes.
 
 ## Instalación (una sola vez)
 
@@ -69,3 +70,15 @@ Estado:
 | `backend/Code.gs` | Apps Script del casino |
 | `FASE1_ANALISIS_Y_MODELO.md` | Análisis de Asistencia y modelo de hojas aprobado |
 | `boceto-casino.html` | Referencia visual |
+
+## Autorización (pantalla 3)
+
+- Usuario con rol `AUTORIZA` (menú **Casino → 2 · Crear usuario**). Entra desde su celular con usuario y PIN.
+- Ve los pedidos del día de todos los supervisores: punto, cantidad, SAS o empresa, supervisor, lista de trabajadores
+  y, si es extemporáneo, la justificación.
+- **Autorizar los pedidos a tiempo** en un solo paso. Los extemporáneos se autorizan uno por uno, después de leer la justificación.
+- **Rechazar** (con motivo) un pedido pendiente, o **revocar** uno autorizado mientras no se haya despachado.
+  El supervisor ve quién rechazó y el motivo, y puede corregir y reenviar.
+- Si el supervisor ajusta el pedido después de que el autorizador lo abrió, la autorización no se acepta
+  ("El supervisor modificó el pedido: revíselo de nuevo"). Así nadie autoriza algo distinto de lo que vio.
+- No se autoriza si algún trabajador ya no puede recibir (inactivo o SAS inactiva) ni si el servicio ya cerró.

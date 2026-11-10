@@ -264,3 +264,7 @@ Cuando apruebes (o ajustes) este modelo, sigo con la **Fase 2: Pantalla 1, Regis
 - Hoja `Puntos_Entrega` (id, nombre, finca, activo), administrada desde la tablet.
 - `Pedidos_Campo.motivo_cancelacion` y el estado `ANULADO` (cancelado por el supervisor antes del despacho, con motivo).
 - El supervisor se asigna a una SAS (o a la empresa) y, opcionalmente, a cuadrillas (hoja `Usuarios`).
+
+## 10. Agregados en la pantalla 3
+
+- `Pedidos_Campo.rechazado_por` y `Pedidos_Campo.hora_rechazo` (quién rechazó o revocó, y a qué hora). `autorizado_por` queda solo para autorizaciones.

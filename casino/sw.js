@@ -2,8 +2,8 @@
    · Modelos y face-api: caché primero (pesados, no cambian).
    · Página, CSS y JS: red primero, caché si no hay señal.
    · Nunca intercepta el backend (POST a script.google.com). */
-const VERSION = 'casino-v2';
-const BASE = ['./', 'index.html', 'css/casino.css', 'js/comun.js', 'js/rostros.js', 'js/registro.js', 'js/supervisor.js', 'js/admin.js',
+const VERSION = 'casino-v3';
+const BASE = ['./', 'index.html', 'css/casino.css', 'js/comun.js', 'js/rostros.js', 'js/registro.js', 'js/supervisor.js', 'js/autoriza.js', 'js/admin.js',
   'manifest.webmanifest', 'lib/face-api.min.js',
   'models/tiny_face_detector_model-weights_manifest.json', 'models/tiny_face_detector_model-shard1',
   'models/face_landmark_68_model-weights_manifest.json', 'models/face_landmark_68_model-shard1',

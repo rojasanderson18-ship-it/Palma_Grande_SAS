@@ -54,6 +54,8 @@ function ruta() {
     entrarRegistro();
   } else if (s.usuario.rol === 'SUPERVISOR') {
     entrarSupervisor();
+  } else if (s.usuario.rol === 'AUTORIZA') {
+    entrarAutoriza();
   } else {
     $('otroRolUsuario').textContent = `${s.usuario.nombre} · ${s.usuario.rol}`;
     mostrar('pOtroRol');

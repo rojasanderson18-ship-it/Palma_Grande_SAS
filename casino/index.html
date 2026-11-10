@@ -82,7 +82,7 @@
     <div class="hdr-tit">Control de Casino</div>
   </header>
   <div class="cuerpo">
-    <p class="txt">La pantalla de autorización de pedidos se habilita en la próxima fase.</p>
+    <p class="txt">Su rol no tiene una pantalla asignada en el casino.</p>
     <button class="btn btn-sec" data-salir>Salir</button>
   </div>
 </section>
@@ -120,6 +120,31 @@
     <div class="error" id="pedError" role="alert"></div>
     <button class="btn btn-prim btn-xl" id="pedEnviar" disabled>Enviar pedido</button>
     <div class="nota centro" id="pedPie"></div>
+  </div>
+</section>
+
+<!-- ═════ 3 · Autorización de pedidos ═════ -->
+<section id="pAutoriza" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-fila">
+      <div class="hdr-sub" id="autQuien">Autoriza</div>
+      <button class="btn-ico btn-salir" data-salir>Salir</button>
+    </div>
+    <div class="hdr-tit">Autorización de pedidos</div>
+    <div class="hdr-linea nota" id="autLinea"></div>
+    <nav class="tabs" id="autFiltros">
+      <button data-f="PEND" data-nombre="Pendientes" class="on">Pendientes</button>
+      <button data-f="AUT" data-nombre="Autorizados">Autorizados</button>
+      <button data-f="RECH" data-nombre="Rechazados">Rechazados</button>
+      <button data-f="TODOS" data-nombre="Todos">Todos</button>
+    </nav>
+  </header>
+  <div class="cuerpo">
+    <div class="contadores" id="autResumen"></div>
+    <button class="btn btn-prim btn-xl" id="autMasivo" hidden>Autorizar pedidos a tiempo</button>
+    <div class="pila" id="autLista"></div>
+    <button class="btn btn-sec" id="autRecargar">Actualizar</button>
+    <div class="nota centro" id="autNota"></div>
   </div>
 </section>
 
@@ -345,6 +370,7 @@
 <script src="js/rostros.js"></script>
 <script src="js/registro.js"></script>
 <script src="js/supervisor.js"></script>
+<script src="js/autoriza.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

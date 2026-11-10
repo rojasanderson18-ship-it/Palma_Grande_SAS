@@ -136,7 +136,7 @@ function pintarLista() {
       const [cls, txt] = ESTADO_TXT[p.estado] || ['etq-gris', p.estado];
       let det = '';
       if (p.estado === 'AUTORIZADO') det = `Autorizó ${esc(p.autorizado_por)} · ${horaDe(p.hora_autorizacion)}`;
-      if (p.estado === 'RECHAZADO') det = `Motivo: ${esc(p.motivo_rechazo || '—')}`;
+      if (p.estado === 'RECHAZADO') det = `Rechazó ${esc(p.rechazado_por || '')} ${horaDe(p.hora_rechazo)} · Motivo: ${esc(p.motivo_rechazo || '—')}`;
       if (p.estado === 'DESPACHADO') det = `Despachado ${horaDe(p.hora_despacho)}${p.conductor ? ' · conductor ' + esc(p.conductor) : ''}`;
       if (p.estado === 'ANULADO') det = `Motivo: ${esc(p.motivo_cancelacion || '—')}`;
       const editable = ['ENVIADO', 'AUTORIZADO', 'RECHAZADO'].includes(p.estado);

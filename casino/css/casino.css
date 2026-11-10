@@ -161,3 +161,12 @@ input,select{font-family:inherit;font-size:16px}
 .ck-off{color:var(--txt3);cursor:default}
 .campo textarea{border:1px solid var(--borde2);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:16px;resize:vertical;background:#fff;color:var(--txt)}
 .btn-salir{width:auto;padding:0 12px;font-size:13px;font-weight:600;flex:0 0 auto}
+
+/* Pantalla 3 · Autorización */
+.pedido-ext{border-color:var(--aviso-borde)}
+.justif{background:var(--aviso-bg);color:var(--aviso);border-radius:10px;padding:8px 10px;font-size:13px}
+.ped-trab{border-top:1px solid var(--gris-cab);font-size:14px}
+.ped-trab div{padding:7px 0;border-bottom:1px solid var(--gris-cab)}
+.ped-trab small{color:var(--txt3)}
+.ped-trab .malo{color:var(--err)}
+.pedido .btn-link{align-self:flex-start;padding:2px 0}

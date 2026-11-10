@@ -51,7 +51,7 @@ const HOJAS = {
   Pedidos_Campo:   ['id','fecha','servicio','sas','cuadrilla','supervisor','punto_entrega','personas','cantidad',
                     'estado','extemporaneo','justificacion','autorizado_por','hora_autorizacion','motivo_rechazo',
                     'despachado_por','hora_despacho','conductor','creado_en','modificado_por','modificado_en',
-                    'motivo_cancelacion'],
+                    'motivo_cancelacion','rechazado_por','hora_rechazo'],
   Puntos_Entrega:  ['id','nombre','finca','activo','creado_por','creado_en'],
   Cortes_SAS:      ['id','sas','periodo_desde','periodo_hasta','total_raciones','detalle','valor','estado',
                     'creado_por','creado_en','enviado_por','enviado_en','aceptado_por','aceptado_en',
@@ -462,7 +462,10 @@ const ACCIONES = {
   guardarPunto: accGuardarPunto,
   datosSupervisor: accDatosSupervisor,
   guardarPedido: accGuardarPedido,
-  cancelarPedido: accCancelarPedido
+  cancelarPedido: accCancelarPedido,
+  datosAutorizacion: accDatosAutorizacion,
+  autorizarPedidos: accAutorizarPedidos,
+  rechazarPedido: accRechazarPedido
 };
 
 /* ── login {usuario, hash, dispositivo} ── */
@@ -1065,7 +1068,8 @@ function _pedidoObj(r) {
     motivo_rechazo: _txt(r.motivo_rechazo), despachado_por: _txt(r.despachado_por),
     hora_despacho: _txtTs(r.hora_despacho), conductor: _txt(r.conductor), creado_en: _txtTs(r.creado_en),
     modificado_por: _txt(r.modificado_por), modificado_en: _txtTs(r.modificado_en),
-    motivo_cancelacion: _txt(r.motivo_cancelacion), _fila: r._fila
+    motivo_cancelacion: _txt(r.motivo_cancelacion), rechazado_por: _txt(r.rechazado_por),
+    hora_rechazo: _txtTs(r.hora_rechazo), _fila: r._fila
   };
 }
 function _pedidosDelDia(fecha) {
@@ -1089,8 +1093,14 @@ function accDatosSupervisor(d) {
       if (alcance[doc]) (ocupados[p.servicio] = ocupados[p.servicio] || {})[doc] = { pedido: p.id, supervisor: p.supervisor, punto: p.punto_entrega };
     });
   });
+  const nombresU = {}; _usuarios().forEach(function (x) { nombresU[x.usuario] = x.nombre; });
   const propios = pedidos.filter(function (p) { return p.supervisor === u.usuario; })
-    .map(function (p) { delete p._fila; return p; });
+    .map(function (p) {
+      delete p._fila;
+      p.autorizado_por = nombresU[p.autorizado_por] || p.autorizado_por;
+      p.rechazado_por = nombresU[p.rechazado_por] || p.rechazado_por;
+      return p;
+    });
   const sas = u.sas ? sasMap[u.sas] : null;
   return {
     ok: true, servidor: a, hora_corte: _hhmm(cfg.hora_corte_pedidos || '08:00'),
@@ -1152,7 +1162,7 @@ function accGuardarPedido(d) {
       yaComio.map(function (doc) { return alcance[doc].nombre; }).join(', ') };
 
     const cuadrilla = docs.map(function (doc) { return alcance[doc].cuadrilla; })
-      .filter(function (c, i, arr) { return c && arr.indexOf(c) === i; }).join(', ');
+      .filter(function (c, i, arr) { return c && arr.indexOf(c) === i; }).sort().join(', ');
     const justificacion = _san(p.justificacion, 500);
 
     if (idEdit) {
@@ -1178,6 +1188,7 @@ function accGuardarPedido(d) {
       // Un pedido ya autorizado o rechazado que cambia vuelve a quedar pendiente de autorización.
       if (ex.estado !== 'ENVIADO') {
         cambios.estado = 'ENVIADO'; cambios.autorizado_por = ''; cambios.hora_autorizacion = ''; cambios.motivo_rechazo = '';
+        cambios.rechazado_por = ''; cambios.hora_rechazo = '';
       }
       _actualizarFila('Pedidos_Campo', ex._fila, cambios);
       _log({ usuario: u.usuario, rol: u.rol, accion: 'AJUSTAR_PEDIDO', hoja: 'Pedidos_Campo', registro_id: ex.id,
@@ -1221,6 +1232,106 @@ function accCancelarPedido(d) {
     _actualizarFila('Pedidos_Campo', f._fila, cambios);
     _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'CANCELAR_PEDIDO', hoja: 'Pedidos_Campo',
            registro_id: ex.id, antes: _limpio(f), despues: cambios });
+    return { ok: true };
+  } finally { lock.releaseLock(); }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   PANTALLA 3 · AUTORIZACIÓN DE PEDIDOS (Superintendencia / supervisor PG)
+══════════════════════════════════════════════════════ */
+// La "versión" de un pedido es su modificado_en: si el supervisor lo ajustó
+// después de que el autorizador lo vio, la decisión se rechaza.
+function _versionPedido(p) { return p.modificado_en || p.creado_en; }
+
+/* ── datosAutorizacion {token(AUTORIZA|ADMIN)} ── pedidos de hoy de todos */
+function accDatosAutorizacion(d) {
+  const sv = _validarSesion(d.token, ['AUTORIZA', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const a = _ahora(), cfg = _config();
+  const nombresU = {}; _usuarios().forEach(function (u) { nombresU[u.usuario] = u.nombre; });
+  const sasMap = {}; _sasLista().forEach(function (x) { sasMap[x.id] = x; });
+  const per = {}; _personas().forEach(function (p) { per[p.documento] = p; });
+  const pedidos = _pedidosDelDia(a.fecha).map(function (p) {
+    const o = _sinFila(p);
+    o.version = _versionPedido(p);
+    o.supervisor_nombre = nombresU[p.supervisor] || p.supervisor;
+    o.autorizado_por = nombresU[p.autorizado_por] || p.autorizado_por;
+    o.rechazado_por = nombresU[p.rechazado_por] || p.rechazado_por;
+    o.sas_nombre = p.sas === 'EMPRESA' ? 'Empresa' : (sasMap[p.sas] ? sasMap[p.sas].nombre : p.sas);
+    o.trabajadores = p.personas.map(function (doc) {
+      const x = per[doc];
+      return { documento: doc, nombre: x ? x.nombre : doc, cuadrilla: x ? x.cuadrilla : '',
+               motivo: _motivoNoElegible(x, sasMap) };
+    });
+    return o;
+  }).sort(function (x, y) { return x.creado_en.localeCompare(y.creado_en); });
+  return { ok: true, servidor: a, hora_corte: _hhmm(cfg.hora_corte_pedidos || '08:00'), servicios: _servicios(),
+           usuario: { usuario: sv.usuario.usuario, nombre: sv.usuario.nombre, rol: sv.usuario.rol }, pedidos: pedidos };
+}
+
+/* ── autorizarPedidos {token, pedidos:[{id, version}]} ── uno o varios */
+function accAutorizarPedidos(d) {
+  const sv = _validarSesion(d.token, ['AUTORIZA', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const lista = (d.pedidos || []).slice(0, 100);
+  if (!lista.length) return { ok: false, error: 'No hay pedidos para autorizar.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const a = _ahora();
+    const servs = {}; _servicios().forEach(function (s) { servs[s.id] = s; });
+    const sasMap = {}; _sasLista().forEach(function (x) { sasMap[x.id] = x; });
+    const per = {}; _personas().forEach(function (p) { per[p.documento] = p; });
+    const delDia = {}; _pedidosDelDia(a.fecha).forEach(function (p) { delDia[p.id] = p; });
+    const resultados = [], logs = [];
+    lista.forEach(function (it) {
+      const p = delDia[_txt(it.id)];
+      const res = { id: _txt(it.id) };
+      resultados.push(res);
+      if (!p) { res.error = 'Pedido no encontrado o no es de hoy.'; return; }
+      if (p.estado !== 'ENVIADO') { res.error = 'El pedido ya está ' + p.estado.toLowerCase() + '.'; return; }
+      if (_txt(it.version) !== _versionPedido(p)) { res.error = 'El supervisor modificó el pedido: revíselo de nuevo.'; res.cambiado = true; return; }
+      const s = servs[p.servicio];
+      if (!s || a.hora.slice(0, 5) > s.hora_fin) { res.error = 'El servicio ya cerró.'; return; }
+      const malos = p.personas.filter(function (doc) { return _motivoNoElegible(per[doc], sasMap); })
+        .map(function (doc) { return (per[doc] ? per[doc].nombre : doc) + ' (' + textoMotivoSrv(_motivoNoElegible(per[doc], sasMap)) + ')'; });
+      if (malos.length) { res.error = 'Hay trabajadores que ya no pueden recibir: ' + malos.join(', ') + '. Rechace para que el supervisor corrija.'; return; }
+      const cambios = { estado: 'AUTORIZADO', autorizado_por: sv.usuario.usuario, hora_autorizacion: a.ts };
+      _actualizarFila('Pedidos_Campo', p._fila, cambios);
+      logs.push({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'AUTORIZAR_PEDIDO', hoja: 'Pedidos_Campo',
+                  registro_id: p.id, antes: { estado: p.estado, version: _versionPedido(p), cantidad: p.cantidad,
+                  extemporaneo: p.extemporaneo }, despues: cambios });
+      res.ok = true;
+    });
+    _logs(logs);
+    return { ok: true, resultados: resultados, autorizados: logs.length };
+  } finally { lock.releaseLock(); }
+}
+
+function textoMotivoSrv(m) {
+  return { INACTIVO: 'inactivo', SAS_INACTIVA: 'SAS inactiva', SIN_CLASIFICAR: 'sin clasificar', NO_REGISTRADO: 'no registrado' }[m] || m;
+}
+
+/* ── rechazarPedido {token, id, version, motivo} ── ENVIADO o AUTORIZADO (revocar), nunca despachado */
+function accRechazarPedido(d) {
+  const sv = _validarSesion(d.token, ['AUTORIZA', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const motivo = _san(d.motivo, 300);
+  if (motivo.length < 5) return { ok: false, error: 'Escriba el motivo del rechazo.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const a = _ahora();
+    const p = _pedidosDelDia(a.fecha).filter(function (x) { return x.id === _txt(d.id); })[0];
+    if (!p) return { ok: false, error: 'Pedido no encontrado o no es de hoy.' };
+    if (p.estado !== 'ENVIADO' && p.estado !== 'AUTORIZADO')
+      return { ok: false, error: 'No se puede rechazar: el pedido está ' + p.estado.toLowerCase() + '.' };
+    if (_txt(d.version) !== _versionPedido(p)) return { ok: false, cambiado: true, error: 'El supervisor modificó el pedido: revíselo de nuevo.' };
+    const cambios = { estado: 'RECHAZADO', motivo_rechazo: motivo, rechazado_por: sv.usuario.usuario, hora_rechazo: a.ts,
+                      autorizado_por: '', hora_autorizacion: '' };
+    _actualizarFila('Pedidos_Campo', p._fila, cambios);
+    _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: p.estado === 'AUTORIZADO' ? 'REVOCAR_AUTORIZACION' : 'RECHAZAR_PEDIDO',
+           hoja: 'Pedidos_Campo', registro_id: p.id,
+           antes: { estado: p.estado, autorizado_por: p.autorizado_por, hora_autorizacion: p.hora_autorizacion }, despues: cambios });
     return { ok: true };
   } finally { lock.releaseLock(); }
 }
