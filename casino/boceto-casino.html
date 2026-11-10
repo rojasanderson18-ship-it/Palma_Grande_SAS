@@ -1,0 +1,184 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boceto – Control de Casino Palma Grande</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>body{margin:0;background:#E9ECE6;font-family:Inter,sans-serif;padding:24px}h1{font-size:24px;margin:0 0 4px}p.n{margin:0 0 24px;color:#4A524C;font-size:14px}.wrap{display:flex;flex-wrap:wrap;gap:32px}section h2{font-size:14px;margin:0 0 8px;color:#1B1F1C}section>div{box-shadow:0 4px 18px rgba(0,0,0,.12);border-radius:20px;overflow:hidden}a{color:#2F6B3A}</style></head><body>
+<h1>Boceto – Control de Casino (Palma Grande)</h1><p class="n">Referencia visual para el módulo /casino/. Datos y valores entre corchetes son de ejemplo. Sin confirmación de recepción en campo: se cobra lo despachado según pedido autorizado.</p>
+<div class="wrap"><section><h2>1 · Registro en casino</h2>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F4; font-family: Inter, sans-serif; color: #1B1F1C; display: flex; flex-direction: column">
+<div style="background: #2F6B3A; color: #FFFFFF; padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 13px; opacity: 0.9">Casino · Finca principal</div>
+<div style="font-size: 22px; font-weight: 700">Almuerzo</div>
+<div style="font-size: 13px; opacity: 0.9">Lun 9 nov · servicio abierto 11:30 – 14:00</div>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1">
+<div style="background: #1B1F1C; border-radius: 16px; height: 230px; display: flex; align-items: center; justify-content: center; position: relative">
+<div style="width: 150px; height: 180px; border: 3px solid #7BD389; border-radius: 80px"></div>
+<div style="position: absolute; bottom: 12px; color: #FFFFFF; font-size: 13px">Mire a la cámara</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1px solid #E2E5DF">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div style="font-size: 18px; font-weight: 700">Juan Pérez Rodríguez</div>
+<span style="background: #FCE9DC; color: #9A3412; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px">SAS</span>
+</div>
+<div style="font-size: 14px; color: #4A524C">C.C. ••• 4521 · Cosechero</div>
+<div style="font-size: 14px; color: #4A524C">Contratista: <b style="color: #1B1F1C">[NOMBRE SAS]</b> · Contrato vigente</div>
+<div style="display: flex; gap: 8px; align-items: center; background: #E7F3E9; color: #1E4A27; padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 600">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>
+Primer almuerzo del día · 12:14
+</div>
+</div>
+<button style="height: 56px; border: 0; border-radius: 14px; background: #2F6B3A; color: #FFFFFF; font-size: 17px; font-weight: 700; font-family: Inter, sans-serif">Entregar ración</button>
+<div style="display: flex; gap: 10px">
+<button style="flex: 1; height: 48px; border: 1px solid #C9CEC6; border-radius: 12px; background: #FFFFFF; font-size: 14px; font-weight: 600; font-family: Inter, sans-serif; color: #1B1F1C">Buscar por cédula</button>
+<button style="flex: 1; height: 48px; border: 1px solid #C9CEC6; border-radius: 12px; background: #FFFFFF; font-size: 14px; font-weight: 600; font-family: Inter, sans-serif; color: #1B1F1C">Visitante</button>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #4A524C; padding: 0 4px">
+<span>Entregadas hoy: <b style="color: #1B1F1C">142</b></span>
+<span>Empresa <b style="color: #2F6B3A">61</b> · SAS <b style="color: #9A3412">81</b></span>
+</div>
+<div style="font-size: 12px; color: #5C645E; padding: 0 4px">Entrega: Marta (casino) · Tablet 01</div>
+</div>
+</div>
+</section><section><h2>2 · Pedido de campo (supervisor)</h2>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F4; font-family: Inter, sans-serif; color: #1B1F1C; display: flex; flex-direction: column">
+<div style="background: #FFFFFF; padding: 20px; border-bottom: 1px solid #E2E5DF; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #5C645E">Supervisor · [NOMBRE SAS]</div>
+<div style="font-size: 22px; font-weight: 700">Almuerzos a campo</div>
+<div style="display: flex; gap: 8px; align-items: center; background: #FFF7E6; color: #7A4B00; padding: 8px 10px; border-radius: 10px; font-size: 13px; font-weight: 600">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+Cierra a las 8:00 a. m. · faltan 32 min
+</div>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #4A524C">Punto de entrega
+<select style="height: 48px; border: 1px solid #C9CEC6; border-radius: 12px; padding: 0 12px; font-size: 15px; font-family: Inter, sans-serif; background: #FFFFFF; color: #1B1F1C"><option>Lote 12 · Finca 1</option></select>
+</label>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; overflow: hidden">
+<div style="display: flex; justify-content: space-between; padding: 12px; background: #EEF0EC; font-size: 13px; font-weight: 600; color: #4A524C"><span>Trabajadores activos (12)</span><a href="#">Marcar todos</a></div>
+<label style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #EEF0EC; font-size: 15px; min-height: 24px"><input type="checkbox" checked style="width: 22px; height: 22px; accent-color: #2F6B3A">Juan Pérez</label>
+<label style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #EEF0EC; font-size: 15px"><input type="checkbox" checked style="width: 22px; height: 22px; accent-color: #2F6B3A">Luis Gómez</label>
+<label style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #EEF0EC; font-size: 15px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #2F6B3A">Carlos Ruiz <span style="margin-left: auto; font-size: 12px; color: #5C645E">no vino</span></label>
+<label style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #EEF0EC; font-size: 15px"><input type="checkbox" checked style="width: 22px; height: 22px; accent-color: #2F6B3A">Andrés Mora</label>
+<div style="padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 13px; color: #5C645E">+ 8 más</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; font-weight: 600; color: #4A524C">Estado del pedido</div>
+<div style="font-size: 14px">Enviado 7:28 → <b style="color: #9A3412">Pendiente autorización</b></div>
+<div style="font-size: 12px; color: #5C645E">Autoriza: Superintendencia / supervisor Palma Grande</div>
+</div>
+<button style="margin-top: auto; height: 56px; border: 0; border-radius: 14px; background: #2F6B3A; color: #FFFFFF; font-size: 17px; font-weight: 700; font-family: Inter, sans-serif">Enviar pedido · 11 almuerzos</button>
+<div style="font-size: 12px; color: #5C645E; text-align: center">Después de las 8:00 queda como extemporáneo y requiere justificación</div>
+</div>
+</div>
+</section><section><h2>3 · Programación del día (casino)</h2>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F4; font-family: Inter, sans-serif; color: #1B1F1C; display: flex; flex-direction: column">
+<div style="background: #2F6B3A; color: #FFFFFF; padding: 20px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 13px; opacity: 0.9">Casino · Lun 9 nov · pedidos cerrados 8:00</div>
+<div style="font-size: 22px; font-weight: 700">Programación de almuerzos</div>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px">
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 10px"><div style="font-size: 12px; color: #5C645E">Total</div><div style="font-size: 24px; font-weight: 700">[N]</div></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 10px"><div style="font-size: 12px; color: #5C645E">En casino</div><div style="font-size: 24px; font-weight: 700">[N]</div></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 10px"><div style="font-size: 12px; color: #5C645E">A campo</div><div style="font-size: 24px; font-weight: 700">[N]</div></div>
+</div>
+<div style="font-size: 13px; font-weight: 600; color: #4A524C">Despachos a campo</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 16px">Lote 12 · Finca 1</b><span style="font-size: 20px; font-weight: 700">11</span></div>
+<div style="font-size: 13px; color: #4A524C">[SAS 1] · Supervisor: [NOMBRE] · <a href="#">ver lista</a></div>
+<div style="display: flex; gap: 8px; align-items: center; background: #E7F3E9; color: #1E4A27; padding: 8px 10px; border-radius: 10px; font-size: 13px; font-weight: 600">Despachado 11:10 · conductor [NOMBRE]</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 16px">Lote 30 · Finca 2</b><span style="font-size: 20px; font-weight: 700">9</span></div>
+<div style="font-size: 13px; color: #4A524C">[SAS 2] · Supervisor: [NOMBRE] · <a href="#">ver lista</a></div>
+<button style="height: 48px; border: 0; border-radius: 12px; background: #2F6B3A; color: #FFFFFF; font-size: 15px; font-weight: 700; font-family: Inter, sans-serif">Marcar despachado</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 16px">Frente cosecha · Finca 3</b><span style="font-size: 20px; font-weight: 700">14</span></div>
+<div style="font-size: 13px; color: #4A524C">Empresa · Supervisor: [NOMBRE] · <a href="#">ver lista</a></div>
+<div style="font-size: 13px; color: #9A3412; font-weight: 600">+2 extemporáneos (autorizó [NOMBRE] 8:40)</div>
+<button style="height: 48px; border: 0; border-radius: 12px; background: #2F6B3A; color: #FFFFFF; font-size: 15px; font-weight: 700; font-family: Inter, sans-serif">Marcar despachado</button>
+</div>
+<div style="font-size: 12px; color: #5C645E; text-align: center; margin-top: auto">Lo despachado según el pedido autorizado es lo que se cobra a la SAS. Ajustes solo antes del despacho.</div>
+</div>
+</div>
+</section><section><h2>4 · Cierre por SAS contratista</h2>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F4; font-family: Inter, sans-serif; color: #1B1F1C; display: flex; flex-direction: column">
+<div style="background: #FFFFFF; padding: 20px; border-bottom: 1px solid #E2E5DF; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #5C645E">Cierre quincenal · 1 – 15 nov</div>
+<div style="font-size: 22px; font-weight: 700">[NOMBRE SAS]</div>
+<div style="font-size: 13px; color: #5C645E">NIT [NIT] · 38 trabajadores activos</div>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 12px">
+<div style="font-size: 12px; color: #5C645E">Raciones registradas</div>
+<div style="font-size: 24px; font-weight: 700">[N]</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 12px">
+<div style="font-size: 12px; color: #5C645E">Valor a descontar</div>
+<div style="font-size: 24px; font-weight: 700">$[VALOR]</div>
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; overflow: hidden">
+<div style="display: grid; grid-template-columns: 1fr 44px 44px 44px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #5C645E; background: #EEF0EC">
+<span>Trabajador</span><span>Des</span><span>Alm</span><span>Cen</span>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 44px 44px 44px; padding: 11px 12px; font-size: 14px; border-top: 1px solid #EEF0EC"><span>Juan Pérez</span><span>10</span><span>11</span><span>4</span></div>
+<div style="display: grid; grid-template-columns: 1fr 44px 44px 44px; padding: 11px 12px; font-size: 14px; border-top: 1px solid #EEF0EC"><span>Luis Gómez</span><span>9</span><span>11</span><span>0</span></div>
+<div style="display: grid; grid-template-columns: 1fr 44px 44px 44px; padding: 11px 12px; font-size: 14px; border-top: 1px solid #EEF0EC"><span>Carlos Ruiz</span><span>11</span><span>11</span><span>6</span></div>
+<div style="padding: 10px 12px; font-size: 13px; border-top: 1px solid #EEF0EC"><a href="#">Ver detalle día a día con hora →</a></div>
+</div>
+<div style="background: #FFF7E6; border: 1px solid #F2D49B; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 14px; font-weight: 700; color: #7A4B00">Novedades a revisar (3)</div>
+<div style="font-size: 13px; color: #5A4300">• 2 registros manuales por cédula (sin rostro)</div>
+<div style="font-size: 13px; color: #5A4300">• 1 intento de segundo almuerzo, bloqueado</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto">
+<button style="height: 52px; border: 0; border-radius: 14px; background: #2F6B3A; color: #FFFFFF; font-size: 16px; font-weight: 700; font-family: Inter, sans-serif">Enviar corte a la SAS para firma</button>
+<button style="height: 48px; border: 1px solid #C9CEC6; border-radius: 12px; background: #FFFFFF; font-size: 14px; font-weight: 600; font-family: Inter, sans-serif; color: #1B1F1C">Exportar PDF / Excel para descuento en factura</button>
+</div>
+<div style="font-size: 12px; color: #5C645E; text-align: center">Estado: Borrador → Enviado → Aceptado por SAS → Descontado</div>
+</div>
+</div>
+</section><section><h2>5 · Tablero de consumo</h2>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F7F4; font-family: Inter, sans-serif; color: #1B1F1C; display: flex; flex-direction: column">
+<div style="background: #FFFFFF; padding: 20px; border-bottom: 1px solid #E2E5DF; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 22px; font-weight: 700">Consumo del casino</div>
+<div style="display: flex; gap: 8px">
+<button style="height: 36px; padding: 0 14px; border-radius: 99px; border: 0; background: #2F6B3A; color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: Inter, sans-serif">Semana</button>
+<button style="height: 36px; padding: 0 14px; border-radius: 99px; border: 1px solid #C9CEC6; background: #FFFFFF; font-size: 13px; font-weight: 600; font-family: Inter, sans-serif; color: #1B1F1C">Quincena</button>
+<button style="height: 36px; padding: 0 14px; border-radius: 99px; border: 1px solid #C9CEC6; background: #FFFFFF; font-size: 13px; font-weight: 600; font-family: Inter, sans-serif; color: #1B1F1C">Mes</button>
+</div>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 13px; font-weight: 600; color: #5C645E">Raciones por día</div>
+<div style="display: flex; align-items: flex-end; gap: 10px; height: 120px">
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%"><div style="height: 50%; background: #C2410C"></div><div style="height: 35%; background: #2F6B3A"></div></div>
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%"><div style="height: 55%; background: #C2410C"></div><div style="height: 38%; background: #2F6B3A"></div></div>
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%"><div style="height: 48%; background: #C2410C"></div><div style="height: 36%; background: #2F6B3A"></div></div>
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%"><div style="height: 52%; background: #C2410C"></div><div style="height: 40%; background: #2F6B3A"></div></div>
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%"><div style="height: 45%; background: #C2410C"></div><div style="height: 33%; background: #2F6B3A"></div></div>
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%"><div style="height: 20%; background: #C2410C"></div><div style="height: 15%; background: #2F6B3A"></div></div>
+</div>
+<div style="display: flex; gap: 14px; font-size: 12px; color: #4A524C">
+<span><span style="display: inline-block; width: 10px; height: 10px; background: #2F6B3A"></span> Empresa</span>
+<span><span style="display: inline-block; width: 10px; height: 10px; background: #C2410C"></span> SAS contratistas</span>
+<span style="margin-left: auto">Datos de ejemplo</span>
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; overflow: hidden">
+<div style="padding: 12px; font-size: 13px; font-weight: 600; color: #5C645E">Conciliación con el proveedor del casino</div>
+<div style="display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 14px"><span>Factura del proveedor</span><b>[N] raciones</b></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 14px"><span>Registradas en la app</span><b>[N] raciones</b></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 14px; color: #9A3412"><span>Diferencia</span><b>[N]</b></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E5DF; border-radius: 12px; overflow: hidden">
+<div style="padding: 12px; font-size: 13px; font-weight: 600; color: #5C645E">Por SAS contratista (a descontar)</div>
+<div style="display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 14px"><span>[SAS 1]</span><b>$[VALOR]</b></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 14px"><span>[SAS 2]</span><b>$[VALOR]</b></div>
+<div style="display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid #EEF0EC; font-size: 14px"><span>Empresa (por centro de costo)</span><b>$[VALOR]</b></div>
+</div>
+</div>
+</div>
+</section></div></body></html>
