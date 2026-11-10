@@ -9,7 +9,7 @@ Estado:
 - **Pantalla 3 — Autorización de pedidos** (rol `AUTORIZA`: Superintendencia / supervisor Palma Grande).
 - **Pantalla 4 — Programación del día y despacho** (tablet del casino, botón **Programación**).
 - **Pantalla 5 — Cierre por SAS contratista** (ADMIN).
-- Pantalla 6 (tablero) en la fase siguiente.
+- **Pantalla 6 — Tablero de consumo** (ADMIN; AUTORIZA solo lectura).
 
 ## Instalación (una sola vez)
 
@@ -113,3 +113,17 @@ Estado:
   el cambio aparece como ajuste (− o +) en el siguiente corte de esa SAS, nunca dos veces.
 - Exportar: **PDF** (usa "Guardar como PDF" en la ventana de impresión) y **Excel** (hojas Resumen, Trabajadores, Detalle, Ajustes, Novedades).
   El Excel carga la librería SheetJS desde cdnjs, igual que el hub, así que necesita internet.
+
+## Tablero de consumo (pantalla 6)
+
+- `ADMIN` (Administración → **Tablero**, o **Abrir tablero** desde un computador de oficina) y `AUTORIZA`
+  (botón **Tablero de consumo** en su pantalla, solo lectura).
+- Periodo: **Semana** (lunes a domingo), **Quincena** o **Mes**, con flechas para ir al anterior y al siguiente.
+- Muestra: raciones y valor, casino y campo; **raciones por día, Empresa vs SAS** (barras apiladas; toque una barra
+  para ver el detalle del día, o "Ver como tabla"); total **por SAS contratista** (con el estado de su corte si coincide con el periodo);
+  **Empresa por centro de costo** más los visitantes (cargo a Palma Grande S.A.S); totales por servicio.
+- **Conciliación con el proveedor del casino**: el ADMIN escribe las raciones y el valor de la factura del proveedor
+  (y su referencia) para ese periodo. Se compara con lo registrado en la app (casino, campo y visitantes) y se muestra la diferencia.
+  Queda en la hoja `Conciliacion_Proveedor` y en el Log.
+- Colores de la gráfica: Empresa `#199e70` y SAS `#9A3412`, validados para personas con daltonismo y para contraste.
+  El verde y el naranja del boceto no pasaban esa prueba.

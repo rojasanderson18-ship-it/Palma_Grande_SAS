@@ -470,7 +470,9 @@ const ACCIONES = {
   programacionDia: accProgramacionDia,
   despacharPedido: accDespacharPedido,
   cierreSAS: accCierreSAS,
-  estadoCorte: accEstadoCorte
+  estadoCorte: accEstadoCorte,
+  tableroCasino: accTableroCasino,
+  guardarConciliacion: accGuardarConciliacion
 };
 
 /* ── login {usuario, hash, dispositivo} ── */
@@ -1696,5 +1698,111 @@ function accEstadoCorte(d) {
       return { ok: true, id: corte.id };
     }
     return { ok: false, error: 'Acción no válida.' };
+  } finally { lock.releaseLock(); }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   PANTALLA 6 · TABLERO DE CONSUMO
+══════════════════════════════════════════════════════ */
+/* ── tableroCasino {token(ADMIN|AUTORIZA), desde, hasta} ── */
+function accTableroCasino(d) {
+  const sv = _validarSesion(d.token, ['ADMIN', 'AUTORIZA']);
+  if (!sv.ok) return sv;
+  const per = _validarPeriodo(d); if (!per.ok) return per;
+  const sasMap = {}; _sasLista().forEach(function (x) { sasMap[x.id] = x; });
+  const servs = _servicios();
+  const dias = {}, porSas = {}, porCC = {}, porServ = {}, porModo = { CASINO: 0, CAMPO: 0 };
+  const tot = { EMPRESA: { n: 0, valor: 0 }, SAS: { n: 0, valor: 0 }, VISITANTE: { n: 0, valor: 0 } };
+  for (let f = per.desde; f <= per.hasta; f = _sumarDias(f, 1)) dias[f] = { EMPRESA: 0, SAS: 0, VISITANTE: 0, valor: 0 };
+  const sumar = function (fecha, tipo, valor, servicio) {
+    const x = dias[fecha]; x[tipo]++; x.valor += valor;
+    tot[tipo].n++; tot[tipo].valor += valor;
+    const ps = porServ[servicio] = porServ[servicio] || { n: 0, valor: 0 }; ps.n++; ps.valor += valor;
+  };
+  let anuladas = 0;
+  _leer('Raciones').forEach(function (r) {
+    const fecha = _txtFecha(r.fecha);
+    if (fecha < per.desde || fecha > per.hasta) return;
+    if (_txt(r.estado).toUpperCase() !== 'VALIDA') { anuladas++; return; }
+    const tipo = _txt(r.tipo_pago).toUpperCase() === 'SAS' ? 'SAS' : 'EMPRESA';
+    const valor = Number(r.valor) || 0, servicio = _txt(r.servicio).toUpperCase();
+    sumar(fecha, tipo, valor, servicio);
+    porModo[_txt(r.modo).toUpperCase() === 'CAMPO' ? 'CAMPO' : 'CASINO']++;
+    if (tipo === 'SAS') {
+      const id = _txt(r.sas);
+      const x = porSas[id] = porSas[id] || { id: id, nombre: sasMap[id] ? sasMap[id].nombre : id, n: 0, valor: 0 };
+      x.n++; x.valor += valor;
+    } else {
+      const cc = _txt(r.centro_costo) || 'Sin centro de costo';
+      const x = porCC[cc] = porCC[cc] || { centro_costo: cc, n: 0, valor: 0 };
+      x.n++; x.valor += valor;
+    }
+  });
+  const cfg = _config();
+  _leer('Visitantes').forEach(function (v) {
+    const fecha = _txtFecha(v.fecha);
+    if (fecha < per.desde || fecha > per.hasta) return;
+    if (_txt(v.estado).toUpperCase() !== 'VALIDA') { anuladas++; return; }
+    sumar(fecha, 'VISITANTE', Number(v.valor) || 0, _txt(v.servicio).toUpperCase());
+    porModo.CASINO++;
+  });
+  // Estado del corte de cada SAS cuando coincide exactamente con el periodo.
+  const cortes = {};
+  _leer('Cortes_SAS').forEach(function (c) {
+    if (_txtFecha(c.periodo_desde) === per.desde && _txtFecha(c.periodo_hasta) === per.hasta) cortes[_txt(c.sas)] = _txt(c.estado).toUpperCase();
+  });
+  const conc = _leer('Conciliacion_Proveedor').filter(function (c) {
+    return _txtFecha(c.periodo_desde) === per.desde && _txtFecha(c.periodo_hasta) === per.hasta;
+  })[0];
+  const total = tot.EMPRESA.n + tot.SAS.n + tot.VISITANTE.n;
+  const valorTotal = tot.EMPRESA.valor + tot.SAS.valor + tot.VISITANTE.valor;
+  return {
+    ok: true, servidor: _ahora(), desde: per.desde, hasta: per.hasta, puede_editar: sv.usuario.rol === 'ADMIN',
+    totales: tot, total: total, valor_total: valorTotal, anuladas: anuladas, por_modo: porModo,
+    cargo_visitantes: cfg.cargo_visitantes || CARGO_VISITANTES_DEF,
+    dias: Object.keys(dias).sort().map(function (f) { return Object.assign({ fecha: f }, dias[f]); }),
+    por_sas: Object.keys(porSas).map(function (k) { const x = porSas[k]; x.corte = cortes[k] || ''; return x; })
+      .sort(function (a, b) { return b.valor - a.valor; }),
+    por_cc: Object.keys(porCC).map(function (k) { return porCC[k]; }).sort(function (a, b) { return b.valor - a.valor; }),
+    por_servicio: servs.filter(function (s) { return porServ[s.id]; })
+      .map(function (s) { return { id: s.id, nombre: s.nombre, n: porServ[s.id].n, valor: porServ[s.id].valor }; }),
+    conciliacion: conc ? { raciones_factura: _txt(conc.raciones_factura) === '' ? null : Number(conc.raciones_factura),
+                           valor_factura: _txt(conc.valor_factura) === '' ? null : Number(conc.valor_factura),
+                           factura_ref: _txt(conc.factura_ref),
+                           editado_por: (_usuario(_txt(conc.editado_por)) || {}).nombre || _txt(conc.editado_por),
+                           editado_en: _txtTs(conc.editado_en) } : null
+  };
+}
+
+/* ── guardarConciliacion {token(ADMIN), desde, hasta, raciones_factura, valor_factura, factura_ref} ── */
+function accGuardarConciliacion(d) {
+  const sv = _validarSesion(d.token, ['ADMIN']);
+  if (!sv.ok) return sv;
+  const per = _validarPeriodo(d); if (!per.ok) return per;
+  const num = function (v) {
+    const s = _txt(v).replace(/[^\d]/g, '');
+    return s === '' ? '' : Number(s);
+  };
+  const rac = num(d.raciones_factura), val = num(d.valor_factura);
+  if (rac === '' && val === '') return { ok: false, error: 'Escriba las raciones o el valor de la factura del proveedor.' };
+  const datos = { raciones_factura: rac, valor_factura: val, factura_ref: _san(d.factura_ref, 60),
+                  editado_por: sv.usuario.usuario, editado_en: _ahora().ts };
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const ex = _leer('Conciliacion_Proveedor').filter(function (c) {
+      return _txtFecha(c.periodo_desde) === per.desde && _txtFecha(c.periodo_hasta) === per.hasta;
+    })[0];
+    if (ex) {
+      _actualizarFila('Conciliacion_Proveedor', ex._fila, datos);
+      _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'EDITAR', hoja: 'Conciliacion_Proveedor',
+             registro_id: per.desde + '/' + per.hasta, antes: _limpio(ex), despues: datos });
+    } else {
+      const fila = Object.assign({ periodo_desde: per.desde, periodo_hasta: per.hasta }, datos);
+      _append('Conciliacion_Proveedor', [fila]);
+      _log({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'CREAR', hoja: 'Conciliacion_Proveedor',
+             registro_id: per.desde + '/' + per.hasta, despues: fila });
+    }
+    return { ok: true };
   } finally { lock.releaseLock(); }
 }

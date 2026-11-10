@@ -227,3 +227,24 @@ input,select{font-family:inherit;font-size:16px}
   #impresion .firmas div{flex:1}
   @page{margin:14mm}
 }
+
+/* Pantalla 6 · Tablero */
+.periodo-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:15px}
+.periodo-nav .btn-ico{font-size:22px;line-height:1}
+.periodo-nav .btn-ico:disabled{opacity:.35}
+.graf-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.leyenda{display:flex;gap:12px;font-size:12px;color:var(--txt2)}
+.leyenda i,.g-tip i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.graf{position:relative}
+.graf svg{display:block;overflow:visible}
+.g-grid{stroke:#E2E5DF;stroke-width:1}
+.g-eje{font-size:10px;fill:#5C645E;font-family:Inter,sans-serif}
+.g-hit{fill:transparent;cursor:pointer}
+.g-hit.on{fill:rgba(27,31,28,.06)}
+.g-tip{position:absolute;top:0;background:#fff;border:1px solid var(--borde);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--txt);box-shadow:0 4px 14px rgba(0,0,0,.12);pointer-events:none;white-space:nowrap;display:flex;flex-direction:column;gap:2px}
+.g-tip[hidden]{display:none}
+.fila-dato.dif b{color:var(--err)}
+.fila-dato.tt{font-weight:700}
+.tabla-dias .tr{grid-template-columns:minmax(0,1fr) 44px 44px 48px 84px}
+.conc-campos{margin-top:6px}
+#pAdmin .hdr-fila{flex-wrap:wrap}

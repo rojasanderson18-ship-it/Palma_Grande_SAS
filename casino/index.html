@@ -70,7 +70,8 @@
       <div class="error" id="tabletError"></div>
       <button class="btn btn-prim" id="tabletAutorizar">Autorizar tablet</button>
       <p class="nota">¿Está en la oficina? Puede abrir el cierre sin autorizar este equipo como tablet del casino.</p>
-      <button class="btn btn-sec" id="tabletCierre">Abrir cierre por SAS</button>
+      <div class="fila-btns"><button class="btn btn-sec" id="tabletCierre">Abrir cierre por SAS</button>
+      <button class="btn btn-sec" id="tabletTablero">Abrir tablero</button></div>
     </div>
     <p class="txt" id="tabletNoAdmin" hidden>Esta tablet no está autorizada. Un usuario <b>ADMIN</b> debe ingresar y autorizarla.</p>
     <button class="btn btn-sec" data-salir>Cambiar de usuario</button>
@@ -146,6 +147,7 @@
     <button class="btn btn-prim btn-xl" id="autMasivo" hidden>Autorizar pedidos a tiempo</button>
     <div class="pila" id="autLista"></div>
     <button class="btn btn-sec" id="autRecargar">Actualizar</button>
+    <button class="btn btn-sec" id="autTablero">Tablero de consumo</button>
     <div class="nota centro" id="autNota"></div>
   </div>
 </section>
@@ -216,7 +218,8 @@
   <header class="hdr">
     <div class="hdr-fila">
       <button class="btn-link" id="adminVolver">← Volver al registro</button>
-      <button class="btn-ico btn-salir" id="adminCierre">Cierre por SAS</button>
+      <span class="pie-btns"><button class="btn-ico btn-salir" id="adminTablero">Tablero</button>
+      <button class="btn-ico btn-salir" id="adminCierre">Cierre por SAS</button></span>
     </div>
     <div class="hdr-tit">Administración del casino</div>
     <nav class="tabs" id="adminTabs">
@@ -301,6 +304,26 @@
     </div>
     <div class="nota centro" id="ciNota"></div>
     <div class="pila" id="ciCuerpo"></div>
+  </div>
+</section>
+
+<!-- ═════ 6 · Tablero de consumo ═════ -->
+<section id="pTablero" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-fila"><button class="btn-link" id="tbVolver">← Volver</button></div>
+    <div class="hdr-tit">Consumo del casino</div>
+    <div class="filtros" id="tbModos">
+      <button data-m="SEMANA">Semana</button><button data-m="QUINCENA" class="on">Quincena</button><button data-m="MES">Mes</button>
+    </div>
+    <div class="periodo-nav">
+      <button class="btn-ico" id="tbAnt" aria-label="Periodo anterior">‹</button>
+      <b id="tbPeriodo"></b>
+      <button class="btn-ico" id="tbSig" aria-label="Periodo siguiente">›</button>
+    </div>
+  </header>
+  <div class="cuerpo">
+    <div class="nota centro" id="tbNota"></div>
+    <div class="pila" id="tbCuerpo"></div>
   </div>
 </section>
 
@@ -435,6 +458,7 @@
 <script src="js/autoriza.js"></script>
 <script src="js/programacion.js"></script>
 <script src="js/cierre.js"></script>
+<script src="js/tablero.js"></script>
 <script src="js/admin.js"></script>
 <!-- Documento para imprimir / PDF del corte -->
 <div id="impresion" aria-hidden="true"></div>
