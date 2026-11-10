@@ -55,7 +55,8 @@ const HOJAS = {
   Puntos_Entrega:  ['id','nombre','finca','activo','creado_por','creado_en'],
   Cortes_SAS:      ['id','sas','periodo_desde','periodo_hasta','total_raciones','detalle','valor','estado',
                     'creado_por','creado_en','enviado_por','enviado_en','aceptado_por','aceptado_en',
-                    'descontado_por','descontado_en','factura_ref','observaciones'],
+                    'descontado_por','descontado_en','factura_ref','observaciones','aceptado_firma',
+                    'total_ajustes','valor_ajustes'],
   Conciliacion_Proveedor: ['periodo_desde','periodo_hasta','raciones_factura','valor_factura','factura_ref',
                     'editado_por','editado_en'],
   Usuarios:        ['usuario','nombre','rol','sas','cuadrillas','pin_hash','activo','creado_en'],
@@ -467,7 +468,9 @@ const ACCIONES = {
   autorizarPedidos: accAutorizarPedidos,
   rechazarPedido: accRechazarPedido,
   programacionDia: accProgramacionDia,
-  despacharPedido: accDespacharPedido
+  despacharPedido: accDespacharPedido,
+  cierreSAS: accCierreSAS,
+  estadoCorte: accEstadoCorte
 };
 
 /* ── login {usuario, hash, dispositivo} ── */
@@ -1461,5 +1464,237 @@ function accDespacharPedido(d) {
     return { ok: true, despachadas: nuevas.length, excluidos: excluidos, hora: a.hora.slice(0, 5),
              raciones: nuevas.map(function (r) { return { id: r.id, documento: r.documento, servicio: r.servicio,
                hora: r.hora, modo: 'CAMPO', tipo_pago: r.tipo_pago }; }) };
+  } finally { lock.releaseLock(); }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   PANTALLA 5 · CIERRE POR SAS CONTRATISTA
+   Una ración cuenta en un corte si, a la hora de envío del corte
+   (enviado_en), ya estaba registrada y no estaba anulada. Lo que cambia
+   después (anulaciones o raciones que llegan tarde desde una tablet sin
+   señal) sale como AJUSTE en el siguiente corte de esa SAS. Así un corte
+   enviado nunca cambia y nada se cobra dos veces.
+══════════════════════════════════════════════════════ */
+const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function _racionesDeSAS(sasId) {
+  return _leer('Raciones').filter(function (r) {
+    return _txt(r.tipo_pago).toUpperCase() === 'SAS' && _txt(r.sas) === sasId;
+  }).map(function (r) {
+    return { id: _txt(r.id), fecha: _txtFecha(r.fecha), hora: _txtHora(r.hora).slice(0, 5), documento: _txt(r.documento),
+             nombre: _txt(r.nombre), servicio: _txt(r.servicio).toUpperCase(), modo: _txt(r.modo).toUpperCase() || 'CASINO',
+             metodo: _txt(r.metodo_id).toUpperCase(), pedido_id: _txt(r.pedido_id), valor: Number(r.valor) || 0,
+             estado: _txt(r.estado).toUpperCase(), registrado_en: _txtTs(r.registrado_en), anulado_en: _txtTs(r.anulado_en),
+             motivo_anulacion: _txt(r.motivo_anulacion), anulado_por: _txt(r.anulado_por), entregado_por: _txt(r.entregado_por) };
+  });
+}
+
+function _cortesDeSAS(sasId) {
+  return _leer('Cortes_SAS').filter(function (c) { return _txt(c.sas) === sasId; }).map(function (c) {
+    return { _fila: c._fila, id: _txt(c.id), sas: _txt(c.sas), desde: _txtFecha(c.periodo_desde), hasta: _txtFecha(c.periodo_hasta),
+             estado: _txt(c.estado).toUpperCase(), total_raciones: Number(c.total_raciones) || 0, valor: Number(c.valor) || 0,
+             total_ajustes: Number(c.total_ajustes) || 0, valor_ajustes: Number(c.valor_ajustes) || 0,
+             creado_por: _txt(c.creado_por), creado_en: _txtTs(c.creado_en), enviado_por: _txt(c.enviado_por),
+             enviado_en: _txtTs(c.enviado_en), aceptado_por: _txt(c.aceptado_por), aceptado_en: _txtTs(c.aceptado_en),
+             aceptado_firma: _txt(c.aceptado_firma), descontado_por: _txt(c.descontado_por),
+             descontado_en: _txtTs(c.descontado_en), factura_ref: _txt(c.factura_ref), observaciones: _txt(c.observaciones) };
+  }).sort(function (a, b) { return a.desde.localeCompare(b.desde); });
+}
+
+// ¿La ración contaba como cobrada en el instante T?
+function _contabaEn(r, T) {
+  if (!r.registrado_en || r.registrado_en > T) return false;
+  return r.estado === 'VALIDA' || (r.estado === 'ANULADA' && r.anulado_en > T);
+}
+
+function _calcularCorte(sasId, desde, hasta, corte, cortes, rac) {
+  const corteT = corte && corte.enviado_en ? corte.enviado_en : '9999-12-31 23:59:59';
+  const servs = {}; _servicios().forEach(function (s) { servs[s.id] = s; });
+  const trab = {}, porServ = {}, porModo = { CASINO: 0, CAMPO: 0 };
+  let total = 0, valor = 0;
+  const detalle = [], manuales = [], anuladas = [];
+  rac.forEach(function (r) {
+    if (r.fecha < desde || r.fecha > hasta) return;
+    if (r.estado === 'ANULADA' && r.anulado_en <= corteT) anuladas.push(r);
+    if (!_contabaEn(r, corteT)) return;
+    total++; valor += r.valor;
+    const t = trab[r.documento] = trab[r.documento] || { documento: r.documento, nombre: r.nombre, s: {}, n: 0, valor: 0 };
+    t.s[r.servicio] = (t.s[r.servicio] || 0) + 1; t.n++; t.valor += r.valor;
+    const ps = porServ[r.servicio] = porServ[r.servicio] || { n: 0, valor: 0 };
+    ps.n++; ps.valor += r.valor;
+    porModo[r.modo] = (porModo[r.modo] || 0) + 1;
+    detalle.push({ fecha: r.fecha, hora: r.hora, documento: r.documento, nombre: r.nombre, servicio: r.servicio,
+                   modo: r.modo, metodo: r.metodo, valor: r.valor, entregado_por: r.entregado_por });
+    if (r.metodo === 'CEDULA') manuales.push(r);
+  });
+  // Ajustes de periodos ya enviados de esta SAS.
+  const previos = cortes.filter(function (c) {
+    return c.enviado_en && c.enviado_en < corteT && (!corte || c.id !== corte.id);
+  });
+  const desdeT = previos.reduce(function (m, c) { return c.enviado_en > m ? c.enviado_en : m; }, '');
+  const ajustes = [];
+  previos.forEach(function (c) {
+    rac.forEach(function (r) {
+      if (r.fecha < c.desde || r.fecha > c.hasta) return;
+      const d = (_contabaEn(r, corteT) ? 1 : 0) - (_contabaEn(r, desdeT) ? 1 : 0);
+      if (!d) return;
+      ajustes.push({ corte: c.id, fecha: r.fecha, hora: r.hora, documento: r.documento, nombre: r.nombre, servicio: r.servicio,
+                     signo: d, valor: d * r.valor,
+                     motivo: d < 0 ? 'Anulada después del corte' + (r.motivo_anulacion ? ': ' + r.motivo_anulacion : '')
+                                   : 'Registrada después del corte (tablet sin señal)' });
+    });
+  });
+  const totalAj = ajustes.reduce(function (t, a) { return t + a.signo; }, 0);
+  const valorAj = ajustes.reduce(function (t, a) { return t + a.valor; }, 0);
+  // Intentos bloqueados en el periodo de trabajadores de esta SAS.
+  const docs = {}; rac.forEach(function (r) { docs[r.documento] = r.nombre; });
+  _personas().forEach(function (p) { if (p.tipo_pago === 'SAS' && p.sas === sasId) docs[p.documento] = p.nombre; });
+  const intentos = _leer('Intentos').map(function (i) {
+    return { fecha: _txtFecha(i.fecha), hora: _txtHora(i.hora).slice(0, 5), documento: _txt(i.documento),
+             servicio: _txt(i.servicio).toUpperCase(), motivo: _txt(i.motivo).toUpperCase(), detalle: _txt(i.detalle) };
+  }).filter(function (i) { return i.fecha >= desde && i.fecha <= hasta && docs[i.documento] !== undefined; })
+    .map(function (i) { i.nombre = docs[i.documento]; return i; });
+  const trabajadores = Object.keys(trab).map(function (k) { return trab[k]; })
+    .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
+  detalle.sort(function (a, b) { return (a.fecha + a.hora).localeCompare(b.fecha + b.hora); });
+  return {
+    total: total, valor: valor, por_servicio: porServ, por_modo: porModo, trabajadores: trabajadores, detalle: detalle,
+    ajustes: ajustes, total_ajustes: totalAj, valor_ajustes: valorAj, valor_neto: valor + valorAj,
+    novedades: {
+      manuales: manuales.map(function (r) { return { fecha: r.fecha, hora: r.hora, nombre: r.nombre, servicio: r.servicio, entregado_por: r.entregado_por }; }),
+      anuladas: anuladas.map(function (r) { return { fecha: r.fecha, hora: r.hora, nombre: r.nombre, servicio: r.servicio, motivo: r.motivo_anulacion, anulado_por: r.anulado_por }; }),
+      intentos: intentos
+    },
+    servicios: Object.keys(servs).map(function (k) { return { id: k, nombre: servs[k].nombre }; })
+  };
+}
+
+function _validarPeriodo(d) {
+  const desde = _txt(d.desde), hasta = _txt(d.hasta);
+  if (!FECHA_RE.test(desde) || !FECHA_RE.test(hasta) || desde > hasta) return { ok: false, error: 'Periodo inválido.' };
+  if (_sumarDias(desde, 62) < hasta) return { ok: false, error: 'El periodo no puede pasar de 2 meses.' };
+  return { ok: true, desde: desde, hasta: hasta };
+}
+
+/* ── cierreSAS {token(ADMIN), sas, desde, hasta} ── vista previa o corte guardado */
+function accCierreSAS(d) {
+  const sv = _validarSesion(d.token, ['ADMIN']);
+  if (!sv.ok) return sv;
+  const sasLista = _sasLista();
+  if (!_txt(d.sas)) return { ok: true, sasLista: sasLista };   // solo la lista (equipo sin catálogo de tablet)
+  const per = _validarPeriodo(d); if (!per.ok) return per;
+  const sas = sasLista.filter(function (x) { return x.id === _txt(d.sas); })[0];
+  if (!sas) return { ok: false, error: 'SAS no encontrada.' };
+  const cortes = _cortesDeSAS(sas.id);
+  const corte = cortes.filter(function (c) { return c.desde === per.desde && c.hasta === per.hasta; })[0] || null;
+  const cruce = cortes.filter(function (c) { return c !== corte && c.desde <= per.hasta && c.hasta >= per.desde; })[0];
+  const calc = _calcularCorte(sas.id, per.desde, per.hasta, corte, cortes, _racionesDeSAS(sas.id));
+  const nombresU = {}; _usuarios().forEach(function (u) { nombresU[u.usuario] = u.nombre; });
+  const activos = _personas().filter(function (p) { return p.tipo_pago === 'SAS' && p.sas === sas.id && p.activo && p.estado_asistencia !== 'INACTIVO'; }).length;
+  const limpiar = function (c) {
+    const o = Object.assign({}, c); delete o._fila;
+    ['creado_por', 'enviado_por', 'aceptado_por', 'descontado_por'].forEach(function (k) { o[k + '_nombre'] = nombresU[o[k]] || o[k]; });
+    return o;
+  };
+  return { ok: true, servidor: _ahora(), sas: sas, activos: activos, desde: per.desde, hasta: per.hasta,
+           corte: corte ? limpiar(corte) : null, cruce: cruce ? limpiar(cruce) : null,
+           cortes: cortes.map(limpiar).reverse(), calculo: calc };
+}
+
+/* ── estadoCorte {token(ADMIN), sas, desde, hasta, paso, firma?, factura_ref?, motivo?, observaciones?} ──
+   GUARDAR (borrador) · ENVIAR · ACEPTAR · DESCONTAR · RETROCEDER */
+function accEstadoCorte(d) {
+  const sv = _validarSesion(d.token, ['ADMIN']);
+  if (!sv.ok) return sv;
+  const per = _validarPeriodo(d); if (!per.ok) return per;
+  const accion = _txt(d.paso).toUpperCase();
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const a = _ahora(), u = sv.usuario;
+    const sas = _sasLista().filter(function (x) { return x.id === _txt(d.sas); })[0];
+    if (!sas) return { ok: false, error: 'SAS no encontrada.' };
+    const cortes = _cortesDeSAS(sas.id);
+    let corte = cortes.filter(function (c) { return c.desde === per.desde && c.hasta === per.hasta; })[0] || null;
+    const cruce = cortes.filter(function (c) { return c !== corte && c.desde <= per.hasta && c.hasta >= per.desde; })[0];
+    if (cruce) return { ok: false, error: 'El periodo se cruza con el corte ' + cruce.desde + ' a ' + cruce.hasta + ' (' + cruce.estado.toLowerCase() + ').' };
+    const obs = d.observaciones != null ? _san(d.observaciones, 500) : null;
+    const log = function (acc, antes, despues) {
+      _log({ usuario: u.usuario, rol: u.rol, accion: acc, hoja: 'Cortes_SAS', registro_id: corte ? corte.id : '', antes: antes, despues: despues });
+    };
+
+    if (accion === 'GUARDAR' || accion === 'ENVIAR') {
+      if (corte && corte.estado !== 'BORRADOR') return { ok: false, error: 'El corte ya está ' + corte.estado.toLowerCase() + '.' };
+      if (accion === 'ENVIAR' && per.hasta >= a.fecha) return { ok: false, error: 'El periodo aún no termina: se puede enviar desde el ' + _sumarDias(per.hasta, 1) + '.' };
+      if (accion === 'ENVIAR') {
+        const posterior = cortes.filter(function (c) { return c.enviado_en && c.desde > per.hasta; })[0];
+        if (posterior) return { ok: false, error: 'Ya hay un corte posterior enviado (' + posterior.desde + '). Envíe los cortes en orden.' };
+      }
+      const ref = corte ? Object.assign({}, corte) : null;
+      if (accion === 'ENVIAR') { if (ref) ref.enviado_en = a.ts; }
+      const calc = _calcularCorte(sas.id, per.desde, per.hasta, accion === 'ENVIAR' ? (ref || { id: '_nuevo', enviado_en: a.ts }) : ref,
+                                  cortes, _racionesDeSAS(sas.id));
+      if (accion === 'ENVIAR' && !calc.total && !calc.total_ajustes)
+        return { ok: false, error: 'No hay raciones ni ajustes en el periodo: no hay nada que enviar.' };
+      const detalle = JSON.stringify({
+        por_servicio: calc.por_servicio, por_modo: calc.por_modo,
+        trabajadores: calc.trabajadores.map(function (t) { return [t.documento, t.nombre, t.s, t.n, t.valor]; })
+      }).slice(0, 45000);
+      const datos = { total_raciones: calc.total, valor: calc.valor_neto, total_ajustes: calc.total_ajustes,
+                      valor_ajustes: calc.valor_ajustes, detalle: detalle };
+      if (obs != null) datos.observaciones = obs;
+      if (accion === 'ENVIAR') { datos.estado = 'ENVIADO'; datos.enviado_por = u.usuario; datos.enviado_en = a.ts; }
+      if (!corte) {
+        const nuevo = Object.assign({ id: 'CS-' + sas.id.replace(/[^A-Z0-9]/gi, '').slice(0, 10) + '-' + per.desde.replace(/-/g, ''),
+                                      sas: sas.id, periodo_desde: per.desde, periodo_hasta: per.hasta, estado: 'BORRADOR',
+                                      creado_por: u.usuario, creado_en: a.ts }, datos);
+        _append('Cortes_SAS', [nuevo]);
+        corte = { id: nuevo.id };
+        log(accion === 'ENVIAR' ? 'ENVIAR_CORTE' : 'CREAR_CORTE', null, Object.assign({}, nuevo, { detalle: undefined }));
+      } else {
+        _actualizarFila('Cortes_SAS', corte._fila, datos);
+        log(accion === 'ENVIAR' ? 'ENVIAR_CORTE' : 'ACTUALIZAR_CORTE', { estado: corte.estado, valor: corte.valor },
+            Object.assign({}, datos, { detalle: undefined }));
+      }
+      return { ok: true, id: corte.id };
+    }
+
+    if (!corte) return { ok: false, error: 'Primero guarde el corte.' };
+    if (accion === 'ACEPTAR') {
+      if (corte.estado !== 'ENVIADO') return { ok: false, error: 'Solo se acepta un corte enviado.' };
+      const firma = _san(d.firma, 80);
+      if (firma.length < 3) return { ok: false, error: 'Escriba quién aceptó el corte por parte de la SAS.' };
+      const c = { estado: 'ACEPTADO', aceptado_por: u.usuario, aceptado_en: a.ts, aceptado_firma: firma };
+      if (obs != null) c.observaciones = obs;
+      _actualizarFila('Cortes_SAS', corte._fila, c);
+      log('ACEPTAR_CORTE', { estado: corte.estado }, c);
+      return { ok: true, id: corte.id };
+    }
+    if (accion === 'DESCONTAR') {
+      if (corte.estado !== 'ACEPTADO') return { ok: false, error: 'Solo se descuenta un corte aceptado por la SAS.' };
+      const fac = _san(d.factura_ref, 60);
+      if (fac.length < 2) return { ok: false, error: 'Escriba la referencia de la factura donde se descontó.' };
+      const c = { estado: 'DESCONTADO', descontado_por: u.usuario, descontado_en: a.ts, factura_ref: fac };
+      if (obs != null) c.observaciones = obs;
+      _actualizarFila('Cortes_SAS', corte._fila, c);
+      log('DESCONTAR_CORTE', { estado: corte.estado }, c);
+      return { ok: true, id: corte.id };
+    }
+    if (accion === 'RETROCEDER') {
+      const motivo = _san(d.motivo, 300);
+      if (motivo.length < 5) return { ok: false, error: 'Escriba el motivo para devolver el corte.' };
+      let c;
+      if (corte.estado === 'ACEPTADO') c = { estado: 'ENVIADO', aceptado_por: '', aceptado_en: '', aceptado_firma: '' };
+      else if (corte.estado === 'ENVIADO') {
+        const posterior = cortes.filter(function (x) { return x.id !== corte.id && x.enviado_en && x.enviado_en > corte.enviado_en; })[0];
+        if (posterior) return { ok: false, error: 'No se puede devolver: después se envió el corte ' + posterior.desde + ' a ' + posterior.hasta + '.' };
+        c = { estado: 'BORRADOR', enviado_por: '', enviado_en: '' };
+      } else return { ok: false, error: corte.estado === 'DESCONTADO' ? 'Un corte descontado ya no se puede devolver.' : 'Un borrador no se devuelve.' };
+      _actualizarFila('Cortes_SAS', corte._fila, c);
+      log('DEVOLVER_CORTE', { estado: corte.estado, enviado_en: corte.enviado_en, aceptado_firma: corte.aceptado_firma },
+          Object.assign({ motivo: motivo }, c));
+      return { ok: true, id: corte.id };
+    }
+    return { ok: false, error: 'Acción no válida.' };
   } finally { lock.releaseLock(); }
 }

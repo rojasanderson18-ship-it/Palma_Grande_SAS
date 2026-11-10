@@ -69,6 +69,8 @@
       </label>
       <div class="error" id="tabletError"></div>
       <button class="btn btn-prim" id="tabletAutorizar">Autorizar tablet</button>
+      <p class="nota">¿Está en la oficina? Puede abrir el cierre sin autorizar este equipo como tablet del casino.</p>
+      <button class="btn btn-sec" id="tabletCierre">Abrir cierre por SAS</button>
     </div>
     <p class="txt" id="tabletNoAdmin" hidden>Esta tablet no está autorizada. Un usuario <b>ADMIN</b> debe ingresar y autorizarla.</p>
     <button class="btn btn-sec" data-salir>Cambiar de usuario</button>
@@ -214,6 +216,7 @@
   <header class="hdr">
     <div class="hdr-fila">
       <button class="btn-link" id="adminVolver">← Volver al registro</button>
+      <button class="btn-ico btn-salir" id="adminCierre">Cierre por SAS</button>
     </div>
     <div class="hdr-tit">Administración del casino</div>
     <nav class="tabs" id="adminTabs">
@@ -278,6 +281,29 @@
 </section>
 
 <!-- ═════ Modales ═════ -->
+<!-- ═════ 5 · Cierre por SAS contratista (ADMIN) ═════ -->
+<section id="pCierre" class="pant" hidden>
+  <header class="hdr">
+    <div class="hdr-fila"><button class="btn-link" id="ciVolver">← Volver</button></div>
+    <div class="hdr-sub" id="ciSub">Cierre por SAS</div>
+    <div class="hdr-tit" id="ciTitulo">Cierre por SAS contratista</div>
+    <div class="hdr-sub" id="ciInfo"></div>
+  </header>
+  <div class="cuerpo">
+    <div class="ci-filtros">
+      <label class="campo">SAS contratista<select id="ciSas"></select></label>
+      <label class="campo">Periodo<select id="ciPeriodo"></select></label>
+    </div>
+    <div class="ci-filtros" id="ciRango" hidden>
+      <label class="campo">Desde<input type="date" id="ciDesde"></label>
+      <label class="campo">Hasta<input type="date" id="ciHasta"></label>
+      <button class="btn btn-sec" id="ciAplicar">Aplicar</button>
+    </div>
+    <div class="nota centro" id="ciNota"></div>
+    <div class="pila" id="ciCuerpo"></div>
+  </div>
+</section>
+
 <div class="modal" id="modalCedula" hidden>
   <div class="modal-caja">
     <div class="modal-tit">Buscar por cédula</div>
@@ -408,6 +434,9 @@
 <script src="js/supervisor.js"></script>
 <script src="js/autoriza.js"></script>
 <script src="js/programacion.js"></script>
+<script src="js/cierre.js"></script>
 <script src="js/admin.js"></script>
+<!-- Documento para imprimir / PDF del corte -->
+<div id="impresion" aria-hidden="true"></div>
 </body>
 </html>

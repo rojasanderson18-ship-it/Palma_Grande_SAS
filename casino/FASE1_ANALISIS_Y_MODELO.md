@@ -273,3 +273,9 @@ Cuando apruebes (o ajustes) este modelo, sigo con la **Fase 2: Pantalla 1, Regis
 
 - `Pedidos_Campo.cantidad_despachada`: cuántas raciones se crearon al despachar (puede ser menor que `cantidad` si alguien ya había comido en el casino).
 - Raciones de despacho: `id = P-<pedido>-<documento>`, `modo = CAMPO`, `metodo_id = PEDIDO`.
+
+## 12. Agregados en la pantalla 5
+
+- `Cortes_SAS.aceptado_firma` (quién aceptó por la SAS), `total_ajustes` y `valor_ajustes`. `valor` es el valor neto a descontar (periodo + ajustes).
+- Regla de congelamiento: una ración cuenta en un corte si a la hora de `enviado_en` ya estaba registrada y no estaba anulada.
+  Los cambios posteriores salen como ajuste en el siguiente corte enviado de la misma SAS.

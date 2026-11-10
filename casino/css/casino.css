@@ -185,3 +185,45 @@ input,select{font-family:inherit;font-size:16px}
 .txt-sas{color:var(--sas);font-weight:600}
 .hdr-verde .hdr-fila .btn-link{padding:0}
 .pie{flex-wrap:wrap}
+
+/* Pantalla 5 · Cierre por SAS */
+.ci-filtros{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+#ciRango{grid-template-columns:1fr 1fr auto}
+.flujo{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px}
+.paso{padding:4px 10px;border-radius:99px;background:var(--gris-cab);color:var(--txt3);font-weight:600}
+.paso.hecho{background:var(--verde-claro);color:var(--verde-osc)}
+.paso.on{background:var(--verde);color:#fff}
+.flecha{color:var(--txt3)}
+.kpis-2{grid-template-columns:1fr 1fr}
+.fila-dato{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid var(--gris-cab)}
+.fila-dato:last-child{border-bottom:0}
+.fila-dato small{display:block;font-size:12px;color:var(--txt3)}
+.fila-dato>span:last-child{text-align:right;white-space:nowrap}
+.tabla-ci{background:#fff;border:1px solid var(--borde);border-radius:12px;overflow:hidden}
+.tabla-ci .tr{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--cols),40px) 84px;gap:4px;padding:10px 12px;border-top:1px solid var(--gris-cab);font-size:14px;align-items:center}
+.tabla-ci .tr>span:not(:first-child){text-align:right}
+.tabla-ci .tr small{display:block;font-size:11px;color:var(--txt3)}
+.tabla-ci .th{background:var(--gris-cab);font-size:12px;font-weight:600;color:var(--txt3);border-top:0}
+.tabla-ci .tt{font-weight:700;background:#FAFBF9}
+.alerta-col{flex-direction:column;gap:4px}
+.alerta-col .btn-link{color:var(--aviso);padding:2px 0;font-size:14px;line-height:1.4;text-align:left}
+.txt-aviso{color:var(--aviso)!important}
+.detalle-dias{max-height:420px;overflow-y:auto}
+#impresion{display:none}
+@media print{
+  body{background:#fff}
+  body>*:not(#impresion){display:none!important}
+  #impresion{display:block!important;font-family:Inter,Arial,sans-serif;color:#000;font-size:11px}
+  #impresion h1{font-size:16px;margin-bottom:8px}
+  #impresion h2{font-size:13px;margin:14px 0 6px}
+  #impresion table{width:100%;border-collapse:collapse;margin-bottom:6px}
+  #impresion th,#impresion td{border:1px solid #999;padding:3px 6px;text-align:left}
+  #impresion th{background:#eee}
+  #impresion .imp-cab td{border:0;padding:2px 0}
+  #impresion tr.tot td{font-weight:700}
+  #impresion .imp-det{font-size:10px}
+  #impresion .imp-nota{color:#444;margin-top:4px}
+  #impresion .firmas{display:flex;gap:40px;margin-top:40px}
+  #impresion .firmas div{flex:1}
+  @page{margin:14mm}
+}

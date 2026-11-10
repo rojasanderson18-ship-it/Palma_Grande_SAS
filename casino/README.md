@@ -8,7 +8,8 @@ Estado:
 - **Pantalla 2 — Pedido de campo (supervisor)**.
 - **Pantalla 3 — Autorización de pedidos** (rol `AUTORIZA`: Superintendencia / supervisor Palma Grande).
 - **Pantalla 4 — Programación del día y despacho** (tablet del casino, botón **Programación**).
-- Pantallas 5–6 (cierre por SAS, tablero) en fases siguientes.
+- **Pantalla 5 — Cierre por SAS contratista** (ADMIN).
+- Pantalla 6 (tablero) en la fase siguiente.
 
 ## Instalación (una sola vez)
 
@@ -96,3 +97,19 @@ Estado:
 - Se puede despachar antes de que abra el servicio y hasta que cierre. Despachar necesita señal.
 - Un pedido despachado ya no se puede ajustar, cancelar ni revocar. Si una ración de campo se cobró por error, un ADMIN la anula
   con motivo (Administración → Hoy).
+
+## Cierre por SAS (pantalla 5)
+
+- Solo `ADMIN`. Se abre desde **Administración → Cierre por SAS** o, en un computador de oficina sin autorizarlo como
+  tablet, desde el botón **Abrir cierre por SAS** que aparece después de ingresar.
+- Se elige la SAS y la quincena (1–15 o 16–fin de mes; por defecto la última terminada) u **Otro rango** (máximo 2 meses).
+- Muestra: raciones y valor del periodo (casino y campo), totales por servicio, tabla por trabajador (Des / Alm / Cen),
+  detalle día a día con hora y **novedades** (registros manuales por cédula, intentos bloqueados, anuladas).
+- Flujo: **Borrador → Enviado → Aceptado por SAS → Descontado**.
+  - *Enviar* se habilita al día siguiente del fin del periodo. Al enviar, las cifras **quedan fijas** y se descarga el PDF para mandarlo a la SAS.
+  - *Aceptado*: se escribe quién firmó por la SAS. *Descontado*: se escribe la referencia de la factura.
+  - Se puede **devolver** un paso (con motivo): de Aceptado a Enviado, o de Enviado a Borrador si es el último corte enviado de esa SAS. Un corte descontado ya no se devuelve.
+- **Ajustes**: si después de enviado un corte se anula una ración de ese periodo, o llega tarde una ración registrada sin señal,
+  el cambio aparece como ajuste (− o +) en el siguiente corte de esa SAS, nunca dos veces.
+- Exportar: **PDF** (usa "Guardar como PDF" en la ventana de impresión) y **Excel** (hojas Resumen, Trabajadores, Detalle, Ajustes, Novedades).
+  El Excel carga la librería SheetJS desde cdnjs, igual que el hub, así que necesita internet.
