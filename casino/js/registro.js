@@ -371,7 +371,7 @@ async function iniciarCamaraRegistro() {
         mostrarFicha(doc, 'ROSTRO');
       },
       // Con una ficha en pantalla no se cambia de persona durante 6 s.
-      pausado: () => !App.enRegistro || !$('pAdmin').hidden ||
+      pausado: () => !App.enRegistro || $('pRegistro').hidden ||
         (App.ficha && Date.now() - App.ficha.t < 6000) || !$('modalCedula').hidden || !$('modalVisitante').hidden
     });
   } catch (e) {
@@ -398,13 +398,15 @@ function pintarCabecera() {
 function pintarContadores() {
   const s = servicioActual();
   const h = hoy();
-  const rs = s ? h.raciones.filter(r => r.servicio === s.id) : h.raciones;
+  const delServ = s ? h.raciones.filter(r => r.servicio === s.id) : h.raciones;
+  const rs = delServ.filter(r => r.modo !== 'CAMPO');          // lo entregado en el casino
+  const campo = delServ.length - rs.length;                      // despachado a campo (pantalla 4)
   const vs = s ? h.visitantes.filter(v => v.servicio === s.id) : h.visitantes;
   const emp = rs.filter(r => r.tipo_pago === 'EMPRESA').length, sas = rs.filter(r => r.tipo_pago === 'SAS').length;
   const etiqueta = s ? `${s.nombre}s entregados hoy` : 'Entregadas hoy';
   $('contadores').innerHTML =
     `<span>${esc(etiqueta)}: <b>${rs.length + vs.length}</b></span>` +
-    `<span>Empresa <b class="c-emp">${emp}</b> · SAS <b class="c-sas">${sas}</b>${vs.length ? ` · Visit. <b>${vs.length}</b>` : ''}</span>`;
+    `<span>Empresa <b class="c-emp">${emp}</b> · SAS <b class="c-sas">${sas}</b>${vs.length ? ` · Visit. <b>${vs.length}</b>` : ''}${campo ? ` · Campo <b>${campo}</b>` : ''}</span>`;
 }
 
 function pintarSync() {
@@ -447,7 +449,9 @@ function evaluar(persona, documento, s) {
   if (!persona) return { ok: false, motivo: 'NO_REGISTRADO', texto: textoMotivo('NO_REGISTRADO') };
   if (persona.motivo) return { ok: false, motivo: persona.motivo, texto: textoMotivo(persona.motivo) };
   const previa = hoy().raciones.find(r => r.documento === documento && r.servicio === s.id);
-  if (previa) return { ok: false, motivo: 'DUPLICADA', texto: `Ya recibió ${s.nombre.toLowerCase()} hoy · ${previa.hora.slice(0, 5)}`, previa };
+  if (previa) return { ok: false, motivo: 'DUPLICADA', previa,
+    texto: previa.modo === 'CAMPO' ? `Tiene ${s.nombre.toLowerCase()} despachado a campo · ${previa.hora.slice(0, 5)}`
+                                   : `Ya recibió ${s.nombre.toLowerCase()} hoy · ${previa.hora.slice(0, 5)}` };
   return { ok: true, texto: `Primer ${s.nombre.toLowerCase()} del día · ${ahoraBogota().hhmm}` };
 }
 

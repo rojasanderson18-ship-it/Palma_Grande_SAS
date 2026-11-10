@@ -148,6 +148,26 @@
   </div>
 </section>
 
+<!-- ═════ 4 · Programación del día (casino) ═════ -->
+<section id="pProgramacion" class="pant" hidden>
+  <header class="hdr hdr-verde">
+    <div class="hdr-fila">
+      <button class="btn-link" id="progVolver">← Registro</button>
+    </div>
+    <div class="hdr-sub" id="progLinea">Casino</div>
+    <div class="hdr-tit" id="progTitulo">Programación del día</div>
+  </header>
+  <div class="cuerpo">
+    <div class="filtros" id="progServicios" hidden></div>
+    <div class="kpis" id="progTotales"></div>
+    <div id="progPendientes"></div>
+    <div class="pila" id="progLista"></div>
+    <div class="nota centro">Lo despachado según el pedido autorizado es lo que se cobra a la SAS. Ajustes solo antes del despacho.</div>
+    <button class="btn btn-sec" id="progRecargar">Actualizar</button>
+    <div class="nota centro" id="progNota"></div>
+  </div>
+</section>
+
 <!-- ═════ 1 · Registro en casino ═════ -->
 <section id="pRegistro" class="pant" hidden>
   <header class="hdr hdr-verde">
@@ -180,6 +200,7 @@
       <div class="pie">
         <span id="regPie"></span>
         <span class="pie-btns">
+          <button class="btn-ico btn-salir" id="btnProgramacion">Programación</button>
           <button class="btn-ico" id="btnAdmin" hidden title="Administración" aria-label="Administración">⚙</button>
           <button class="btn-ico btn-salir" data-salir>Salir</button>
         </span>
@@ -349,6 +370,21 @@
   </div>
 </div>
 
+<div class="modal" id="modalDespacho" hidden>
+  <div class="modal-caja">
+    <div class="modal-tit">Marcar despachado</div>
+    <div class="txt" id="despResumen"></div>
+    <label class="campo">Conductor *<input id="despConductor" type="text" maxlength="80" list="despConductores" autocomplete="off"></label>
+    <datalist id="despConductores"></datalist>
+    <div class="nota">Al confirmar, estas raciones quedan registradas como consumidas y se cobran. No se podrá ajustar el pedido.</div>
+    <div class="error" id="despError"></div>
+    <div class="fila-btns">
+      <button class="btn btn-sec" id="despCancelar">Cancelar</button>
+      <button class="btn btn-prim" id="despOk">Confirmar despacho</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modalTexto" hidden>
   <div class="modal-caja">
     <div class="modal-tit mt-titulo"></div>
@@ -371,6 +407,7 @@
 <script src="js/registro.js"></script>
 <script src="js/supervisor.js"></script>
 <script src="js/autoriza.js"></script>
+<script src="js/programacion.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

@@ -7,7 +7,8 @@ Estado:
 - **Pantalla 1 — Registro en casino** + administración mínima para operarla.
 - **Pantalla 2 — Pedido de campo (supervisor)**.
 - **Pantalla 3 — Autorización de pedidos** (rol `AUTORIZA`: Superintendencia / supervisor Palma Grande).
-- Pantallas 4–6 (programación del día, cierre por SAS, tablero) en fases siguientes.
+- **Pantalla 4 — Programación del día y despacho** (tablet del casino, botón **Programación**).
+- Pantallas 5–6 (cierre por SAS, tablero) en fases siguientes.
 
 ## Instalación (una sola vez)
 
@@ -82,3 +83,16 @@ Estado:
 - Si el supervisor ajusta el pedido después de que el autorizador lo abrió, la autorización no se acepta
   ("El supervisor modificó el pedido: revíselo de nuevo"). Así nadie autoriza algo distinto de lo que vio.
 - No se autoriza si algún trabajador ya no puede recibir (inactivo o SAS inactiva) ni si el servicio ya cerró.
+
+## Programación del día (pantalla 4)
+
+- En la tablet del casino, botón **Programación** (usuarios `CASINO` o `ADMIN`).
+- Totales del servicio: **en casino** (registradas, incluye visitantes) y **a campo** (pedidos autorizados o despachados).
+- Despachos agrupados por punto de entrega y, dentro, por SAS o empresa. Los pedidos sin autorizar se ven, pero no se pueden despachar.
+- **Marcar despachado** pide el conductor (la tablet recuerda los últimos). Al confirmar, el servidor crea una ración
+  `CAMPO` por trabajador (`metodo_id = PEDIDO`, con `pedido_id`), que es **lo que se cobra**. No hay confirmación de recepción en campo.
+- Quien ya comió en el casino ese servicio se excluye del despacho y queda en `Intentos`. Después del despacho,
+  si un trabajador de campo llega al casino, la ficha muestra "Tiene almuerzo despachado a campo" y no se entrega.
+- Se puede despachar antes de que abra el servicio y hasta que cierre. Despachar necesita señal.
+- Un pedido despachado ya no se puede ajustar, cancelar ni revocar. Si una ración de campo se cobró por error, un ADMIN la anula
+  con motivo (Administración → Hoy).

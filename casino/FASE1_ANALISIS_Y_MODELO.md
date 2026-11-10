@@ -268,3 +268,8 @@ Cuando apruebes (o ajustes) este modelo, sigo con la **Fase 2: Pantalla 1, Regis
 ## 10. Agregados en la pantalla 3
 
 - `Pedidos_Campo.rechazado_por` y `Pedidos_Campo.hora_rechazo` (quién rechazó o revocó, y a qué hora). `autorizado_por` queda solo para autorizaciones.
+
+## 11. Agregados en la pantalla 4
+
+- `Pedidos_Campo.cantidad_despachada`: cuántas raciones se crearon al despachar (puede ser menor que `cantidad` si alguien ya había comido en el casino).
+- Raciones de despacho: `id = P-<pedido>-<documento>`, `modo = CAMPO`, `metodo_id = PEDIDO`.

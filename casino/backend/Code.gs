@@ -51,7 +51,7 @@ const HOJAS = {
   Pedidos_Campo:   ['id','fecha','servicio','sas','cuadrilla','supervisor','punto_entrega','personas','cantidad',
                     'estado','extemporaneo','justificacion','autorizado_por','hora_autorizacion','motivo_rechazo',
                     'despachado_por','hora_despacho','conductor','creado_en','modificado_por','modificado_en',
-                    'motivo_cancelacion','rechazado_por','hora_rechazo'],
+                    'motivo_cancelacion','rechazado_por','hora_rechazo','cantidad_despachada'],
   Puntos_Entrega:  ['id','nombre','finca','activo','creado_por','creado_en'],
   Cortes_SAS:      ['id','sas','periodo_desde','periodo_hasta','total_raciones','detalle','valor','estado',
                     'creado_por','creado_en','enviado_por','enviado_en','aceptado_por','aceptado_en',
@@ -465,7 +465,9 @@ const ACCIONES = {
   cancelarPedido: accCancelarPedido,
   datosAutorizacion: accDatosAutorizacion,
   autorizarPedidos: accAutorizarPedidos,
-  rechazarPedido: accRechazarPedido
+  rechazarPedido: accRechazarPedido,
+  programacionDia: accProgramacionDia,
+  despacharPedido: accDespacharPedido
 };
 
 /* ── login {usuario, hash, dispositivo} ── */
@@ -1069,7 +1071,8 @@ function _pedidoObj(r) {
     hora_despacho: _txtTs(r.hora_despacho), conductor: _txt(r.conductor), creado_en: _txtTs(r.creado_en),
     modificado_por: _txt(r.modificado_por), modificado_en: _txtTs(r.modificado_en),
     motivo_cancelacion: _txt(r.motivo_cancelacion), rechazado_por: _txt(r.rechazado_por),
-    hora_rechazo: _txtTs(r.hora_rechazo), _fila: r._fila
+    hora_rechazo: _txtTs(r.hora_rechazo), cantidad_despachada: _txt(r.cantidad_despachada) === '' ? null : Number(r.cantidad_despachada),
+    _fila: r._fila
   };
 }
 function _pedidosDelDia(fecha) {
@@ -1146,6 +1149,14 @@ function accGuardarPedido(d) {
 
     const pedidos = _pedidosDelDia(a.fecha);
     const idEdit = _txt(p.id);
+    if (idEdit) {
+      // Primero el estado del pedido: un despachado o cancelado no se toca.
+      const ex0 = pedidos.filter(function (o) { return o.id === idEdit; })[0];
+      if (!ex0) return { ok: false, error: 'Pedido no encontrado o no es de hoy.' };
+      if (ex0.supervisor !== u.usuario && u.rol !== 'ADMIN') return { ok: false, error: 'Ese pedido es de otro supervisor.' };
+      if (ex0.estado === 'DESPACHADO') return { ok: false, error: 'El pedido ya fue despachado: no se puede ajustar.' };
+      if (ex0.estado === 'ANULADO') return { ok: false, error: 'El pedido fue cancelado.' };
+    }
     const choque = [];
     pedidos.forEach(function (o) {
       if (o.id === idEdit || o.servicio !== s.id || ESTADOS_PEDIDO_ACTIVOS.indexOf(o.estado) === -1) return;
@@ -1333,5 +1344,122 @@ function accRechazarPedido(d) {
            hoja: 'Pedidos_Campo', registro_id: p.id,
            antes: { estado: p.estado, autorizado_por: p.autorizado_por, hora_autorizacion: p.hora_autorizacion }, despues: cambios });
     return { ok: true };
+  } finally { lock.releaseLock(); }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   PANTALLA 4 · PROGRAMACIÓN DEL DÍA Y DESPACHO (casino)
+══════════════════════════════════════════════════════ */
+/* ── programacionDia {token(CASINO|ADMIN)} ── */
+function accProgramacionDia(d) {
+  const sv = _validarSesion(d.token, ['CASINO', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const a = _ahora(), cfg = _config();
+  const nombresU = {}; _usuarios().forEach(function (u) { nombresU[u.usuario] = u.nombre; });
+  const sasMap = {}; _sasLista().forEach(function (x) { sasMap[x.id] = x; });
+  const per = {}; _personas().forEach(function (p) { per[p.documento] = p; });
+  // Raciones de hoy por servicio y modo, y quién ya comió (para avisar antes de despachar).
+  const conteo = {}, comio = {};
+  _recientes('Raciones', 1).forEach(function (r) {
+    if (_txtFecha(r.fecha) !== a.fecha || _txt(r.estado).toUpperCase() !== 'VALIDA') return;
+    const sv2 = _txt(r.servicio).toUpperCase(), modo = _txt(r.modo).toUpperCase() || 'CASINO';
+    conteo[sv2] = conteo[sv2] || { CASINO: 0, CAMPO: 0 };
+    conteo[sv2][modo] = (conteo[sv2][modo] || 0) + 1;
+    comio[sv2 + '|' + _txt(r.documento)] = { modo: modo, hora: _txtHora(r.hora).slice(0, 5) };
+  });
+  const visit = {};
+  _recientes('Visitantes', 1).forEach(function (v) {
+    if (_txtFecha(v.fecha) === a.fecha && _txt(v.estado).toUpperCase() === 'VALIDA') {
+      const k = _txt(v.servicio).toUpperCase(); visit[k] = (visit[k] || 0) + 1;
+    }
+  });
+  const pedidos = _pedidosDelDia(a.fecha)
+    .filter(function (p) { return ['ENVIADO', 'AUTORIZADO', 'DESPACHADO'].indexOf(p.estado) !== -1; })
+    .map(function (p) {
+      const o = _sinFila(p);
+      o.version = _versionPedido(p);
+      o.supervisor_nombre = nombresU[p.supervisor] || p.supervisor;
+      o.autorizado_nombre = nombresU[p.autorizado_por] || p.autorizado_por;
+      o.despachado_nombre = nombresU[p.despachado_por] || p.despachado_por;
+      o.sas_nombre = p.sas === 'EMPRESA' ? 'Empresa' : (sasMap[p.sas] ? sasMap[p.sas].nombre : p.sas);
+      o.trabajadores = p.personas.map(function (doc) {
+        const x = per[doc], c = comio[p.servicio + '|' + doc];
+        return { documento: doc, nombre: x ? x.nombre : doc,
+                 // Ya comió en el casino (si el pedido no está despachado, se excluirá al despachar).
+                 ya_comio: c && c.modo === 'CASINO' ? c.hora : '' };
+      });
+      return o;
+    });
+  return { ok: true, servidor: a, hora_corte: _hhmm(cfg.hora_corte_pedidos || '08:00'),
+           servicios: _servicios().filter(function (s) { return s.activo; }),
+           conteo: conteo, visitantes: visit, pedidos: pedidos };
+}
+
+/* ── despacharPedido {token(CASINO|ADMIN), id, version, conductor, dispositivo} ──
+   Registra las raciones del pedido como consumidas (modo CAMPO): es lo que
+   se cobra a la SAS. No hay confirmación de recepción en campo. */
+function accDespacharPedido(d) {
+  const sv = _validarSesion(d.token, ['CASINO', 'ADMIN']);
+  if (!sv.ok) return sv;
+  const conductor = _san(d.conductor, 80);
+  if (conductor.length < 3) return { ok: false, error: 'Escriba el nombre del conductor.' };
+  const lock = LockService.getScriptLock(); lock.waitLock(25000);
+  try {
+    const a = _ahora();
+    const p = _pedidosDelDia(a.fecha).filter(function (x) { return x.id === _txt(d.id); })[0];
+    if (!p) return { ok: false, error: 'Pedido no encontrado o no es de hoy.' };
+    if (p.estado === 'DESPACHADO') return { ok: false, error: 'Este pedido ya fue despachado a las ' + p.hora_despacho.slice(11, 16) + '.' };
+    if (p.estado !== 'AUTORIZADO') return { ok: false, error: 'Solo se despachan pedidos autorizados (este está ' + p.estado.toLowerCase() + ').' };
+    if (_txt(d.version) !== _versionPedido(p)) return { ok: false, cambiado: true, error: 'El pedido cambió: actualice la programación.' };
+    const servs = {}; _servicios().forEach(function (s) { servs[s.id] = s; });
+    const s = servs[p.servicio];
+    if (!s) return { ok: false, error: 'Servicio no válido.' };
+    if (a.hora.slice(0, 5) > s.hora_fin) return { ok: false, error: 'El servicio de ' + s.nombre.toLowerCase() + ' ya cerró.' };
+    const sasMap = {}; _sasLista().forEach(function (x) { sasMap[x.id] = x; });
+    const per = {}; _personas().forEach(function (x) { per[x.documento] = x; });
+    const rec = _recientes('Raciones', 1);
+    const ids = {}, ocupado = {};
+    rec.forEach(function (r) {
+      ids[_txt(r.id)] = true;
+      if (_txtFecha(r.fecha) === a.fecha && _txt(r.estado).toUpperCase() === 'VALIDA' && _txt(r.servicio).toUpperCase() === s.id)
+        ocupado[_txt(r.documento)] = _txtHora(r.hora).slice(0, 5);
+    });
+    const dv = d.dispositivo ? _txt(d.dispositivo).slice(0, 40) : '';
+    const nuevas = [], intentos = [], excluidos = [], logs = [];
+    p.personas.forEach(function (doc) {
+      const id = 'P-' + p.id + '-' + doc;
+      if (ids[id]) return;                       // reintento: ya creada
+      const x = per[doc];
+      let motivo = _motivoNoElegible(x, sasMap);
+      if (!motivo && ocupado[doc]) motivo = 'DUPLICADA';
+      if (motivo) {
+        excluidos.push({ documento: doc, nombre: x ? x.nombre : doc, motivo: motivo, hora_previa: ocupado[doc] || '' });
+        intentos.push({ id: 'I-' + id, fecha: a.fecha, hora: a.hora, documento: doc, servicio: s.id, motivo: motivo,
+                        dispositivo: dv, usuario: sv.usuario.usuario,
+                        detalle: 'Excluido del despacho ' + p.id + (ocupado[doc] ? ' · ya recibió a las ' + ocupado[doc] : ''),
+                        registrado_en: a.ts });
+        return;
+      }
+      const fila = { id: id, fecha: a.fecha, hora: a.hora, documento: doc, nombre: x.nombre, tipo_pago: x.tipo_pago,
+                     sas: x.tipo_pago === 'SAS' ? x.sas : '', centro_costo: x.tipo_pago === 'EMPRESA' ? x.centro_costo : '',
+                     servicio: s.id, modo: 'CAMPO', metodo_id: 'PEDIDO', pedido_id: p.id, valor: s.valor,
+                     entregado_por: sv.usuario.usuario, dispositivo: dv, estado: 'VALIDA', registrado_en: a.ts, offline: 'NO' };
+      nuevas.push(fila); ocupado[doc] = a.hora.slice(0, 5);
+      logs.push({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'CREAR', hoja: 'Raciones', registro_id: id,
+                  despues: fila, dispositivo: dv });
+    });
+    const cambios = { estado: 'DESPACHADO', despachado_por: sv.usuario.usuario, hora_despacho: a.ts, conductor: conductor,
+                      cantidad_despachada: nuevas.length };
+    _append('Raciones', nuevas);
+    _append('Intentos', intentos);
+    _actualizarFila('Pedidos_Campo', p._fila, cambios);
+    logs.push({ usuario: sv.usuario.usuario, rol: sv.usuario.rol, accion: 'DESPACHAR_PEDIDO', hoja: 'Pedidos_Campo',
+                registro_id: p.id, antes: { estado: p.estado, cantidad: p.cantidad },
+                despues: Object.assign({ excluidos: excluidos.length }, cambios), dispositivo: dv });
+    _logs(logs);
+    return { ok: true, despachadas: nuevas.length, excluidos: excluidos, hora: a.hora.slice(0, 5),
+             raciones: nuevas.map(function (r) { return { id: r.id, documento: r.documento, servicio: r.servicio,
+               hora: r.hora, modo: 'CAMPO', tipo_pago: r.tipo_pago }; }) };
   } finally { lock.releaseLock(); }
 }
